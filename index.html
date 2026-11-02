@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v10.0</title>
+    <title>정기시험 좌석배치 시스템 v11.0</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS (엑셀 파싱 및 양식 다운로드) -->
@@ -22,8 +22,8 @@
     <!-- 상단 헤더 & 저장 상태 바 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v10.0</h1>
-            <p class="text-xs text-indigo-200">중복 배치 원천 차단 · 동적 슬롯 할당 · 과목명 뱃지 표출 · 하교생 제외 & 자습생 맨 뒤 배치</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v11.0</h1>
+            <p class="text-xs text-indigo-200">좌석 배치순 내부 일련번호(1~35) 부여 엔진 · 중복 배치 원천 차단 · 과목명 뱃지 표출</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -66,7 +66,6 @@
                 <input type="file" id="excel-file" accept=".xlsx, .xls" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
             </div>
 
-            <!-- 파싱 데이터 상태 요약 카드 -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
                     <h3 class="font-bold text-emerald-900 text-sm">📘 선택과목 현황</h3>
@@ -82,7 +81,6 @@
                 </div>
             </div>
 
-            <!-- 확장 시간표 영역 -->
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-bold text-slate-800">📅 파싱된 정기시험 시간표</h2>
@@ -109,7 +107,6 @@
                 </div>
             </div>
 
-            <!-- 학생 명단 -->
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-bold text-slate-800">👥 학생 명단 (<span id="student-count">0</span>명)</h2>
@@ -219,12 +216,12 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-700">지정 모드</label>
                         <select id="bulk-mode-type" class="w-full border rounded p-2 text-sm mt-1 bg-white">
-                            <option value="RANGE">번호 범위 (1-14)</option>
+                            <option value="RANGE">내부번호 범위 (1-14)</option>
                             <option value="COUNT">시작:인원 (1:15)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700">본반 남아있는 조건</label>
+                        <label class="block text-xs font-semibold text-slate-700">본반 남아있는 조건 (내부번호)</label>
                         <input type="text" id="bulk-home-range" value="15-28" class="w-full border rounded p-2 text-sm mt-1 bg-white">
                     </div>
                     <div>
@@ -236,7 +233,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700">이동 조건</label>
+                        <label class="block text-xs font-semibold text-slate-700">이동 조건 (내부번호)</label>
                         <input type="text" id="bulk-move-range" value="1-14, 29-35" class="w-full border rounded p-2 text-sm mt-1 bg-white">
                     </div>
                 </div>
@@ -277,9 +274,9 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600">선택과목 응시 장소 배치 방식</label>
                         <select id="select-exam-mode" class="w-full border rounded p-2 text-sm mt-1 bg-indigo-50 font-bold text-indigo-900">
-                            <option value="MODE_A">모드 A: 수강생 1반부터 학번순 밀어넣기 + 자습생 이어서 배치 (중복 방지)</option>
-                            <option value="MODE_B">모드 B: 실제 과목 수업교실 이동 집결 + 자습생 남은교실 배치 (중복 방지)</option>
-                            <option value="MODE_C">모드 C: 원래 자기 반에서 응시/자습 (기존 번호 범위 적용)</option>
+                            <option value="MODE_A">모드 A: 1반부터 학번순 배치 + 자습생 이어서 배치 ➔ 좌석순 내부일련번호 부여</option>
+                            <option value="MODE_B">모드 B: 과목 수업교실 이동 ➔ 자습생 남은교실 배치 ➔ 좌석순 내부일련번호 부여</option>
+                            <option value="MODE_C">모드 C: 원래 자기 반 배치 (본반/이동 번호 적용)</option>
                         </select>
                     </div>
                 </div>
@@ -356,13 +353,13 @@
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V10', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V11', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
             if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V10');
+            const saved = localStorage.getItem('SEAT_PLANNER_V11');
             if(saved) {
                 try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
             }
@@ -383,10 +380,9 @@
             if(tabId === 'tab5') updateExamInfoDisplay();
         }
 
-        function parseInputString(inputStr, mode, grade, classNum) {
-            if (!inputStr) return [];
+        function parseInputString(inputStr, mode, targetList) {
+            if (!inputStr || !targetList) return [];
             const result = [];
-            const classStudents = appState.students.filter(s => s.grade === grade && s.classNum === classNum);
 
             if (mode === 'COUNT') {
                 const parts = inputStr.split(',');
@@ -395,11 +391,11 @@
                     const startNum = parseInt(startStr);
                     const count = parseInt(countStr);
                     if (!isNaN(startNum) && !isNaN(count)) {
-                        const matched = classStudents
-                            .filter(s => s.num >= startNum)
-                            .sort((a, b) => a.num - b.num)
+                        const matched = targetList
+                            .filter(s => (s.seatSeq || s.num) >= startNum)
+                            .sort((a, b) => (a.seatSeq || a.num) - (b.seatSeq || b.num))
                             .slice(0, count);
-                        matched.forEach(s => result.push(s.num));
+                        matched.forEach(s => result.push(s.seatSeq || s.num));
                     }
                 });
             } else {
@@ -733,16 +729,14 @@
         }
 
         function calculateRoomStudentCounts(room) {
-            const homeNumList = parseInputString(room.homeRange || "15-28", room.modeType || "RANGE", room.targetGrade, room.targetClass);
-            const moveNumList = parseInputString(room.moveRange || "1-14, 29-35", room.modeType || "RANGE", room.moveGrade, room.targetClass);
+            const classStudents = appState.students.filter(s => s.grade === room.targetGrade && s.classNum === room.targetClass);
+            const moveClassStudents = appState.students.filter(s => s.grade === room.moveGrade && s.classNum === room.targetClass);
 
-            const homeStudents = appState.students.filter(s => 
-                s.grade === room.targetGrade && s.classNum === room.targetClass && homeNumList.includes(s.num)
-            ).sort((a,b)=>a.num-b.num);
+            const homeNumList = parseInputString(room.homeRange || "15-28", room.modeType || "RANGE", classStudents);
+            const moveNumList = parseInputString(room.moveRange || "1-14, 29-35", room.modeType || "RANGE", moveClassStudents);
 
-            const moveStudents = appState.students.filter(s => 
-                s.grade === room.moveGrade && s.classNum === room.targetClass && moveNumList.includes(s.num)
-            ).sort((a,b)=>a.num-b.num);
+            const homeStudents = classStudents.filter(s => homeNumList.includes(s.seatSeq || s.num)).sort((a,b)=>(a.seatSeq||a.num)-(b.seatSeq||b.num));
+            const moveStudents = moveClassStudents.filter(s => moveNumList.includes(s.seatSeq || s.num)).sort((a,b)=>(a.seatSeq||a.num)-(b.seatSeq||b.num));
 
             return { homeStudents, moveStudents, total: homeStudents.length + moveStudents.length };
         }
@@ -823,7 +817,7 @@
             }
         }
 
-        // --- 7. [v10.0 전면 개정] 중복 원천 차단 + 동적 슬롯 재배치 엔진 ---
+        // --- 7. [v11.0 핵심 연산 엔진] 좌석순 내부일련번호 부여 및 이동 통제 ---
         function generateSeatingForPeriod() {
             const day = document.getElementById('select-day').value;
             const period = document.getElementById('select-period').value;
@@ -839,7 +833,6 @@
             const item = (appState.timetableList || []).find(t => t.timeSlot.includes(day.split(' ')[0]) && t.timeSlot.includes(period));
             const currentExamName = item ? item.g2 : "";
 
-            // 💡 자습 여부 판별 함수
             const isStudentSelfStudy = (student) => {
                 if(!student) return false;
                 if(student.grade === 1) return false;
@@ -852,91 +845,60 @@
                 return !student.subjects.some(sub => currentExamName.includes(sub));
             };
 
-            // 💡 고사실별 배치 학생 매핑
-            let finalRoomStudentMapping = {}; // roomId -> { home: [], move: [] }
-
-            if (examMode === 'MODE_A' || examMode === 'MODE_B') {
-                // 모드 A/B: 중복 배치를 방지하기 위해 2학년 전체 학생 명단을 하나의 큐로 구성
-                let allExamers = [];
-                let allSelfStudiers = [];
-
-                appState.students.filter(s => s.grade === 2).forEach(s => {
-                    if(isStudentSelfStudy(s)) allSelfStudiers.push(s);
-                    else allExamers.push(s);
-                });
-
-                allExamers.sort((a,b) => parseInt(a.id) - parseInt(b.id));
-                allSelfStudiers.sort((a,b) => parseInt(a.id) - parseInt(b.id));
-
-                if (examMode === 'MODE_A') {
-                    // 모드 A: 수강생 전원 학번순 1반부터 밀어 넣고, 이어서 자습생 배치
-                    let masterQueue = [...allExamers, ...allSelfStudiers];
-
-                    appState.rooms.forEach(room => {
-                        const counts = calculateRoomStudentCounts(room);
-                        const needMoveSlot = counts.moveStudents.length; // 각 고사실에 배정될 이동 학생 슬롯 수
-                        
-                        // 1학년 고사실에는 2학년 이동 큐에서 잘라 배치
-                        const assignedMove = masterQueue.splice(0, needMoveSlot);
-                        finalRoomStudentMapping[room.id] = {
-                            home: counts.homeStudents,
-                            move: assignedMove
-                        };
-                    });
-                } else if (examMode === 'MODE_B') {
-                    // 모드 B: 실제 과목 수업 교실에 해당 과목 응시생 배치
-                    const targetRoomName = appState.subjectRooms[currentExamName.trim()];
-
-                    appState.rooms.forEach(room => {
-                        const counts = calculateRoomStudentCounts(room);
-                        const needMoveSlot = counts.moveStudents.length;
-
-                        let assignedMove = [];
-                        if(targetRoomName && room.name.includes(targetRoomName)) {
-                            assignedMove = allExamers.splice(0, needMoveSlot);
-                        } else {
-                            assignedMove = allSelfStudiers.splice(0, needMoveSlot);
-                        }
-
-                        finalRoomStudentMapping[room.id] = {
-                            home: counts.homeStudents,
-                            move: assignedMove
-                        };
+            // 💡 [1단계] 모드 A/B 선택 시 각 반에서 배치 후 좌석 순서대로 내부일련번호(seatSeq 1~35) 새로 부여
+            if (examMode === 'MODE_A') {
+                for (let c = 1; c <= 12; c++) {
+                    let classSts = appState.students.filter(s => s.grade === 2 && s.classNum === c);
+                    let examers = classSts.filter(s => !isStudentSelfStudy(s)).sort((a,b) => a.num - b.num);
+                    let selfStudiers = classSts.filter(s => isStudentSelfStudy(s)).sort((a,b) => a.num - b.num);
+                    
+                    let ordered = [...examers, ...selfStudiers];
+                    ordered.forEach((st, seqIdx) => {
+                        st.seatSeq = seqIdx + 1; // 1번부터 최대 35번까지 부여
                     });
                 }
-            } else {
-                // 모드 C: 기존 반 고정 번호 범위대로 배치
+            } else if (examMode === 'MODE_B') {
+                const targetRoomName = appState.subjectRooms[currentExamName.trim()];
+                let allExamers = appState.students.filter(s => s.grade === 2 && !isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
+                let allSelfStudiers = appState.students.filter(s => s.grade === 2 && isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
+
                 appState.rooms.forEach(room => {
                     const counts = calculateRoomStudentCounts(room);
-                    finalRoomStudentMapping[room.id] = {
-                        home: counts.homeStudents,
-                        move: counts.moveStudents
-                    };
+                    const needCount = counts.moveStudents.length;
+
+                    let roomAssigned = [];
+                    if (targetRoomName && room.name.includes(targetRoomName)) {
+                        roomAssigned = allExamers.splice(0, needCount);
+                    } else {
+                        roomAssigned = allSelfStudiers.splice(0, needCount);
+                    }
+                    
+                    roomAssigned.forEach((st, seqIdx) => {
+                        st.seatSeq = seqIdx + 1;
+                    });
                 });
+            } else {
+                // 모드 C: 원래 번호(num) 그대로 사용
+                appState.students.forEach(st => delete st.seatSeq);
             }
 
-            // 💡 좌석배치도 렌더링
+            // 💡 [2단계] 생성된 내부 일련번호(seatSeq) 기반으로 이동 조건 판별 및 좌석배치 실행
             appState.rooms.forEach(room => {
                 const roomDiv = document.createElement('div');
                 roomDiv.className = "bg-white p-6 rounded-lg border border-slate-200 shadow-sm print-page";
 
-                const assigned = finalRoomStudentMapping[room.id];
-                const homeStudents = assigned ? assigned.home : [];
-                const moveStudents = assigned ? assigned.move : [];
-
-                const totalCount = homeStudents.length + moveStudents.length;
-                const layout = appState.capacityRules[totalCount] || [5, 7, 5, 7, 5];
+                const counts = calculateRoomStudentCounts(room);
+                const layout = appState.capacityRules[counts.total] || [5, 7, 5, 7, 5];
                 const isHomeInFixed = (room.fixedGroup === 'HOMEROOM');
 
-                // 자습생 후순위(맨 뒤) 배치 정렬
                 const processGroup = (students) => {
                     const examers = students.filter(s => !isStudentSelfStudy(s));
                     const selfStudiers = students.filter(s => isStudentSelfStudy(s));
                     return [...examers, ...selfStudiers];
                 };
 
-                const fixedGroupStudents = processGroup(isHomeInFixed ? homeStudents : moveStudents);
-                const flexGroupStudents = processGroup(isHomeInFixed ? moveStudents : homeStudents);
+                const fixedGroupStudents = processGroup(isHomeInFixed ? counts.homeStudents : counts.moveStudents);
+                const flexGroupStudents = processGroup(isHomeInFixed ? counts.moveStudents : counts.homeStudents);
 
                 let fixedIdx = 0;
                 let flexIdx = 0;
@@ -949,7 +911,7 @@
                             <h3 class="text-xl font-bold text-slate-800">${room.name}</h3>
                             <p class="text-xs text-indigo-600 font-semibold">[${day} ${period} 좌석배치도 - ${modeTitle}]</p>
                         </div>
-                        <span class="text-xs font-semibold text-slate-500">총 실인원: ${totalCount}명 (규격: ${layout.join('-')}행)</span>
+                        <span class="text-xs font-semibold text-slate-500">총 실인원: ${counts.total}명 (규격: ${layout.join('-')}행)</span>
                     </div>
                     <div class="grid grid-cols-5 gap-2">
                 `;
@@ -976,9 +938,11 @@
 
                         if(student) {
                             const selfStudyFlag = isStudentSelfStudy(student);
+                            const seqDisplay = student.seatSeq ? `<span class="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-1 rounded ml-1">내부${student.seatSeq}번</span>` : '';
+
                             html += `
                                 <div class="p-2 rounded border text-center shadow-2xs ${selfStudyFlag ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-300'}">
-                                    <div class="text-[10px] font-mono text-slate-400">${student.id}</div>
+                                    <div class="text-[10px] font-mono text-slate-400">${student.id} ${seqDisplay}</div>
                                     <div class="font-bold text-sm text-slate-800">${student.name} ${selfStudyFlag ? '<span class="text-[10px] text-amber-700 block font-normal">(자습생)</span>' : ''}</div>
                                 </div>
                             `;
