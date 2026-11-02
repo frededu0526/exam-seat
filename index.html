@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v6.0</title>
+    <title>정기시험 좌석배치 시스템 v6.1</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS (엑셀 파싱 및 양식 다운로드) -->
+    <!-- SheetJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -22,8 +22,8 @@
     <!-- 상단 헤더 & 저장 상태 바 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v6.0</h1>
-            <p class="text-xs text-indigo-200">선택과목 3가지 배치 모드 · 다중 구간 인원수 지정 · 구획 엄격 분리</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v6.1</h1>
+            <p class="text-xs text-indigo-200">일괄 적용 오류 수정 · 선택과목 배치 모드 · 구획 엄격 분리</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -153,36 +153,45 @@
             </div>
         </section>
 
-        <!-- [탭 4] 이동 범위 & 2·4분단 설정 -->
+        <!-- [탭 4] 이동 범위 & 2·4분단 설정 (수정됨) -->
         <section id="tab4" class="tab-content hidden">
             <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200 mb-6">
-                <h2 class="text-md font-bold mb-2 text-indigo-900">⚡ 분단 지정 및 이동 설정 (범위 vs 사람 수 지정)</h2>
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+                <h2 class="text-md font-bold mb-2 text-indigo-900">⚡ 분단 지정 및 이동 설정 일괄 적용</h2>
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700">적용 대상</label>
                         <select id="bulk-target-grade" class="w-full border rounded p-2 text-sm mt-1 bg-white">
                             <option value="ALL">전체 고사실</option>
                             <option value="1">1학년 고사실만</option>
                             <option value="2">2학년 고사실만</option>
+                            <option value="3">3학년 고사실만</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700">2·4분단(7석) 배치 그룹</label>
+                        <label class="block text-xs font-semibold text-slate-700">2·4분단(7석) 그룹</label>
                         <select id="bulk-fixed-group" class="w-full border rounded p-2 text-sm mt-1 bg-white">
                             <option value="HOMEROOM">본반 학생 그룹</option>
                             <option value="MOVE">이동 학생 그룹</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700">이동 지정 모드</label>
+                        <label class="block text-xs font-semibold text-slate-700">지정 모드</label>
                         <select id="bulk-mode-type" class="w-full border rounded p-2 text-sm mt-1 bg-white">
-                            <option value="RANGE">번호 범위 (예: 1-14, 29-35)</option>
-                            <option value="COUNT">시작번호:인원수 (예: 1:15, 30:15)</option>
+                            <option value="RANGE">번호 범위 (1-14)</option>
+                            <option value="COUNT">시작:인원 (1:15)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700">본반 남는 조건</label>
+                        <label class="block text-xs font-semibold text-slate-700">본반 남아있는 조건</label>
                         <input type="text" id="bulk-home-range" value="15-28" class="w-full border rounded p-2 text-sm mt-1 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700">이동해오는 학년</label>
+                        <select id="bulk-move-grade" class="w-full border rounded p-2 text-sm mt-1 bg-white">
+                            <option value="2">2학년</option>
+                            <option value="3">3학년</option>
+                            <option value="1">1학년</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700">이동 조건</label>
@@ -190,7 +199,7 @@
                     </div>
                 </div>
                 <button onclick="applyBulkMovementRules()" class="bg-indigo-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-indigo-500">
-                    일괄 규칙 적용
+                    ⚡ 선택한 고사실에 일괄 적용
                 </button>
             </div>
 
@@ -271,7 +280,7 @@
         </div>
     </div>
 
-    <!-- 핵심 로직 JavaScript -->
+    <!-- 스크립트 로직 -->
     <script>
         let appState = {
             students: [],
@@ -295,13 +304,13 @@
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V6', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V6_1', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
-            if(statusEl) statusEl.innerText = "🟢 로컬 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
+            if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V6');
+            const saved = localStorage.getItem('SEAT_PLANNER_V6_1');
             if(saved) {
                 try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
             }
@@ -320,14 +329,13 @@
             if(tabId === 'tab4') renderRoomRules();
         }
 
-        // --- 다중 파서: RANGE 방식("1-14, 29-35") 및 COUNT 방식("1:15, 30:15") 파싱 ---
+        // --- 다중 파서 ---
         function parseInputString(inputStr, mode, grade, classNum) {
             if (!inputStr) return [];
             const result = [];
             const classStudents = appState.students.filter(s => s.grade === grade && s.classNum === classNum);
 
             if (mode === 'COUNT') {
-                // 시작번호:인원수 방식 파싱 (예: "1:15, 30:15")
                 const parts = inputStr.split(',');
                 parts.forEach(part => {
                     const [startStr, countStr] = part.split(':').map(s => s.trim());
@@ -342,7 +350,6 @@
                     }
                 });
             } else {
-                // 기존 RANGE 방식 파싱 (예: "1-14, 29-35")
                 const parts = inputStr.split(',');
                 parts.forEach(part => {
                     const trimmed = part.trim();
@@ -362,7 +369,7 @@
             return Array.from(new Set(result)).sort((a, b) => a - b);
         }
 
-        // --- 1. 엑셀 업로드 ---
+        // --- 1. 엑셀 파싱 ---
         function downloadExcelTemplate() {
             const wb = XLSX.utils.book_new();
             const g1Data = [{ "일련번호": 1, "학번": 10101, "이름": "구소정" }, { "일련번호": 2, "학번": 10102, "이름": "김석현" }];
@@ -409,7 +416,7 @@
                     if(parsed.length > 0) {
                         appState.students = parsed;
                         renderStudents(); saveToLocalStorage();
-                        alert(`${parsed.length}명의 학생 데이터를 불러왔습니다.`);
+                        alert(`${parsed.length}명 파싱 완료!`);
                     }
                 };
                 reader.readAsArrayBuffer(file);
@@ -420,7 +427,7 @@
             document.getElementById('student-count').innerText = appState.students.length;
             const tbody = document.getElementById('student-table-body');
             if(appState.students.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">데이터가 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">학생 데이터가 없습니다.</td></tr>`;
                 return;
             }
             tbody.innerHTML = appState.students.map((st, idx) => `
@@ -471,7 +478,7 @@
                 });
             }
             renderRooms(); saveToLocalStorage();
-            alert(`${grade}학년 ${classCount}개 고사실이 이어붙여 생성되었습니다.`);
+            alert(`${grade}학년 ${classCount}개 고사실이 생성되었습니다.`);
         }
 
         function clearAllRooms() {
@@ -533,7 +540,7 @@
             }
         }
 
-        // --- 4. 인원 파싱 및 고사실별 인원 산출 ---
+        // --- 4. 일괄 적용 & 인원 계산 (오류 수정됨) ---
         function applyBulkMovementRules() {
             const targetFilter = document.getElementById('bulk-target-grade').value;
             const fixedGroup = document.getElementById('bulk-fixed-group').value;
@@ -554,7 +561,7 @@
                 }
             });
             renderRoomRules(); saveToLocalStorage();
-            alert("일괄 설정이 지정 고사실에 반영되었습니다.");
+            alert("일괄 설정이 지정 고사실에 성공적으로 반영되었습니다!");
         }
 
         function calculateRoomStudentCounts(room) {
@@ -592,12 +599,19 @@
                             </div>
                             <div class="text-[11px] text-slate-500 font-mono">적용규격: ${layout.join('-')}행</div>
                         </div>
-                        <div class="grid grid-cols-3 gap-3 flex-1 text-xs">
+                        <div class="grid grid-cols-4 gap-3 flex-1 text-xs">
                             <div class="bg-white p-2 rounded border">
-                                <span class="font-bold text-amber-700 block mb-1">🪑 2·4분단 (7석) 배치</span>
+                                <span class="font-bold text-amber-700 block mb-1">🪑 2·4분단 (7석) Group</span>
                                 <select onchange="updateRoomProp(${idx}, 'fixedGroup', this.value)" class="border rounded px-1 w-full mt-1">
                                     <option value="HOMEROOM" ${room.fixedGroup==='HOMEROOM'?'selected':''}>본반 학생 (${room.targetGrade}학년)</option>
                                     <option value="MOVE" ${room.fixedGroup==='MOVE'?'selected':''}>이동 학생 (${room.moveGrade}학년)</option>
+                                </select>
+                            </div>
+                            <div class="bg-white p-2 rounded border">
+                                <span class="font-bold text-slate-700 block mb-1">📐 지정 모드</span>
+                                <select onchange="updateRoomProp(${idx}, 'modeType', this.value)" class="border rounded px-1 w-full mt-1">
+                                    <option value="RANGE" ${room.modeType==='RANGE'?'selected':''}>범위 지정 (1-14)</option>
+                                    <option value="COUNT" ${room.modeType==='COUNT'?'selected':''}>인원 지정 (1:15)</option>
                                 </select>
                             </div>
                             <div class="bg-white p-2 rounded border">
@@ -621,13 +635,13 @@
             }).join('');
         }
 
-        // --- 5. 선택과목 및 완벽한 분단 침범 방지 좌석 배치 엔진 ---
+        // --- 5. 좌석 배치 생성 및 완벽한 침범 방지 ---
         function generateSeatingForPeriod() {
             const printArea = document.getElementById('print-area');
             printArea.innerHTML = "";
 
             if(appState.students.length === 0) {
-                alert("학생 명단이 없습니다. 1탭에서 기초자료를 업로드해 주세요.");
+                alert("학생 데이터가 없습니다. 1탭에서 기초자료를 업로드해 주세요.");
                 return;
             }
 
@@ -642,7 +656,7 @@
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
                         <div>
                             <h3 class="text-xl font-bold text-slate-800">${room.name}</h3>
-                            <p class="text-xs text-indigo-600 font-semibold">[선택과목 및 교차 좌석배치도]</p>
+                            <p class="text-xs text-indigo-600 font-semibold">[선택과목 & 교차 좌석배치도]</p>
                         </div>
                         <span class="text-xs font-semibold text-slate-500">
                             총 실인원: ${counts.total}명 (규격: ${layout.join('-')}행)
@@ -651,7 +665,6 @@
                     <div class="grid grid-cols-5 gap-2">
                 `;
 
-                // 2·4분단 그룹과 1·3·5분단 그룹 엄격 분리
                 const isHomeInFixed = (room.fixedGroup === 'HOMEROOM');
                 const fixedGroupStudents = isHomeInFixed ? counts.homeStudents : counts.moveStudents;
                 const flexGroupStudents = isHomeInFixed ? counts.moveStudents : counts.homeStudents;
@@ -673,7 +686,7 @@
                     for(let r = 0; r < rowCount; r++) {
                         let student = null;
 
-                        // 💡 구획 침범 방지 로직: 상대 그룹이 비어도 절대 넘어오지 않음
+                        // 💡 그룹 간 구획 완벽 분리
                         if(isFixedCol) {
                             if(fixedIdx < fixedGroupStudents.length) student = fixedGroupStudents[fixedIdx++];
                         } else {
@@ -703,10 +716,10 @@
                 printArea.appendChild(roomDiv);
             });
 
-            alert("구획 침범 없는 완벽한 좌석배치가 생성되었습니다!");
+            alert("구획 침범이 없는 깔끔한 좌석배치가 생성되었습니다!");
         }
 
-        // --- JSON 내보내기/복원 ---
+        // --- 백업 & 저장 ---
         function exportJSON() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
             const a = document.createElement('a'); a.href = dataStr;
