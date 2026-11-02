@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v12.0</title>
+    <title>정기시험 좌석배치 시스템 v13.0</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS (엑셀 파싱 및 양식 다운로드) -->
@@ -22,8 +22,8 @@
     <!-- 상단 헤더 & 저장 상태 바 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v12.0</h1>
-            <p class="text-xs text-indigo-200">전교생 학번순 연속 밀어넣기 엔진 · 고사실별 실제 정원 반영 · 좌석순 내부 일련번호(1~35) 연동</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v13.0</h1>
+            <p class="text-xs text-indigo-200">실정원 완전 유지 · 전교생 밀어넣기 모드 A/B/C 완벽 독립 엔진</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -216,12 +216,12 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-700">지정 모드</label>
                         <select id="bulk-mode-type" class="w-full border rounded p-2 text-sm mt-1 bg-white">
-                            <option value="RANGE">내부번호 범위 (1-14)</option>
+                            <option value="RANGE">번호 범위 (1-14)</option>
                             <option value="COUNT">시작:인원 (1:15)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700">본반 남아있는 조건 (내부번호)</label>
+                        <label class="block text-xs font-semibold text-slate-700">본반 남아있는 조건</label>
                         <input type="text" id="bulk-home-range" value="15-28" class="w-full border rounded p-2 text-sm mt-1 bg-white">
                     </div>
                     <div>
@@ -233,7 +233,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700">이동 조건 (내부번호)</label>
+                        <label class="block text-xs font-semibold text-slate-700">이동 조건</label>
                         <input type="text" id="bulk-move-range" value="1-14, 29-35" class="w-full border rounded p-2 text-sm mt-1 bg-white">
                     </div>
                 </div>
@@ -274,9 +274,9 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600">선택과목 응시 장소 배치 방식</label>
                         <select id="select-exam-mode" class="w-full border rounded p-2 text-sm mt-1 bg-indigo-50 font-bold text-indigo-900">
-                            <option value="MODE_A">모드 A: 전교생 학번순 연속 밀어넣기 + 실정원 반영 ➔ 내부일련번호 부여</option>
-                            <option value="MODE_B">모드 B: 실제 과목 수업교실 집결 ➔ 남은교실 자습생 배치 ➔ 내부일련번호 부여</option>
-                            <option value="MODE_C">모드 C: 원래 자기 반 배치 (본반/이동 번호 적용)</option>
+                            <option value="MODE_A">모드 A: 학번순 밀어넣기 (실정원 유지 + 전교생 순차배치)</option>
+                            <option value="MODE_B">모드 B: 실제 수업교실 이동 집결 (자습생 남은교실 배치)</option>
+                            <option value="MODE_C">모드 C: 원래 자기 반에서 응시/자습</option>
                         </select>
                     </div>
                 </div>
@@ -353,13 +353,13 @@
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V12', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V13', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
             if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V12');
+            const saved = localStorage.getItem('SEAT_PLANNER_V13');
             if(saved) {
                 try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
             }
@@ -392,10 +392,10 @@
                     const count = parseInt(countStr);
                     if (!isNaN(startNum) && !isNaN(count)) {
                         const matched = targetList
-                            .filter(s => (s.seatSeq || s.num) >= startNum)
-                            .sort((a, b) => (a.seatSeq || a.num) - (b.seatSeq || b.num))
+                            .filter(s => s.num >= startNum)
+                            .sort((a, b) => a.num - b.num)
                             .slice(0, count);
-                        matched.forEach(s => result.push(s.seatSeq || s.num));
+                        matched.forEach(s => result.push(s.num));
                     }
                 });
             } else {
@@ -735,8 +735,8 @@
             const homeNumList = parseInputString(room.homeRange || "15-28", room.modeType || "RANGE", classStudents);
             const moveNumList = parseInputString(room.moveRange || "1-14, 29-35", room.modeType || "RANGE", moveClassStudents);
 
-            const homeStudents = classStudents.filter(s => homeNumList.includes(s.seatSeq || s.num)).sort((a,b)=>(a.seatSeq||a.num)-(b.seatSeq||b.num));
-            const moveStudents = moveClassStudents.filter(s => moveNumList.includes(s.seatSeq || s.num)).sort((a,b)=>(a.seatSeq||a.num)-(b.seatSeq||b.num));
+            const homeStudents = classStudents.filter(s => homeNumList.includes(s.num)).sort((a,b)=>a.num-b.num);
+            const moveStudents = moveClassStudents.filter(s => moveNumList.includes(s.num)).sort((a,b)=>a.num-b.num);
 
             return { homeStudents, moveStudents, total: homeStudents.length + moveStudents.length };
         }
@@ -817,7 +817,7 @@
             }
         }
 
-        // --- 7. [v12.0 전교생 밀어넣기 & 고사실 실정원 반영 핵심 엔진] ---
+        // --- 7. [v13.0 완벽 전교생 연속배치 & 실정원 보존 핵심 엔진] ---
         function generateSeatingForPeriod() {
             const day = document.getElementById('select-day').value;
             const period = document.getElementById('select-period').value;
@@ -845,70 +845,80 @@
                 return !student.subjects.some(sub => currentExamName.includes(sub));
             };
 
-            // 💡 [1단계] 모드 A/B 선택 시 학급 경계 허물고 전교생 큐(Queue) 구성 후 고사실별 실인원 반영
+            // 💡 고사실별 실제 배치 학생 매핑
+            let finalRoomStudentMapping = {}; // roomId -> studentList[]
+
             if (examMode === 'MODE_A') {
+                // 모드 A: 전교생 응시생 학번순 + 자습생 이어서 배치 ➔ 고사실 실정원 수대로 순차 슬롯 할당
                 let allExamers = appState.students.filter(s => s.grade === 2 && !isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
                 let allSelfStudiers = appState.students.filter(s => s.grade === 2 && isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
-                
-                // 전교생 연속 큐 생성 (수강생 전원 ➔ 자습생 전원)
+
                 let globalQueue = [...allExamers, ...allSelfStudiers];
 
-                // 제13고사실부터 순차적으로 고사실별 이동 실인원 슬롯만큼 자르고 좌석순 seatSeq 부여
                 appState.rooms.forEach(room => {
                     const counts = calculateRoomStudentCounts(room);
-                    const needCount = counts.moveStudents.length; // 해당 고사실의 이동 실정원
+                    const roomCapacity = counts.total; // 4탭 기준 해당 고사실 실제 총 정원 (예: 32명, 29명 등)
 
-                    let roomAssigned = globalQueue.splice(0, needCount);
+                    let roomAssigned = globalQueue.splice(0, roomCapacity);
                     roomAssigned.forEach((st, seqIdx) => {
-                        st.seatSeq = seqIdx + 1; // 1번부터 차례대로 내부 일련번호 부여
+                        st.seatSeq = seqIdx + 1; // 좌석배치 순서대로 내부일련번호 부여
                     });
+
+                    finalRoomStudentMapping[room.id] = roomAssigned;
                 });
 
             } else if (examMode === 'MODE_B') {
+                // 모드 B: 실제 과목 수업교실 집결 배치
                 const targetRoomName = appState.subjectRooms[currentExamName.trim()];
                 let allExamers = appState.students.filter(s => s.grade === 2 && !isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
                 let allSelfStudiers = appState.students.filter(s => s.grade === 2 && isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
 
                 appState.rooms.forEach(room => {
                     const counts = calculateRoomStudentCounts(room);
-                    const needCount = counts.moveStudents.length;
+                    const roomCapacity = counts.total;
 
                     let roomAssigned = [];
                     if (targetRoomName && room.name.includes(targetRoomName)) {
-                        roomAssigned = allExamers.splice(0, needCount);
+                        roomAssigned = allExamers.splice(0, roomCapacity);
                     } else {
-                        roomAssigned = allSelfStudiers.splice(0, needCount);
+                        roomAssigned = allSelfStudiers.splice(0, roomCapacity);
                     }
-                    
+
                     roomAssigned.forEach((st, seqIdx) => {
                         st.seatSeq = seqIdx + 1;
                     });
+
+                    finalRoomStudentMapping[room.id] = roomAssigned;
                 });
+
             } else {
-                // 모드 C: 원래 본반 번호(num) 사용
-                appState.students.forEach(st => delete st.seatSeq);
+                // 모드 C: 원래 반 기준 배치
+                appState.rooms.forEach(room => {
+                    const counts = calculateRoomStudentCounts(room);
+                    const isHomeInFixed = (room.fixedGroup === 'HOMEROOM');
+                    
+                    const processGroup = (sts) => {
+                        const examers = sts.filter(s => !isStudentSelfStudy(s));
+                        const selfs = sts.filter(s => isStudentSelfStudy(s));
+                        return [...examers, ...selfs];
+                    };
+
+                    const homeAssigned = processGroup(counts.homeStudents);
+                    const moveAssigned = processGroup(counts.moveStudents);
+
+                    finalRoomStudentMapping[room.id] = isHomeInFixed 
+                        ? { home: homeAssigned, move: moveAssigned } 
+                        : { home: moveAssigned, move: homeAssigned };
+                });
             }
 
-            // 💡 [2단계] 생성된 내부 일련번호(seatSeq) 기반으로 이동 조건 판별 및 좌석배치 실행
+            // 💡 [2단계] 좌석배치도 HTML 생성 및 렌더링
             appState.rooms.forEach(room => {
                 const roomDiv = document.createElement('div');
                 roomDiv.className = "bg-white p-6 rounded-lg border border-slate-200 shadow-sm print-page";
 
                 const counts = calculateRoomStudentCounts(room);
                 const layout = appState.capacityRules[counts.total] || [5, 7, 5, 7, 5];
-                const isHomeInFixed = (room.fixedGroup === 'HOMEROOM');
-
-                const processGroup = (students) => {
-                    const examers = students.filter(s => !isStudentSelfStudy(s));
-                    const selfStudiers = students.filter(s => isStudentSelfStudy(s));
-                    return [...examers, ...selfStudiers];
-                };
-
-                const fixedGroupStudents = processGroup(isHomeInFixed ? counts.homeStudents : counts.moveStudents);
-                const flexGroupStudents = processGroup(isHomeInFixed ? counts.moveStudents : counts.homeStudents);
-
-                let fixedIdx = 0;
-                let flexIdx = 0;
 
                 let modeTitle = examMode === 'MODE_A' ? '모드 A (학번순 밀어넣기)' : (examMode === 'MODE_B' ? '모드 B (실제 수업교실 이동)' : '모드 C (원래 자기반 응시)');
 
@@ -923,45 +933,90 @@
                     <div class="grid grid-cols-5 gap-2">
                 `;
 
-                for(let c = 0; c < 5; c++) {
-                    const isFixedCol = (c === 1 || c === 3);
-                    const rowCount = layout[c] || 5;
+                if (examMode === 'MODE_A' || examMode === 'MODE_B') {
+                    // 순차 렌더링 (전교생 밀어넣기 모드)
+                    let studentList = finalRoomStudentMapping[room.id] || [];
+                    let sIdx = 0;
 
-                    html += `
-                        <div class="flex flex-col gap-2 bg-slate-50 p-2 rounded border border-slate-200">
-                            <div class="text-center font-bold text-xs ${isFixedCol ? 'text-amber-800 bg-amber-50' : 'text-slate-700'} pb-1 border-b">
-                                ${c+1}분단 (${rowCount}행) ${isFixedCol ? '[고정분단]' : ''}
-                            </div>
-                    `;
+                    for(let c = 0; c < 5; c++) {
+                        const isFixedCol = (c === 1 || c === 3);
+                        const rowCount = layout[c] || 5;
 
-                    for(let r = 0; r < rowCount; r++) {
-                        let student = null;
-
-                        if(isFixedCol) {
-                            if(fixedIdx < fixedGroupStudents.length) student = fixedGroupStudents[fixedIdx++];
-                        } else {
-                            if(flexIdx < flexGroupStudents.length) student = flexGroupStudents[flexIdx++];
-                        }
-
-                        if(student) {
-                            const selfStudyFlag = isStudentSelfStudy(student);
-                            const seqDisplay = student.seatSeq ? `<span class="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-1 rounded ml-1">내부${student.seatSeq}번</span>` : '';
-
-                            html += `
-                                <div class="p-2 rounded border text-center shadow-2xs ${selfStudyFlag ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-300'}">
-                                    <div class="text-[10px] font-mono text-slate-400">${student.id} ${seqDisplay}</div>
-                                    <div class="font-bold text-sm text-slate-800">${student.name} ${selfStudyFlag ? '<span class="text-[10px] text-amber-700 block font-normal">(자습생)</span>' : ''}</div>
+                        html += `
+                            <div class="flex flex-col gap-2 bg-slate-50 p-2 rounded border border-slate-200">
+                                <div class="text-center font-bold text-xs ${isFixedCol ? 'text-amber-800 bg-amber-50' : 'text-slate-700'} pb-1 border-b">
+                                    ${c+1}분단 (${rowCount}행) ${isFixedCol ? '[고정분단]' : ''}
                                 </div>
-                            `;
-                        } else {
-                            html += `
-                                <div class="bg-slate-100 p-2 rounded border border-dashed border-slate-300 text-center text-xs text-slate-300 py-3">
-                                    빈 좌석
-                                </div>
-                            `;
+                        `;
+
+                        for(let r = 0; r < rowCount; r++) {
+                            let student = (sIdx < studentList.length) ? studentList[sIdx++] : null;
+
+                            if(student) {
+                                const selfStudyFlag = isStudentSelfStudy(student);
+                                const seqDisplay = student.seatSeq ? `<span class="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-1 rounded ml-1">내부${student.seatSeq}번</span>` : '';
+
+                                html += `
+                                    <div class="p-2 rounded border text-center shadow-2xs ${selfStudyFlag ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-300'}">
+                                        <div class="text-[10px] font-mono text-slate-400">${student.id} ${seqDisplay}</div>
+                                        <div class="font-bold text-sm text-slate-800">${student.name} ${selfStudyFlag ? '<span class="text-[10px] text-amber-700 block font-normal">(자습생)</span>' : ''}</div>
+                                    </div>
+                                `;
+                            } else {
+                                html += `
+                                    <div class="bg-slate-100 p-2 rounded border border-dashed border-slate-300 text-center text-xs text-slate-300 py-3">
+                                        빈 좌석
+                                    </div>
+                                `;
+                            }
                         }
+                        html += `</div>`;
                     }
-                    html += `</div>`;
+                } else {
+                    // 모드 C: 본반/이동 2·4분단 구분 배치
+                    const assigned = finalRoomStudentMapping[room.id] || { home: [], move: [] };
+                    let fixedGroupStudents = assigned.home;
+                    let flexGroupStudents = assigned.move;
+
+                    let fixedIdx = 0, flexIdx = 0;
+
+                    for(let c = 0; c < 5; c++) {
+                        const isFixedCol = (c === 1 || c === 3);
+                        const rowCount = layout[c] || 5;
+
+                        html += `
+                            <div class="flex flex-col gap-2 bg-slate-50 p-2 rounded border border-slate-200">
+                                <div class="text-center font-bold text-xs ${isFixedCol ? 'text-amber-800 bg-amber-50' : 'text-slate-700'} pb-1 border-b">
+                                    ${c+1}분단 (${rowCount}행) ${isFixedCol ? '[고정분단]' : ''}
+                                </div>
+                        `;
+
+                        for(let r = 0; r < rowCount; r++) {
+                            let student = null;
+                            if(isFixedCol) {
+                                if(fixedIdx < fixedGroupStudents.length) student = fixedGroupStudents[fixedIdx++];
+                            } else {
+                                if(flexIdx < flexGroupStudents.length) student = flexGroupStudents[flexIdx++];
+                            }
+
+                            if(student) {
+                                const selfStudyFlag = isStudentSelfStudy(student);
+                                html += `
+                                    <div class="p-2 rounded border text-center shadow-2xs ${selfStudyFlag ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-300'}">
+                                        <div class="text-[10px] font-mono text-slate-400">${student.id}</div>
+                                        <div class="font-bold text-sm text-slate-800">${student.name} ${selfStudyFlag ? '<span class="text-[10px] text-amber-700 block font-normal">(자습생)</span>' : ''}</div>
+                                    </div>
+                                `;
+                            } else {
+                                html += `
+                                    <div class="bg-slate-100 p-2 rounded border border-dashed border-slate-300 text-center text-xs text-slate-300 py-3">
+                                        빈 좌석
+                                    </div>
+                                `;
+                            }
+                        }
+                        html += `</div>`;
+                    }
                 }
 
                 html += `</div>`;
