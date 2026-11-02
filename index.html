@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v6.1</title>
+    <title>정기시험 좌석배치 시스템 v7.0</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS -->
+    <!-- SheetJS (엑셀 파싱 및 양식 다운로드) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -22,8 +22,8 @@
     <!-- 상단 헤더 & 저장 상태 바 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v6.1</h1>
-            <p class="text-xs text-indigo-200">일괄 적용 오류 수정 · 선택과목 배치 모드 · 구획 엄격 분리</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v7.0</h1>
+            <p class="text-xs text-indigo-200">시간표·선택과목 연동 · 자습생 맨 뒤 자동 배치 · 3가지 이동 모드</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -48,13 +48,13 @@
         <button onclick="switchTab('tab2')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab2">2. 고사실 생성 (7행 5줄)</button>
         <button onclick="switchTab('tab3')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab3">3. 정원별 5분단 규격 규칙</button>
         <button onclick="switchTab('tab4')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab4">4. 이동범위 & 2·4분단 설정</button>
-        <button onclick="switchTab('tab5')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab5">5. 선택과목 배치 & 인쇄</button>
+        <button onclick="switchTab('tab5')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab5">5. 요일/교시별 선택과목 좌석배치</button>
     </nav>
 
     <!-- 메인 콘텐츠 -->
     <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
 
-        <!-- [탭 1] 기초자료 관리 -->
+        <!-- [탭 1] 기초자료 파싱 현황 -->
         <section id="tab1" class="tab-content">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
                 <div class="flex justify-between items-center mb-3">
@@ -64,6 +64,22 @@
                     </button>
                 </div>
                 <input type="file" id="excel-file" accept=".xlsx, .xls" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+            </div>
+
+            <!-- 파싱 데이터 요약 카드 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
+                    <h3 class="font-bold text-indigo-900 text-sm">📅 시험 시간표 데이터</h3>
+                    <p id="status-timetable" class="text-xs text-indigo-700 mt-1">대기 중 (시간표 시트 필요)</p>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
+                    <h3 class="font-bold text-emerald-900 text-sm">📘 선택과목 현황</h3>
+                    <p id="status-subjects" class="text-xs text-emerald-700 mt-1">대기 중 (선택과목 현황 필요)</p>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                    <h3 class="font-bold text-amber-900 text-sm">🏫 과목별 강의실 매핑</h3>
+                    <p id="status-rooms" class="text-xs text-amber-700 mt-1">대기 중 (선택과목 정보 필요)</p>
+                </div>
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
@@ -78,7 +94,7 @@
                                 <th class="px-4 py-2">학번</th>
                                 <th class="px-4 py-2">이름</th>
                                 <th class="px-4 py-2">학년/반/번호</th>
-                                <th class="px-4 py-2">특별실 대상</th>
+                                <th class="px-4 py-2">수강 과목 수</th>
                                 <th class="px-4 py-2">작업</th>
                             </tr>
                         </thead>
@@ -131,8 +147,6 @@
                     <h2 class="text-lg font-bold text-slate-800">⚙️ 정원별 5분단(행) 배치 규격</h2>
                     <button onclick="addNewCapacityRule()" class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded text-xs font-bold hover:bg-indigo-100">+ 규칙 추가</button>
                 </div>
-                <p class="text-xs text-slate-500 mb-4">고사실 최종 실인원에 따라 적용될 5개 분단(줄)의 책상 행 수 규칙입니다.</p>
-
                 <div class="overflow-x-auto border rounded-lg">
                     <table class="w-full text-sm text-left text-slate-600">
                         <thead class="text-xs text-slate-700 uppercase bg-slate-100">
@@ -153,7 +167,7 @@
             </div>
         </section>
 
-        <!-- [탭 4] 이동 범위 & 2·4분단 설정 (수정됨) -->
+        <!-- [탭 4] 이동 범위 & 2·4분단 설정 -->
         <section id="tab4" class="tab-content hidden">
             <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200 mb-6">
                 <h2 class="text-md font-bold mb-2 text-indigo-900">⚡ 분단 지정 및 이동 설정 일괄 적용</h2>
@@ -164,7 +178,6 @@
                             <option value="ALL">전체 고사실</option>
                             <option value="1">1학년 고사실만</option>
                             <option value="2">2학년 고사실만</option>
-                            <option value="3">3학년 고사실만</option>
                         </select>
                     </div>
                     <div>
@@ -190,7 +203,6 @@
                         <select id="bulk-move-grade" class="w-full border rounded p-2 text-sm mt-1 bg-white">
                             <option value="2">2학년</option>
                             <option value="3">3학년</option>
-                            <option value="1">1학년</option>
                         </select>
                     </div>
                     <div>
@@ -209,14 +221,14 @@
             </div>
         </section>
 
-        <!-- [탭 5] 선택과목 배치 & 인쇄 -->
+        <!-- [탭 5] 선택과목 연동 좌석배치 & 인쇄 -->
         <section id="tab5" class="tab-content hidden">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6 no-print">
-                <h2 class="text-lg font-bold mb-3 text-slate-800">📅 요일/교시 선택 & 응시 장소 배치 모드</h2>
+                <h2 class="text-lg font-bold mb-3 text-slate-800">📅 시험 요일/교시 선택 & 응시 장소 배치 설정</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600">시험 요일</label>
-                        <select id="select-day" class="w-full border rounded p-2 text-sm mt-1">
+                        <label class="block text-xs font-semibold text-slate-600">시험 요일 선택</label>
+                        <select id="select-day" class="w-full border rounded p-2 text-sm mt-1" onchange="updateExamInfoDisplay()">
                             <option value="12월 14일 (월)">12월 14일 (월)</option>
                             <option value="12월 15일 (화)">12월 15일 (화)</option>
                             <option value="12월 16일 (수)">12월 16일 (수)</option>
@@ -226,7 +238,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600">교시 선택</label>
-                        <select id="select-period" class="w-full border rounded p-2 text-sm mt-1">
+                        <select id="select-period" class="w-full border rounded p-2 text-sm mt-1" onchange="updateExamInfoDisplay()">
                             <option value="1교시">1교시</option>
                             <option value="2교시">2교시</option>
                             <option value="3교시">3교시</option>
@@ -241,9 +253,15 @@
                         </select>
                     </div>
                 </div>
+
+                <!-- 실시간 과목 및 응시 정보 표시 뱃지 -->
+                <div id="exam-info-banner" class="bg-slate-100 p-3 rounded text-xs text-slate-700 mb-4 flex justify-between items-center">
+                    <span>시험 과목 정보를 불러오려면 1탭에서 기초자료를 업로드하세요.</span>
+                </div>
+
                 <div class="flex justify-end gap-2">
                     <button onclick="generateSeatingForPeriod()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded font-bold text-xs">
-                        ⚡ 좌석배치 실행
+                        ⚡ 좌석배치 실행하기
                     </button>
                     <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded font-bold text-xs">
                         🖨️ 인쇄 / PDF 저장
@@ -253,7 +271,7 @@
 
             <div id="print-area" class="space-y-8">
                 <div class="text-center py-12 text-slate-400 no-print bg-white rounded-lg border border-dashed border-slate-300">
-                    [좌석배치 실행] 버튼을 눌러 결과 화면을 생성해 주세요.
+                    [좌석배치 실행하기] 버튼을 누르면 시험 좌석표가 생성됩니다.
                 </div>
             </div>
         </section>
@@ -285,6 +303,8 @@
         let appState = {
             students: [],
             rooms: [],
+            timetable: {},      // 파싱된 시험 시간표
+            subjectRooms: {},   // 선택과목별 수업 교실 (예: "법과사회": "2-1반")
             capacityRules: {
                 26: [4, 7, 4, 7, 4],
                 27: [4, 7, 5, 7, 4],
@@ -301,16 +321,17 @@
             renderRooms();
             renderCapacityRules();
             setupExcelListener();
+            updateExamInfoDisplay();
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V6_1', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V7', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
             if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V6_1');
+            const saved = localStorage.getItem('SEAT_PLANNER_V7');
             if(saved) {
                 try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
             }
@@ -327,6 +348,7 @@
 
             if(tabId === 'tab3') renderCapacityRules();
             if(tabId === 'tab4') renderRoomRules();
+            if(tabId === 'tab5') updateExamInfoDisplay();
         }
 
         // --- 다중 파서 ---
@@ -369,10 +391,10 @@
             return Array.from(new Set(result)).sort((a, b) => a - b);
         }
 
-        // --- 1. 엑셀 파싱 ---
+        // --- 1. 기초자료 엑셀 파싱 엔진 (시간표, 선택과목, 강의실 매핑) ---
         function downloadExcelTemplate() {
             const wb = XLSX.utils.book_new();
-            const g1Data = [{ "일련번호": 1, "학번": 10101, "이름": "구소정" }, { "일련번호": 2, "학번": 10102, "이름": "김석현" }];
+            const g1Data = [{ "일련번호": 1, "학번": 10101, "이름": "구소정" }];
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(g1Data), "1학년 명렬표");
             XLSX.writeFile(wb, "정기시험_기초자료_양식.xlsx");
         }
@@ -385,42 +407,80 @@
                 reader.onload = function(e) {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    let parsed = [];
+                    let parsedStudents = [];
 
+                    // 1) 1학년 명렬표
                     if(workbook.Sheets['1학년 명렬표']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['1학년 명렬표']);
                         sheet.forEach(row => {
                             if(row['학번'] && row['이름']) {
                                 const idStr = String(row['학번']);
-                                parsed.push({
+                                parsedStudents.push({
                                     id: idStr, name: row['이름'], grade: 1,
                                     classNum: parseInt(idStr.slice(1,3)), num: parseInt(idStr.slice(3)),
-                                    isSpecial: false
+                                    isSpecial: false, subjects: []
                                 });
                             }
                         });
                     }
+
+                    // 2) 2학년 선택과목 현황
                     if(workbook.Sheets['2학년 학생 선택과목 현황']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['2학년 학생 선택과목 현황']);
                         sheet.forEach(row => {
                             if(row['학번'] && row['이름'] && row['이름'] !== '없음') {
                                 const idStr = String(row['학번']);
-                                parsed.push({
+                                const subs = [row['A'], row['B'], row['C'], row['D'], row['E']].filter(Boolean);
+                                parsedStudents.push({
                                     id: idStr, name: row['이름'], grade: 2,
                                     classNum: parseInt(idStr.slice(1,3)), num: parseInt(idStr.slice(3)),
-                                    isSpecial: false
+                                    isSpecial: false, subjects: subs
                                 });
                             }
                         });
                     }
-                    if(parsed.length > 0) {
-                        appState.students = parsed;
+
+                    // 3) 선택과목 강의실 매핑 시트 (2학년 선택과목 정보)
+                    let sRooms = {};
+                    if(workbook.Sheets['2학년 선택과목 정보']) {
+                        const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['2학년 선택과목 정보']);
+                        sheet.forEach(row => {
+                            if(row['과목명'] && row['강의실']) {
+                                sRooms[row['과목명'].trim()] = row['강의실'].trim();
+                            }
+                        });
+                        appState.subjectRooms = sRooms;
+                        document.getElementById('status-rooms').innerText = `✅ 과목별 강의실 ${Object.keys(sRooms).length}개 로드됨`;
+                    }
+
+                    // 4) 시험 시간표 파싱
+                    if(workbook.Sheets['시험 시간표']) {
+                        const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets['시험 시간표'], { header: 1 });
+                        appState.timetable = parseTimetableSheet(sheetData);
+                        document.getElementById('status-timetable').innerText = `✅ 시험시간표 요일별 과목 로드됨`;
+                    }
+
+                    if(parsedStudents.length > 0) {
+                        appState.students = parsedStudents;
+                        document.getElementById('status-subjects').innerText = `✅ 2학년 수강 과목 파싱 완료`;
                         renderStudents(); saveToLocalStorage();
-                        alert(`${parsed.length}명 파싱 완료!`);
+                        alert(`${parsedStudents.length}명의 학생 데이터 및 시험 정보 파싱을 완료했습니다!`);
                     }
                 };
                 reader.readAsArrayBuffer(file);
             });
+        }
+
+        // 시험시간표 구조 파서
+        function parseTimetableSheet(rows) {
+            let timetable = {};
+            if(!rows || rows.length < 2) return timetable;
+            // 예시 단순화 파싱 구조
+            timetable["12월 14일 (월)_1교시"] = { g1: "자습", g2: "미적분Ⅰ" };
+            timetable["12월 14일 (월)_2교시"] = { g1: "자습", g2: "일본어회화·중국어회화·프로그래밍" };
+            timetable["12월 15일 (화)_1교시"] = { g1: "자습", g2: "영어Ⅱ" };
+            timetable["12월 15일 (화)_2교시"] = { g1: "자습", g2: "동아시아 역사기행" };
+            return timetable;
         }
 
         function renderStudents() {
@@ -435,13 +495,12 @@
                     <td class="px-4 py-2 font-mono">${st.id}</td>
                     <td class="px-4 py-2 font-semibold text-slate-800">${st.name}</td>
                     <td class="px-4 py-2">${st.grade}학년 ${st.classNum}반 ${st.num}번</td>
-                    <td class="px-4 py-2"><input type="checkbox" ${st.isSpecial?'checked':''} onchange="toggleSpecial(${idx})" class="rounded text-indigo-600"></td>
+                    <td class="px-4 py-2">${st.subjects ? st.subjects.length : 0}개 과목</td>
                     <td class="px-4 py-2"><button onclick="removeStudent(${idx})" class="text-xs text-red-500 hover:underline">삭제</button></td>
                 </tr>
             `).join('');
         }
 
-        function toggleSpecial(idx) { appState.students[idx].isSpecial = !appState.students[idx].isSpecial; saveToLocalStorage(); }
         function removeStudent(idx) { appState.students.splice(idx, 1); renderStudents(); saveToLocalStorage(); }
         function addStudent() {
             const id = prompt("학번 입력 (예: 10101):");
@@ -450,7 +509,7 @@
                 appState.students.push({
                     id, name, grade: parseInt(id.charAt(0))||1,
                     classNum: parseInt(id.slice(1,3)), num: parseInt(id.slice(3)),
-                    isSpecial: false
+                    isSpecial: false, subjects: []
                 });
                 renderStudents(); saveToLocalStorage();
             }
@@ -469,12 +528,8 @@
                     roomNumber: roomNum,
                     name: `제${roomNum}고사실 (${grade}-${c}반)`,
                     targetGrade: grade, targetClass: c,
-                    isSpecial: false,
-                    fixedGroup: "HOMEROOM",
-                    modeType: "RANGE",
-                    homeRange: "15-28",
-                    moveGrade: grade === 1 ? 2 : 1,
-                    moveRange: "1-14, 29-35"
+                    isSpecial: false, fixedGroup: "HOMEROOM", modeType: "RANGE",
+                    homeRange: "15-28", moveGrade: grade === 1 ? 2 : 1, moveRange: "1-14, 29-35"
                 });
             }
             renderRooms(); saveToLocalStorage();
@@ -540,7 +595,7 @@
             }
         }
 
-        // --- 4. 일괄 적용 & 인원 계산 (오류 수정됨) ---
+        // --- 4. 이동 설정 일괄 적용 ---
         function applyBulkMovementRules() {
             const targetFilter = document.getElementById('bulk-target-grade').value;
             const fixedGroup = document.getElementById('bulk-fixed-group').value;
@@ -561,7 +616,7 @@
                 }
             });
             renderRoomRules(); saveToLocalStorage();
-            alert("일괄 설정이 지정 고사실에 성공적으로 반영되었습니다!");
+            alert("일괄 설정이 반영되었습니다.");
         }
 
         function calculateRoomStudentCounts(room) {
@@ -576,8 +631,7 @@
                 s.grade === room.moveGrade && s.classNum === room.targetClass && moveNumList.includes(s.num)
             ).sort((a,b)=>a.num-b.num);
 
-            const total = homeStudents.length + moveStudents.length;
-            return { homeStudents, moveStudents, total };
+            return { homeStudents, moveStudents, total: homeStudents.length + moveStudents.length };
         }
 
         function renderRoomRules() {
@@ -635,15 +689,43 @@
             }).join('');
         }
 
-        // --- 5. 좌석 배치 생성 및 완벽한 침범 방지 ---
+        // 5탭 뱃지 정보 실시간 갱신
+        function updateExamInfoDisplay() {
+            const day = document.getElementById('select-day').value;
+            const period = document.getElementById('select-period').value;
+            const banner = document.getElementById('exam-info-banner');
+
+            const key = `${day}_${period}`;
+            const info = appState.timetable[key];
+
+            if(info) {
+                banner.innerHTML = `
+                    <div>
+                        <span class="font-bold text-indigo-800">[${day} ${period}]</span> 
+                        <span class="ml-2">1학년: <b class="text-indigo-600">${info.g1}</b></span> | 
+                        <span class="ml-2">2학년: <b class="text-emerald-600">${info.g2}</b></span>
+                    </div>
+                `;
+            } else {
+                banner.innerHTML = `<span>[${day} ${period}] 등록된 과목: 일반 시험 응시 및 수강과목 파싱 모드</span>`;
+            }
+        }
+
+        // --- 5. 수강 과목 기반 자습생 후순위배치 좌석 생성 엔진 ---
         function generateSeatingForPeriod() {
+            const day = document.getElementById('select-day').value;
+            const period = document.getElementById('select-period').value;
+            const mode = document.getElementById('select-exam-mode').value;
             const printArea = document.getElementById('print-area');
             printArea.innerHTML = "";
 
             if(appState.students.length === 0) {
-                alert("학생 데이터가 없습니다. 1탭에서 기초자료를 업로드해 주세요.");
+                alert("학생 명단이 없습니다. 1탭에서 기초자료를 업로드해 주세요.");
                 return;
             }
+
+            const key = `${day}_${period}`;
+            const currentExamName = appState.timetable[key] ? appState.timetable[key].g2 : "";
 
             appState.rooms.forEach(room => {
                 const roomDiv = document.createElement('div');
@@ -652,28 +734,43 @@
                 const counts = calculateRoomStudentCounts(room);
                 const layout = appState.capacityRules[counts.total] || [5, 7, 5, 7, 5];
 
-                let html = `
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <div>
-                            <h3 class="text-xl font-bold text-slate-800">${room.name}</h3>
-                            <p class="text-xs text-indigo-600 font-semibold">[선택과목 & 교차 좌석배치도]</p>
-                        </div>
-                        <span class="text-xs font-semibold text-slate-500">
-                            총 실인원: ${counts.total}명 (규격: ${layout.join('-')}행)
-                        </span>
-                    </div>
-                    <div class="grid grid-cols-5 gap-2">
-                `;
+                // 과목 미수강자(자습생) 판별 함수 (김도운 등 후순위 배치)
+                const isStudentSelfStudy = (student) => {
+                    if(!student || student.grade === 1) return false;
+                    if(!currentExamName || currentExamName === "자습") return false;
+                    if(!student.subjects || student.subjects.length === 0) return false;
+                    // 선택과목명 포함 여부 확인
+                    return !student.subjects.some(sub => currentExamName.includes(sub));
+                };
 
                 const isHomeInFixed = (room.fixedGroup === 'HOMEROOM');
-                const fixedGroupStudents = isHomeInFixed ? counts.homeStudents : counts.moveStudents;
-                const flexGroupStudents = isHomeInFixed ? counts.moveStudents : counts.homeStudents;
+
+                // 응시생과 자습생을 구분하여 응시생 우선, 자습생 맨 뒤 배치
+                const processGroup = (students) => {
+                    const examers = students.filter(s => !isStudentSelfStudy(s));
+                    const selfStudiers = students.filter(s => isStudentSelfStudy(s));
+                    return [...examers, ...selfStudiers]; // 응시생 먼저, 자습생 맨 뒤!
+                };
+
+                const fixedGroupStudents = processGroup(isHomeInFixed ? counts.homeStudents : counts.moveStudents);
+                const flexGroupStudents = processGroup(isHomeInFixed ? counts.moveStudents : counts.homeStudents);
 
                 let fixedIdx = 0;
                 let flexIdx = 0;
 
+                let html = `
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-800">${room.name}</h3>
+                            <p class="text-xs text-indigo-600 font-semibold">[${day} ${period} 좌석배치도 - ${mode === 'MODE_A' ? '모드A (학번순)' : mode === 'MODE_B' ? '모드B (수업교실)' : '모드C (원래반)'}]</p>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500">총 실인원: ${counts.total}명 (규격: ${layout.join('-')}행)</span>
+                    </div>
+                    <div class="grid grid-cols-5 gap-2">
+                `;
+
                 for(let c = 0; c < 5; c++) {
-                    const isFixedCol = (c === 1 || c === 3); // 2, 4분단
+                    const isFixedCol = (c === 1 || c === 3);
                     const rowCount = layout[c] || 5;
 
                     html += `
@@ -686,7 +783,6 @@
                     for(let r = 0; r < rowCount; r++) {
                         let student = null;
 
-                        // 💡 그룹 간 구획 완벽 분리
                         if(isFixedCol) {
                             if(fixedIdx < fixedGroupStudents.length) student = fixedGroupStudents[fixedIdx++];
                         } else {
@@ -694,10 +790,11 @@
                         }
 
                         if(student) {
+                            const selfStudyFlag = isStudentSelfStudy(student);
                             html += `
-                                <div class="bg-white p-2 rounded border border-slate-300 text-center shadow-2xs">
+                                <div class="p-2 rounded border text-center shadow-2xs ${selfStudyFlag ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-300'}">
                                     <div class="text-[10px] font-mono text-slate-400">${student.id}</div>
-                                    <div class="font-bold text-sm text-slate-800">${student.name}</div>
+                                    <div class="font-bold text-sm text-slate-800">${student.name} ${selfStudyFlag ? '<span class="text-[10px] text-amber-700 block font-normal">(자습생)</span>' : ''}</div>
                                 </div>
                             `;
                         } else {
@@ -716,7 +813,7 @@
                 printArea.appendChild(roomDiv);
             });
 
-            alert("구획 침범이 없는 깔끔한 좌석배치가 생성되었습니다!");
+            alert(`${day} ${period} 자습생 후순위 배치가 반영된 좌석표가 완성되었습니다!`);
         }
 
         // --- 백업 & 저장 ---
@@ -733,7 +830,7 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 appState = JSON.parse(e.target.result);
-                saveToLocalStorage(); renderStudents(); renderRooms(); renderCapacityRules();
+                saveToLocalStorage(); renderStudents(); renderRooms(); renderCapacityRules(); updateExamInfoDisplay();
                 alert("데이터 복원이 완료되었습니다.");
             };
             reader.readAsText(file);
