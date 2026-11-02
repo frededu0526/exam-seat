@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v14.0</title>
+    <title>정기시험 좌석배치 시스템 v15.0</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -22,8 +22,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v14.0</h1>
-            <p class="text-xs text-indigo-200">A모드 단일화 엔진 · 전교생 연속 밀어넣기 ➔ 좌석순 내부번호 부여 ➔ 이동 통제 완벽 구현</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v15.0</h1>
+            <p class="text-xs text-indigo-200">기초자료 학반 실인원 직결 엔진 · A모드 연속 밀어넣기 · 내부일련번호 이동 완벽 구현</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -243,7 +243,7 @@
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-                <h2 class="text-lg font-bold mb-4 text-slate-800">🔍 고사실별 인원 및 이동 설정 현황</h2>
+                <h2 class="text-lg font-bold mb-4 text-slate-800">🔍 고사실별 실인원 및 이동 설정 현황</h2>
                 <div id="room-rule-container" class="space-y-4"></div>
             </div>
         </section>
@@ -349,13 +349,13 @@
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V14', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V15', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
             if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V14');
+            const saved = localStorage.getItem('SEAT_PLANNER_V15');
             if(saved) {
                 try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
             }
@@ -374,6 +374,14 @@
             if(tabId === 'tab3') renderCapacityRules();
             if(tabId === 'tab4') renderRoomRules();
             if(tabId === 'tab5') updateExamInfoDisplay();
+        }
+
+        // 💡 [핵심] 1탭의 학생 명단에서 해당 학반의 실제 학생 수 추출
+        function getRoomTotalCapacity(room) {
+            const baseStudents = appState.students.filter(s => 
+                s.grade === room.targetGrade && s.classNum === room.targetClass
+            );
+            return baseStudents.length > 0 ? baseStudents.length : 34;
         }
 
         function parseInputString(inputStr, mode, totalCount) {
@@ -533,7 +541,7 @@
                     if(parsedStudents.length > 0) {
                         appState.students = parsedStudents;
                         document.getElementById('status-subjects').innerText = `✅ 수강 선택과목 현황 파싱 완료`;
-                        renderStudents(); saveToLocalStorage();
+                        renderStudents(); renderRoomRules(); saveToLocalStorage();
                         alert(`${parsedStudents.length}명의 학생 데이터 파싱이 완료되었습니다!`);
                     }
                 };
@@ -721,19 +729,6 @@
             alert("일괄 설정이 반영되었습니다.");
         }
 
-        function getRoomTotalCapacity(room) {
-    // 본반 설정 범위에 해당하는 인원수 계산
-    const homeNumList = parseInputString(room.homeRange || "15-28", room.modeType || "RANGE", 35);
-    // 이동 설정 범위에 해당하는 인원수 계산
-    const moveNumList = parseInputString(room.moveRange || "1-14, 29-35", room.modeType || "RANGE", 35);
-
-    const homeCount = homeNumList.length;
-    const moveCount = moveNumList.length;
-
-    // 본반 인원 + 이동 인원의 합이 바로 해당 고사실의 실제 정원 (예: 14 + 14 = 28명)
-    return homeCount + moveCount;
-}
-
         function renderRoomRules() {
             const container = document.getElementById('room-rule-container');
             if(appState.rooms.length === 0) {
@@ -749,7 +744,7 @@
                         <div class="w-56">
                             <div class="font-bold text-sm text-slate-800">${room.name}</div>
                             <div class="text-xs text-indigo-700 font-semibold mt-1">
-                                실인원 정원: ${totalCap}명
+                                실인원 정원: ${totalCap}명 (기초자료 기준)
                             </div>
                             <div class="text-[11px] text-slate-500 font-mono">적용규격: ${layout.join('-')}행</div>
                         </div>
@@ -810,7 +805,7 @@
             }
         }
 
-        // --- 7. [v14.0 5단계 흐름 완벽 구현 핵심 엔진] ---
+        // --- 7. [v15.0 실인원 직결 & 전교생 연속밀어넣기 엔진] ---
         function generateSeatingForPeriod() {
             const day = document.getElementById('select-day').value;
             const period = document.getElementById('select-period').value;
@@ -838,31 +833,31 @@
             };
 
             // ==========================================
-            // 💡 [STEP 5-1] A모드 기반 초기 실좌석 배치 & 좌석순 내부번호 부여
+            // 💡 [STEP 5-1] A모드 기반 실좌석 배치 & 좌석순 내부번호 부여
             // ==========================================
             
-            // 1학년 초기 본반 좌석순 내부번호(seq) 부여
+            // 1학년: 자기 반에서 번호순 내부번호(seatSeq 1~N) 부여
             const roomsG1 = appState.rooms.filter(r => r.targetGrade === 1);
             roomsG1.forEach(room => {
                 let sts = appState.students.filter(s => s.grade === 1 && s.classNum === room.targetClass).sort((a,b) => a.num - b.num);
                 sts.forEach((st, idx) => { st.seatSeq = idx + 1; });
             });
 
-            // 2학년 A모드 전교생 큐 생성 (학번순 응시생 전원 ➔ 학번순 자습생 전원)
+            // 2학년: 응시생 전원 학번순 + 자습생 전원 학번순 연속 큐 생성
             const g2All = appState.students.filter(s => s.grade === 2);
             let g2Examers = g2All.filter(s => !isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
             let g2SelfStudiers = g2All.filter(s => isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
 
             let g2GlobalQueue = [...g2Examers, ...g2SelfStudiers];
 
-            // 2학년 고사실에 학급 경계 없이 순차 밀어넣기 및 좌석순 내부번호(seatSeq) 부여
+            // 2학년 고사실: 1탭 기반 실인원(roomCap)만큼 순차 슬롯 잘라서 좌석순 내부번호 부여
             const roomsG2 = appState.rooms.filter(r => r.targetGrade === 2);
-            let g2RoomSeatsMap = {}; // roomId -> studentList[] (좌석순)
+            let g2RoomSeatsMap = {}; // roomId -> studentList[]
 
             roomsG2.forEach(room => {
-                const roomCap = getRoomTotalCapacity(room);
+                const roomCap = getRoomTotalCapacity(room); // 기초자료 기준 해당 반 실제 인원 (예: 32명, 29명)
                 let assigned = g2GlobalQueue.splice(0, roomCap);
-                assigned.forEach((st, idx) => { st.seatSeq = idx + 1; }); // 1번부터 차례대로 내부번호 부여
+                assigned.forEach((st, idx) => { st.seatSeq = idx + 1; }); // 좌석 순서대로 1~N번 내부번호 부여
                 g2RoomSeatsMap[room.id] = assigned;
             });
 
@@ -876,7 +871,6 @@
                 const totalCap = getRoomTotalCapacity(room);
                 const layout = appState.capacityRules[totalCap] || [6, 7, 6, 7, 6];
 
-                // 내부번호(seatSeq) 기준 본반/이동 명단 판별
                 let allRoomSts = (room.targetGrade === 1) 
                     ? appState.students.filter(s => s.grade === 1 && s.classNum === room.targetClass)
                     : (g2RoomSeatsMap[room.id] || []);
@@ -887,9 +881,7 @@
                 let homeGroup = allRoomSts.filter(s => homeSeqList.includes(s.seatSeq)).sort((a,b) => a.seatSeq - b.seatSeq);
                 let moveGroup = [];
 
-                // 타 학급/학년에서 이동해오는 인원 추출
                 if(room.targetGrade === 2) {
-                    // 2학년 고사실의 이동 그룹은 본반 외에 배치된 이동 조건 학생들
                     const moveTargetRoom = appState.rooms.find(r => r.targetGrade === room.moveGrade && r.targetClass === room.targetClass);
                     if(moveTargetRoom) {
                         let moveTargetSts = (room.moveGrade === 1) 
