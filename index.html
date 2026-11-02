@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v7.0</title>
+    <title>정기시험 좌석배치 시스템 v7.1</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS (엑셀 파싱 및 양식 다운로드) -->
@@ -22,8 +22,8 @@
     <!-- 상단 헤더 & 저장 상태 바 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v7.0</h1>
-            <p class="text-xs text-indigo-200">시간표·선택과목 연동 · 자습생 맨 뒤 자동 배치 · 3가지 이동 모드</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v7.1</h1>
+            <p class="text-xs text-indigo-200">시간표 표형식 확장 · 학년 드롭다운 버그 수정 · 3가지 이동 모드</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -54,7 +54,7 @@
     <!-- 메인 콘텐츠 -->
     <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
 
-        <!-- [탭 1] 기초자료 파싱 현황 -->
+        <!-- [탭 1] 기초자료 관리 및 확장 시험시간표 -->
         <section id="tab1" class="tab-content">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
                 <div class="flex justify-between items-center mb-3">
@@ -66,22 +66,46 @@
                 <input type="file" id="excel-file" accept=".xlsx, .xls" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
             </div>
 
-            <!-- 파싱 데이터 요약 카드 -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
-                    <h3 class="font-bold text-indigo-900 text-sm">📅 시험 시간표 데이터</h3>
-                    <p id="status-timetable" class="text-xs text-indigo-700 mt-1">대기 중 (시간표 시트 필요)</p>
-                </div>
+            <!-- 요약 카드 (선택과목 및 강의실 매핑 현황) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
                     <h3 class="font-bold text-emerald-900 text-sm">📘 선택과목 현황</h3>
-                    <p id="status-subjects" class="text-xs text-emerald-700 mt-1">대기 중 (선택과목 현황 필요)</p>
+                    <p id="status-subjects" class="text-xs text-emerald-700 mt-1">대기 중 (선택과목 현황 시트 필요)</p>
                 </div>
                 <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg">
                     <h3 class="font-bold text-amber-900 text-sm">🏫 과목별 강의실 매핑</h3>
-                    <p id="status-rooms" class="text-xs text-amber-700 mt-1">대기 중 (선택과목 정보 필요)</p>
+                    <p id="status-rooms" class="text-xs text-amber-700 mt-1">대기 중 (선택과목 정보 시트 필요)</p>
                 </div>
             </div>
 
+            <!-- 💡 [요구사항 반영] 가로 확장 시험시간표 테이블 표시 영역 -->
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-bold text-slate-800">📅 파싱된 정기시험 시간표</h2>
+                    <span id="timetable-badge" class="text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-500">엑셀 미업로드</span>
+                </div>
+                <div class="overflow-x-auto border rounded-lg">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-2 border-b">시험 일자 및 교시</th>
+                                <th class="px-4 py-2 border-b">1학년 시험 과목</th>
+                                <th class="px-4 py-2 border-b">2학년 시험 과목</th>
+                                <th class="px-4 py-2 border-b">3학년 시험 과목</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timetable-display-body">
+                            <tr>
+                                <td colspan="4" class="text-center py-6 text-slate-400">
+                                    기초자료 엑셀을 업로드하면 요일별·교시별 시험 과목 시간표가 표시됩니다.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 학생 명단 테이블 -->
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-bold text-slate-800">👥 학생 명단 (<span id="student-count">0</span>명)</h2>
@@ -106,13 +130,14 @@
             </div>
         </section>
 
-        <!-- [탭 2] 고사실 생성 -->
+        <!-- [탭 2] 고사실 생성 (드롭다운 완전 보완) -->
         <section id="tab2" class="tab-content hidden">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
                 <h2 class="text-lg font-bold mb-3 text-slate-800">🏫 고사실 넘버링 생성 (기본 7행 5줄)</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600">대상 학년</label>
+                        <!-- 💡 [수정] 1, 2, 3학년 모두 누락 없이 배치 -->
                         <select id="gen-grade" class="w-full border rounded p-2 text-sm mt-1">
                             <option value="1">1학년</option>
                             <option value="2">2학년</option>
@@ -167,17 +192,19 @@
             </div>
         </section>
 
-        <!-- [탭 4] 이동 범위 & 2·4분단 설정 -->
+        <!-- [탭 4] 이동 범위 & 2·4분단 설정 (드롭다운 완전 보완) -->
         <section id="tab4" class="tab-content hidden">
             <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200 mb-6">
                 <h2 class="text-md font-bold mb-2 text-indigo-900">⚡ 분단 지정 및 이동 설정 일괄 적용</h2>
                 <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700">적용 대상</label>
+                        <!-- 💡 [수정] 1, 2, 3학년 모두 선택 가능하도록 복원 -->
                         <select id="bulk-target-grade" class="w-full border rounded p-2 text-sm mt-1 bg-white">
                             <option value="ALL">전체 고사실</option>
                             <option value="1">1학년 고사실만</option>
                             <option value="2">2학년 고사실만</option>
+                            <option value="3">3학년 고사실만</option>
                         </select>
                     </div>
                     <div>
@@ -200,8 +227,10 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700">이동해오는 학년</label>
+                        <!-- 💡 [수정] 1, 2, 3학년 모두 포함 -->
                         <select id="bulk-move-grade" class="w-full border rounded p-2 text-sm mt-1 bg-white">
-                            <option value="2">2학년</option>
+                            <option value="1">1학년</option>
+                            <option value="2" selected>2학년</option>
                             <option value="3">3학년</option>
                         </select>
                     </div>
@@ -254,8 +283,7 @@
                     </div>
                 </div>
 
-                <!-- 실시간 과목 및 응시 정보 표시 뱃지 -->
-                <div id="exam-info-banner" class="bg-slate-100 p-3 rounded text-xs text-slate-700 mb-4 flex justify-between items-center">
+                <div id="exam-info-banner" class="bg-indigo-50 border border-indigo-100 p-3 rounded text-xs text-indigo-900 mb-4 flex justify-between items-center">
                     <span>시험 과목 정보를 불러오려면 1탭에서 기초자료를 업로드하세요.</span>
                 </div>
 
@@ -303,8 +331,8 @@
         let appState = {
             students: [],
             rooms: [],
-            timetable: {},      // 파싱된 시험 시간표
-            subjectRooms: {},   // 선택과목별 수업 교실 (예: "법과사회": "2-1반")
+            timetableList: [],  // 요일/교시별 시간표 배열
+            subjectRooms: {},   // 선택과목별 수업 교실 매핑
             capacityRules: {
                 26: [4, 7, 4, 7, 4],
                 27: [4, 7, 5, 7, 4],
@@ -320,18 +348,19 @@
             renderStudents();
             renderRooms();
             renderCapacityRules();
+            renderTimetableTable();
             setupExcelListener();
             updateExamInfoDisplay();
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V7', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V7_1', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
             if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V7');
+            const saved = localStorage.getItem('SEAT_PLANNER_V7_1');
             if(saved) {
                 try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
             }
@@ -346,6 +375,7 @@
             document.getElementById(tabId).classList.remove('hidden');
             document.getElementById('btn-' + tabId).classList.add('border-indigo-600', 'text-indigo-600');
 
+            if(tabId === 'tab1') renderTimetableTable();
             if(tabId === 'tab3') renderCapacityRules();
             if(tabId === 'tab4') renderRoomRules();
             if(tabId === 'tab5') updateExamInfoDisplay();
@@ -391,7 +421,7 @@
             return Array.from(new Set(result)).sort((a, b) => a - b);
         }
 
-        // --- 1. 기초자료 엑셀 파싱 엔진 (시간표, 선택과목, 강의실 매핑) ---
+        // --- 1. 기초자료 파싱 엔진 및 시간표 표 출력 ---
         function downloadExcelTemplate() {
             const wb = XLSX.utils.book_new();
             const g1Data = [{ "일련번호": 1, "학번": 10101, "이름": "구소정" }];
@@ -409,7 +439,7 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     let parsedStudents = [];
 
-                    // 1) 1학년 명렬표
+                    // 1학년 명렬표
                     if(workbook.Sheets['1학년 명렬표']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['1학년 명렬표']);
                         sheet.forEach(row => {
@@ -424,7 +454,7 @@
                         });
                     }
 
-                    // 2) 2학년 선택과목 현황
+                    // 2학년 학생 선택과목 현황
                     if(workbook.Sheets['2학년 학생 선택과목 현황']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['2학년 학생 선택과목 현황']);
                         sheet.forEach(row => {
@@ -440,7 +470,7 @@
                         });
                     }
 
-                    // 3) 선택과목 강의실 매핑 시트 (2학년 선택과목 정보)
+                    // 2학년 선택과목 정보 (강의실)
                     let sRooms = {};
                     if(workbook.Sheets['2학년 선택과목 정보']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['2학년 선택과목 정보']);
@@ -450,37 +480,69 @@
                             }
                         });
                         appState.subjectRooms = sRooms;
-                        document.getElementById('status-rooms').innerText = `✅ 과목별 강의실 ${Object.keys(sRooms).length}개 로드됨`;
+                        document.getElementById('status-rooms').innerText = `✅ 과목별 강의실 ${Object.keys(sRooms).length}개 파싱 완료`;
                     }
 
-                    // 4) 시험 시간표 파싱
+                    // 시험 시간표 파싱
                     if(workbook.Sheets['시험 시간표']) {
                         const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets['시험 시간표'], { header: 1 });
-                        appState.timetable = parseTimetableSheet(sheetData);
-                        document.getElementById('status-timetable').innerText = `✅ 시험시간표 요일별 과목 로드됨`;
+                        appState.timetableList = parseTimetableToRows(sheetData);
+                        renderTimetableTable();
                     }
 
                     if(parsedStudents.length > 0) {
                         appState.students = parsedStudents;
-                        document.getElementById('status-subjects').innerText = `✅ 2학년 수강 과목 파싱 완료`;
+                        document.getElementById('status-subjects').innerText = `✅ 2학년 선택과목 현황 파싱 완료`;
                         renderStudents(); saveToLocalStorage();
-                        alert(`${parsedStudents.length}명의 학생 데이터 및 시험 정보 파싱을 완료했습니다!`);
+                        alert(`${parsedStudents.length}명의 학생 데이터 및 시간표 파싱을 완료했습니다!`);
                     }
                 };
                 reader.readAsArrayBuffer(file);
             });
         }
 
-        // 시험시간표 구조 파서
-        function parseTimetableSheet(rows) {
-            let timetable = {};
-            if(!rows || rows.length < 2) return timetable;
-            // 예시 단순화 파싱 구조
-            timetable["12월 14일 (월)_1교시"] = { g1: "자습", g2: "미적분Ⅰ" };
-            timetable["12월 14일 (월)_2교시"] = { g1: "자습", g2: "일본어회화·중국어회화·프로그래밍" };
-            timetable["12월 15일 (화)_1교시"] = { g1: "자습", g2: "영어Ⅱ" };
-            timetable["12월 15일 (화)_2교시"] = { g1: "자습", g2: "동아시아 역사기행" };
-            return timetable;
+        // 시험시간표 엑셀 데이터를 표 출력용 구조로 파싱
+        function parseTimetableToRows(rawRows) {
+            let list = [];
+            if(!rawRows || rawRows.length < 2) return list;
+            
+            for(let i = 1; i < rawRows.length; i++) {
+                const r = rawRows[i];
+                if(r && r[0] && String(r[0]).includes('교시')) {
+                    list.push({
+                        timeSlot: String(r[0]).trim(),
+                        g1: r[1] ? String(r[1]).trim() : "없음",
+                        g2: r[2] ? String(r[2]).trim() : "없음",
+                        g3: r[3] ? String(r[3]).trim() : "없음"
+                    });
+                }
+            }
+            return list;
+        }
+
+        // 💡 1탭 확장 시간표 테이블 렌더링 함수
+        function renderTimetableTable() {
+            const tbody = document.getElementById('timetable-display-body');
+            const badge = document.getElementById('timetable-badge');
+
+            if(!appState.timetableList || appState.timetableList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400">기초자료 엑셀을 업로드하면 시간표가 표시됩니다.</td></tr>`;
+                badge.className = "text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-500";
+                badge.innerText = "엑셀 미업로드";
+                return;
+            }
+
+            badge.className = "text-xs font-semibold px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-bold";
+            badge.innerText = `총 ${appState.timetableList.length}개 교시 시험 정상 등록됨`;
+
+            tbody.innerHTML = appState.timetableList.map(item => `
+                <tr class="border-b bg-white hover:bg-slate-50">
+                    <td class="px-4 py-2.5 font-bold text-indigo-900 font-mono">${item.timeSlot}</td>
+                    <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded text-xs ${item.g1==='자습'?'bg-slate-100 text-slate-600':'bg-indigo-50 text-indigo-700 font-semibold'}">${item.g1}</span></td>
+                    <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded text-xs ${item.g2==='자습'?'bg-slate-100 text-slate-600':'bg-emerald-50 text-emerald-800 font-semibold'}">${item.g2}</span></td>
+                    <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded text-xs ${item.g3==='자습'?'bg-slate-100 text-slate-600':'bg-amber-50 text-amber-800 font-semibold'}">${item.g3}</span></td>
+                </tr>
+            `).join('');
         }
 
         function renderStudents() {
@@ -616,7 +678,7 @@
                 }
             });
             renderRoomRules(); saveToLocalStorage();
-            alert("일괄 설정이 반영되었습니다.");
+            alert("일괄 설정이 지정 고사실에 반영되었습니다.");
         }
 
         function calculateRoomStudentCounts(room) {
@@ -655,7 +717,7 @@
                         </div>
                         <div class="grid grid-cols-4 gap-3 flex-1 text-xs">
                             <div class="bg-white p-2 rounded border">
-                                <span class="font-bold text-amber-700 block mb-1">🪑 2·4분단 (7석) Group</span>
+                                <span class="font-bold text-amber-700 block mb-1">🪑 2·4분단 Group</span>
                                 <select onchange="updateRoomProp(${idx}, 'fixedGroup', this.value)" class="border rounded px-1 w-full mt-1">
                                     <option value="HOMEROOM" ${room.fixedGroup==='HOMEROOM'?'selected':''}>본반 학생 (${room.targetGrade}학년)</option>
                                     <option value="MOVE" ${room.fixedGroup==='MOVE'?'selected':''}>이동 학생 (${room.moveGrade}학년)</option>
@@ -695,19 +757,19 @@
             const period = document.getElementById('select-period').value;
             const banner = document.getElementById('exam-info-banner');
 
-            const key = `${day}_${period}`;
-            const info = appState.timetable[key];
+            const item = (appState.timetableList || []).find(t => t.timeSlot.includes(day.split(' ')[0]) && t.timeSlot.includes(period));
 
-            if(info) {
+            if(item) {
                 banner.innerHTML = `
                     <div>
                         <span class="font-bold text-indigo-800">[${day} ${period}]</span> 
-                        <span class="ml-2">1학년: <b class="text-indigo-600">${info.g1}</b></span> | 
-                        <span class="ml-2">2학년: <b class="text-emerald-600">${info.g2}</b></span>
+                        <span class="ml-2">1학년: <b class="text-indigo-600">${item.g1}</b></span> | 
+                        <span class="ml-2">2학년: <b class="text-emerald-600">${item.g2}</b></span> | 
+                        <span class="ml-2">3학년: <b class="text-amber-600">${item.g3}</b></span>
                     </div>
                 `;
             } else {
-                banner.innerHTML = `<span>[${day} ${period}] 등록된 과목: 일반 시험 응시 및 수강과목 파싱 모드</span>`;
+                banner.innerHTML = `<span>[${day} ${period}] 시험 과목 정보가 로드되어 자습생 및 응시생 자동 분류가 적용됩니다.</span>`;
             }
         }
 
@@ -724,8 +786,8 @@
                 return;
             }
 
-            const key = `${day}_${period}`;
-            const currentExamName = appState.timetable[key] ? appState.timetable[key].g2 : "";
+            const item = (appState.timetableList || []).find(t => t.timeSlot.includes(day.split(' ')[0]) && t.timeSlot.includes(period));
+            const currentExamName = item ? item.g2 : "";
 
             appState.rooms.forEach(room => {
                 const roomDiv = document.createElement('div');
@@ -734,22 +796,19 @@
                 const counts = calculateRoomStudentCounts(room);
                 const layout = appState.capacityRules[counts.total] || [5, 7, 5, 7, 5];
 
-                // 과목 미수강자(자습생) 판별 함수 (김도운 등 후순위 배치)
                 const isStudentSelfStudy = (student) => {
                     if(!student || student.grade === 1) return false;
                     if(!currentExamName || currentExamName === "자습") return false;
                     if(!student.subjects || student.subjects.length === 0) return false;
-                    // 선택과목명 포함 여부 확인
                     return !student.subjects.some(sub => currentExamName.includes(sub));
                 };
 
                 const isHomeInFixed = (room.fixedGroup === 'HOMEROOM');
 
-                // 응시생과 자습생을 구분하여 응시생 우선, 자습생 맨 뒤 배치
                 const processGroup = (students) => {
                     const examers = students.filter(s => !isStudentSelfStudy(s));
                     const selfStudiers = students.filter(s => isStudentSelfStudy(s));
-                    return [...examers, ...selfStudiers]; // 응시생 먼저, 자습생 맨 뒤!
+                    return [...examers, ...selfStudiers];
                 };
 
                 const fixedGroupStudents = processGroup(isHomeInFixed ? counts.homeStudents : counts.moveStudents);
@@ -813,7 +872,7 @@
                 printArea.appendChild(roomDiv);
             });
 
-            alert(`${day} ${period} 자습생 후순위 배치가 반영된 좌석표가 완성되었습니다!`);
+            alert(`${day} ${period} 좌석배치표 생성이 완료되었습니다!`);
         }
 
         // --- 백업 & 저장 ---
@@ -830,7 +889,7 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 appState = JSON.parse(e.target.result);
-                saveToLocalStorage(); renderStudents(); renderRooms(); renderCapacityRules(); updateExamInfoDisplay();
+                saveToLocalStorage(); renderStudents(); renderRooms(); renderCapacityRules(); renderTimetableTable(); updateExamInfoDisplay();
                 alert("데이터 복원이 완료되었습니다.");
             };
             reader.readAsText(file);
