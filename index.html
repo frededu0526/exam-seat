@@ -823,20 +823,33 @@
         }
 
         function isStudentSelfStudy(student) {
-            if(!student) return false;
-            if(student.grade === 1) return false;
+    if(!student) return false;
+    if(student.grade === 1) return false;
 
-            const item = getSelectedTimetableItem();
-            const currentExamName = item ? item.g2 : "";
+    const item = getSelectedTimetableItem();
+    let currentExamName = item ? item.g2 : "";
 
-            if(!currentExamName || currentExamName === "자습" || currentExamName === "없음") return false;
+    if(!currentExamName || currentExamName === "자습" || currentExamName === "없음") return false;
 
-            const masterObj = appState.openedSubjects[currentExamName.trim()];
-            if(masterObj && masterObj.isCommon) return false;
+    // 💡 괄호 및 괄호 안 교사명/조 기호 제거 (예: "윤리와 사상(솔)" ➔ "윤리와 사상")
+    const cleanExamName = currentExamName.replace(/\([^)]*\)/g, '').trim();
 
-            if(!student.subjects || student.subjects.length === 0) return true;
-            return !student.subjects.some(sub => currentExamName.includes(sub));
-        }
+    // 개설과목 마스터 공통과목 여부 확인
+    const masterObj = appState.openedSubjects[currentExamName.trim()] || appState.openedSubjects[cleanExamName];
+    if(masterObj && masterObj.isCommon) return false;
+
+    if(!student.subjects || student.subjects.length === 0) return true;
+
+    // 💡 양방향 포함(includes) 검사: 과목명이 일부만 겹쳐도 응시생으로 정밀 판별
+    const isEnrolled = student.subjects.some(sub => {
+        if(!sub || sub === "없음") return false;
+        const cleanSub = String(sub).replace(/\([^)]*\)/g, '').trim();
+        
+        return cleanExamName.includes(cleanSub) || cleanSub.includes(cleanExamName);
+    });
+
+    return !isEnrolled; // 수강 신청이 되어 있으면 자습생이 아님(false = 응시생)
+}
 
         // ==========================================
         // 💡 [STEP 1] 본반/A모드 초기 좌석 배치 (이동X, 번호X)
