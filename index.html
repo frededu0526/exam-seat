@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.7.1</title>
+    <title>정기시험 좌석배치 시스템 v18.8</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.7.1</h1>
-            <p class="text-xs text-indigo-200">공통/선택 과목 이동 규칙 이원화 · 직관적 이동/목적지 용어 적용 · 출발지 우선 추출 원칙</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.8</h1>
+            <p class="text-xs text-indigo-200">3학년 선택과목 파싱 완전 연동 · 전 학년 좌석배치 및 수험표 연동 · 출발지 우선 원칙</p>
         </div>
         <div class="flex gap-2 text-sm flex-wrap items-center">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -75,7 +75,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
-                    <h3 class="font-bold text-emerald-900 text-sm">📘 선택과목 현황</h3>
+                    <h3 class="font-bold text-emerald-900 text-sm">📘 선택과목 현황 (2/3학년)</h3>
                     <p id="status-subjects" class="text-xs text-emerald-700 mt-1">대기 중</p>
                 </div>
                 <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg">
@@ -205,7 +205,7 @@
             </div>
         </section>
 
-        <!-- [탭 4] 이동 범위 & 분단 고정 설정 (개선된 용어 반영) -->
+        <!-- [탭 4] 이동 범위 & 분단 고정 설정 -->
         <section id="tab4" class="tab-content hidden">
             <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200 mb-6">
                 <h2 class="text-md font-bold mb-3 text-indigo-900">⚡ 과목 유형별 이동 설정 이원화 일괄 적용</h2>
@@ -497,7 +497,7 @@
 
         function saveToLocalStorage() {
             try {
-                localStorage.setItem('SEAT_PLANNER_V18_7_1', JSON.stringify(appState));
+                localStorage.setItem('SEAT_PLANNER_V18_8', JSON.stringify(appState));
                 const statusEl = document.getElementById('save-status');
                 if(statusEl) statusEl.innerText = "🟢 안전 저장 완료 (" + new Date().toLocaleTimeString() + ")";
             } catch (e) {
@@ -506,7 +506,7 @@
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18_7_1');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_8');
             if(saved) {
                 try { 
                     appState = JSON.parse(saved); 
@@ -517,7 +517,7 @@
 
         function resetAllData() {
             if (confirm("⚠️ 정말로 저장된 모든 학생, 고사실, 시간표, 수험표 데이터를 초기화하고 백지 상태로 만드시겠습니까?")) {
-                localStorage.removeItem('SEAT_PLANNER_V18_7_1');
+                localStorage.removeItem('SEAT_PLANNER_V18_8');
                 appState = {
                     students: [],
                     rooms: [],
@@ -702,31 +702,36 @@
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(g2Info), "2학년 선택과목 정보");
 
             const g3Sub = [
-                { "연번": 1, "학번": 30101, "이름": "없음", "A": "없음", "B": "없음", "C": "없음", "D": "없음", "E": "없음" }
+                { "연번": 1, "학번": 30101, "이름": "강민준", "A": "화학Ⅱ", "B": "미적분", "C": "심화영어Ⅰ", "D": "사회·문화", "E": "중국어Ⅱ" },
+                { "연번": 2, "학번": 30102, "이름": "김도윤", "A": "물리학Ⅱ", "B": "확률과 통계", "C": "세계사", "D": "생활과 윤리", "E": "일본어Ⅱ" }
             ];
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(g3Sub), "3학년 학생 선택과목 현황");
 
             const g3Info = [
-                { "선택군": "A", "과목명": "없음", "담당교사": "없음", "강의실": "없음" }
+                { "선택군": "A", "과목명": "화학Ⅱ", "담당교사": "김철수", "강의실": "3-1반" },
+                { "선택군": "A", "과목명": "물리학Ⅱ", "담당교사": "이영희", "강의실": "3-2반" }
             ];
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(g3Info), "3학년 선택과목 정보");
 
             const tt = [
-                { "날짜/교시": "12월 14일 (월) 1교시", "1학년": "자습", "2학년": "미적분Ⅰ", "3학년": "없음" },
-                { "날짜/교시": "12월 14일 (월) 2교시", "1학년": "통합사회2", "2학년": "법과사회", "3학년": "없음" }
+                { "날짜/교시": "12월 14일 (월) 1교시", "1학년": "자습", "2학년": "미적분Ⅰ", "3학년": "화학Ⅱ" },
+                { "날짜/교시": "12월 14일 (월) 2교시", "1학년": "통합사회2", "2학년": "법과사회", "3학년": "미적분" }
             ];
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tt), "시험 시간표");
 
             const openSub = [
                 { "학년": "1학년", "과목": "공통국어2", "정기시험": "시행", "공통과목": "True" },
                 { "학년": "2학년", "과목": "화법과 언어", "정기시험": "시행", "공통과목": "True" },
-                { "학년": "2학년", "과목": "법과사회", "정기시험": "시행", "공통과목": "False" }
+                { "학년": "2학년", "과목": "법과사회", "정기시험": "시행", "공통과목": "False" },
+                { "학년": "3학년", "과목": "화학Ⅱ", "정기시험": "시행", "공통과목": "False" },
+                { "학년": "3학년", "과목": "미적분", "정기시험": "시행", "공통과목": "False" }
             ];
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(openSub), "개설과목현황");
 
             XLSX.writeFile(wb, "정기시험_좌석배치도_기초자료_표준양식.xlsx");
         }
 
+        // 💡 [v18.8 핵심] 3학년 파싱 로직 완전 통합
         function setupExcelListener() {
             document.getElementById('excel-file').addEventListener('change', function(e) {
                 const file = e.target.files[0];
@@ -780,17 +785,43 @@
                         });
                     }
 
+                    // 🌟 3학년 학생 선택과목 현황 추가 파싱
+                    if(workbook.Sheets['3학년 학생 선택과목 현황']) {
+                        const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['3학년 학생 선택과목 현황']);
+                        sheet.forEach(row => {
+                            if(row['학번'] && row['이름'] && row['이름'] !== '없음') {
+                                const idStr = String(row['학번']);
+                                const subs = [row['A'], row['B'], row['C'], row['D'], row['E']].filter(Boolean);
+                                parsedStudents.push({
+                                    id: idStr, name: row['이름'], grade: 3,
+                                    classNum: parseInt(idStr.slice(1,3)), num: parseInt(idStr.slice(3)),
+                                    isSpecial: false, subjects: subs
+                                });
+                            }
+                        });
+                    }
+
                     let sRooms = {};
                     if(workbook.Sheets['2학년 선택과목 정보']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['2학년 선택과목 정보']);
                         sheet.forEach(row => {
-                            if(row['과목명'] && row['강의실']) {
+                            if(row['과목명'] && row['강의실'] && row['과목명'] !== '없음') {
                                 sRooms[row['과목명'].trim()] = row['강의실'].trim();
                             }
                         });
-                        appState.subjectRooms = sRooms;
-                        document.getElementById('status-rooms').innerText = `✅ 선택과목 정보 파싱 완료`;
                     }
+
+                    // 🌟 3학년 선택과목 정보 추가 파싱
+                    if(workbook.Sheets['3학년 선택과목 정보']) {
+                        const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['3학년 선택과목 정보']);
+                        sheet.forEach(row => {
+                            if(row['과목명'] && row['강의실'] && row['과목명'] !== '없음') {
+                                sRooms[row['과목명'].trim()] = row['강의실'].trim();
+                            }
+                        });
+                    }
+                    appState.subjectRooms = sRooms;
+                    document.getElementById('status-rooms').innerText = `✅ 과목 정보 파싱 완료`;
 
                     if(workbook.Sheets['시험 시간표']) {
                         const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets['시험 시간표'], { header: 1 });
@@ -800,9 +831,9 @@
 
                     if(parsedStudents.length > 0) {
                         appState.students = parsedStudents;
-                        document.getElementById('status-subjects').innerText = `✅ 수강 선택과목 현황 파싱 완료`;
+                        document.getElementById('status-subjects').innerText = `✅ 1/2/3학년 학생 명단 파싱 완료 (${parsedStudents.length}명)`;
                         renderStudents(); renderRooms(); renderRoomRules(); saveToLocalStorage();
-                        alert(`${parsedStudents.length}명의 학생 데이터 파싱이 완료되었습니다!`);
+                        alert(`총 ${parsedStudents.length}명의 학생 데이터(1,2,3학년) 파싱이 완료되었습니다!`);
                     }
                 };
                 reader.readAsArrayBuffer(file);
@@ -1336,6 +1367,7 @@
             return rawSub || "자습";
         }
 
+        // 💡 [v18.8 핵심] 1, 2, 3학년 통합 Step 1 좌석 배치 로직
         function step1_InitialPlace() {
             if(appState.students.length === 0) {
                 alert("학생 명단이 없습니다. 1탭에서 기초자료를 업로드해 주세요.");
@@ -1352,6 +1384,7 @@
             const period = document.getElementById('select-period').value.trim();
             const specIds = getAllSpecialStudentIds();
 
+            // 1학년 배치 (본반 기준)
             appState.rooms.filter(r => r.targetGrade === 1 && !r.isSpecial).forEach(room => {
                 let sts = appState.students.filter(s => s.grade === 1 && s.classNum === room.targetClass && !specIds.includes(s.id));
                 let validSts = sts.filter(s => getStudentStatus(s, day, period) !== 'HOME').sort((a,b) => a.num - b.num);
@@ -1360,20 +1393,38 @@
                 slotState.roomSeatsMap[room.id] = clonedSts;
             });
 
+            // 2학년 배치 (응시 ➔ 자습 순)
             const g2All = appState.students.filter(s => s.grade === 2 && !specIds.includes(s.id));
-            let g2Examers = g2All.filter(s => getStudentStatus(s, day, period) === 'EXAM').sort((a,b) => parseInt(a.id) - parseInt(b.id));
-            let g2Selfers = g2All.filter(s => getStudentStatus(s, day, period) === 'SELF').sort((a,b) => parseInt(a.id) - parseInt(b.id));
-            let g2Queue = JSON.parse(JSON.stringify([...g2Examers, ...g2Selfers]));
+            if (g2All.length > 0) {
+                let g2Examers = g2All.filter(s => getStudentStatus(s, day, period) === 'EXAM').sort((a,b) => parseInt(a.id) - parseInt(b.id));
+                let g2Selfers = g2All.filter(s => getStudentStatus(s, day, period) === 'SELF').sort((a,b) => parseInt(a.id) - parseInt(b.id));
+                let g2Queue = JSON.parse(JSON.stringify([...g2Examers, ...g2Selfers]));
 
-            appState.rooms.filter(r => r.targetGrade === 2 && !r.isSpecial).forEach(room => {
-                const roomCap = getRoomTotalCapacity(room);
-                let assigned = g2Queue.splice(0, roomCap);
-                assigned.forEach(st => delete st.seatSeq);
-                slotState.roomSeatsMap[room.id] = assigned;
-            });
+                appState.rooms.filter(r => r.targetGrade === 2 && !r.isSpecial).forEach(room => {
+                    const roomCap = getRoomTotalCapacity(room);
+                    let assigned = g2Queue.splice(0, roomCap);
+                    assigned.forEach(st => delete st.seatSeq);
+                    slotState.roomSeatsMap[room.id] = assigned;
+                });
+            }
+
+            // 🌟 3학년 배치 (응시 ➔ 자습 순)
+            const g3All = appState.students.filter(s => s.grade === 3 && !specIds.includes(s.id));
+            if (g3All.length > 0) {
+                let g3Examers = g3All.filter(s => getStudentStatus(s, day, period) === 'EXAM').sort((a,b) => parseInt(a.id) - parseInt(b.id));
+                let g3Selfers = g3All.filter(s => getStudentStatus(s, day, period) === 'SELF').sort((a,b) => parseInt(a.id) - parseInt(b.id));
+                let g3Queue = JSON.parse(JSON.stringify([...g3Examers, ...g3Selfers]));
+
+                appState.rooms.filter(r => r.targetGrade === 3 && !r.isSpecial).forEach(room => {
+                    const roomCap = getRoomTotalCapacity(room);
+                    let assigned = g3Queue.splice(0, roomCap);
+                    assigned.forEach(st => delete st.seatSeq);
+                    slotState.roomSeatsMap[room.id] = assigned;
+                });
+            }
 
             saveToLocalStorage();
-            renderStepUI(`1단계 완료 [${slotKey}]: 하교생 제외 및 [응시생➔자습생] 순서로 슬롯 독립 배치가 완료되었습니다.`);
+            renderStepUI(`1단계 완료 [${slotKey}]: 전 학년 하교생 제외 및 [응시생➔자습생] 순서 배치가 완료되었습니다.`);
         }
 
         function step2_AssignInternalSeq() {
