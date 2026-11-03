@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.0</title>
+    <title>정기시험 좌석배치 시스템 v18.1</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.0</h1>
-            <p class="text-xs text-indigo-200">드래그앤드롭 수동 교체 · 학생별 수험표 발급 · 34명 규격(6-7-7-7-7) 반영 · 보색 시각화</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.1</h1>
+            <p class="text-xs text-indigo-200">드래그앤드롭 완벽 교체 · 5탭 수험표 반영 버튼 & 6탭 미반영 동적 연동 엔진</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -258,7 +258,7 @@
             </div>
         </section>
 
-        <!-- [탭 5] 선택과목 배치 & 드래그앤드롭 수동 교체 -->
+        <!-- [탭 5] 선택과목 배치 & 드래그앤드롭 수동 교체 & 수험표 반영 -->
         <section id="tab5" class="tab-content hidden">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6 no-print">
                 <div class="flex justify-between items-center mb-3">
@@ -292,19 +292,22 @@
                     <span>시험 과목 정보를 불러오려면 1탭에서 기초자료를 업로드하세요.</span>
                 </div>
 
-                <!-- 3단계 순차 실행 버튼 -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 border-t">
-                    <button onclick="step1_InitialPlace()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
-                        1️⃣ Step 1: 본반/A모드 좌석 배치
+                <!-- 3단계 순차 실행 및 수험표 반영 버튼 바 -->
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-2 pt-2 border-t">
+                    <button onclick="step1_InitialPlace()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
+                        1️⃣ Step 1: 좌석 배치
                     </button>
-                    <button onclick="step2_AssignInternalSeq()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
-                        2️⃣ Step 2: 좌석순 내부일련번호 부여
+                    <button onclick="step2_AssignInternalSeq()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
+                        2️⃣ Step 2: 내부번호 부여
                     </button>
-                    <button onclick="step3_ExecuteMovement()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
-                        3️⃣ Step 3: 최종 고사실 이동 통제
+                    <button onclick="step3_ExecuteMovement()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
+                        3️⃣ Step 3: 최종 이동 통제
                     </button>
-                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
-                        🖨️ 전체 좌석배치도 인쇄
+                    <button onclick="commitSeatingToTickets()" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
+                        📌 수험표에 배치 반영하기
+                    </button>
+                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
+                        🖨️ 좌석배치도 인쇄
                     </button>
                 </div>
             </div>
@@ -350,7 +353,7 @@
 
             <div id="ticket-print-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="text-center py-12 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300 col-span-2">
-                    기초자료 업로드 후 5번 탭 배치를 진행하면 학생별 개인 수험표가 자동 생성됩니다.
+                    기초자료 업로드 후 5번 탭에서 [📌 수험표에 배치 반영하기]를 누르면 학생별 수험표가 생성됩니다.
                 </div>
             </div>
         </section>
@@ -395,18 +398,20 @@
                 31: { layout: [5, 7, 6, 7, 6], fixed: [false, true, false, true, false] },
                 32: { layout: [6, 7, 6, 7, 6], fixed: [false, true, false, true, false] },
                 33: { layout: [6, 7, 7, 7, 6], fixed: [false, true, false, true, false] },
-                34: { layout: [6, 7, 7, 7, 7], fixed: [false, true, false, true, false] }, // 💡 6-7-7-7-7 수정!
+                34: { layout: [6, 7, 7, 7, 7], fixed: [false, true, false, true, false] },
                 35: { layout: [7, 7, 7, 7, 7], fixed: [false, true, false, true, false] }
             },
             stepState: {
                 currentStep: 0,
                 roomSeatsMap: {}
             },
+            // 💡 [v18.1 신규] 수험표 확정 데이터 매핑 저장소 (Key: "요일_교시")
+            ticketAllocations: {},
             supabaseConfig: { url: "", key: "" }
         };
 
-        // 드래그 앤 드롭 상태 변수
-        let draggedStudentData = null;
+        // 드래그앤드롭 전역 상태
+        let dragSrcData = null;
 
         window.onload = function() {
             loadFromLocalStorage();
@@ -419,13 +424,13 @@
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V18', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V18_1', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
             if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_1');
             if(saved) {
                 try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
             }
@@ -1086,7 +1091,7 @@
             appState.rooms.filter(r => !r.isSpecial).forEach(room => {
                 let list = appState.stepState.roomSeatsMap[room.id] || [];
                 list.forEach((st, idx) => {
-                    st.seatSeq = idx + 1;
+                    if(st) st.seatSeq = idx + 1;
                 });
             });
 
@@ -1107,12 +1112,12 @@
         }
 
         // ==========================================
-        // 🖐️ [드래그 앤 드롭 핸들러] 좌석 수동 위치 교체
+        // 🖐️ [v18.1 개선] HTML5 드래그 앤 드롭 완벽 처리
         // ==========================================
-        function handleDragStart(e, roomId, index) {
-            draggedStudentData = { roomId, index };
-            e.dataTransfer.setData('text/plain', JSON.stringify({ roomId, index }));
-            e.target.classList.add('dragging');
+        function handleDragStart(e, roomId, idx) {
+            dragSrcData = { roomId, idx: parseInt(idx) };
+            e.dataTransfer.setData('text/plain', JSON.stringify(dragSrcData));
+            e.currentTarget.classList.add('dragging');
         }
 
         function handleDragOver(e) {
@@ -1125,30 +1130,88 @@
             e.currentTarget.classList.remove('drag-over');
         }
 
-        function handleDrop(e, targetRoomId, targetIndex) {
+        function handleDrop(e, targetRoomId, targetIdx) {
             e.preventDefault();
             e.currentTarget.classList.remove('drag-over');
-            if(!draggedStudentData) return;
+            
+            if(!dragSrcData) return;
 
-            const sourceRoomId = draggedStudentData.roomId;
-            const sourceIndex = draggedStudentData.index;
+            const srcRoomId = dragSrcData.roomId;
+            const srcIdx = dragSrcData.idx;
+            const tgtIdx = parseInt(targetIndex || targetIdx);
 
-            const sourceList = appState.stepState.roomSeatsMap[sourceRoomId];
-            const targetList = appState.stepState.roomSeatsMap[targetRoomId];
+            const srcList = appState.stepState.roomSeatsMap[srcRoomId];
+            const tgtList = appState.stepState.roomSeatsMap[targetRoomId];
 
-            if(sourceList && targetList) {
-                const temp = sourceList[sourceIndex];
-                sourceList[sourceIndex] = targetList[targetIndex];
-                targetList[targetIndex] = temp;
+            if (srcList && tgtList) {
+                // 두 학생의 자리 Swap
+                const temp = srcList[srcIdx];
+                srcList[srcIdx] = tgtList[tgtIdx];
+                tgtList[tgtIdx] = temp;
+
+                // 내부번호 부여 단계 이후라면 내부번호 재정렬
+                if(appState.stepState.currentStep >= 2) {
+                    if(srcList[srcIdx]) srcList[srcIdx].seatSeq = srcIdx + 1;
+                    if(tgtList[tgtIdx]) tgtList[tgtIdx].seatSeq = tgtIdx + 1;
+                }
 
                 saveToLocalStorage();
-                renderStepUI("🖐️ 수동으로 좌석 위치가 교체(Swap)되었습니다.");
+                renderStepUI("🖐️ 좌석 위치가 수동으로 완벽하게 교체(Swap)되었습니다.");
             }
-            draggedStudentData = null;
+            dragSrcData = null;
         }
 
         // ==========================================
-        // 🖥️ UI 렌더링 (보색 계열 색상 대비 & 과목 병기)
+        // 📌 [v18.1 신규] 5번 탭 배치를 6번 탭 수험표로 반영
+        // ==========================================
+        function commitSeatingToTickets() {
+            if(!appState.stepState.currentStep || appState.stepState.currentStep < 1) {
+                alert("좌석배치(Step 1~3)를 먼저 실행한 뒤 반영 버튼을 눌러주세요.");
+                return;
+            }
+
+            const day = document.getElementById('select-day').value.trim();
+            const period = document.getElementById('select-period').value.trim();
+            const slotKey = `${day}_${period}`;
+
+            if(!appState.ticketAllocations) appState.ticketAllocations = {};
+            appState.ticketAllocations[slotKey] = {};
+
+            const specIds = getAllSpecialStudentIds();
+
+            // 1. 일반 고사실 배치 학생 반영
+            appState.rooms.forEach(room => {
+                if(room.isSpecial) {
+                    (room.assignedStudentIds || []).forEach(stId => {
+                        const st = appState.students.find(s => s.id === stId);
+                        if(st) {
+                            appState.ticketAllocations[slotKey][st.id] = {
+                                roomName: room.name,
+                                seatSeq: "-",
+                                subject: getStudentExamSubject(st)
+                            };
+                        }
+                    });
+                } else {
+                    const list = appState.stepState.roomSeatsMap[room.id] || [];
+                    list.forEach((st, idx) => {
+                        if(st) {
+                            appState.ticketAllocations[slotKey][st.id] = {
+                                roomName: room.name,
+                                seatSeq: st.seatSeq || (idx + 1),
+                                subject: getStudentExamSubject(st)
+                            };
+                        }
+                    });
+                }
+            });
+
+            saveToLocalStorage();
+            alert(`📌 [${day} ${period}] 좌석배치가 학생 개인 수험표 데이터베이스에 성공적으로 반영되었습니다!\n6번 탭에서 확인해 보세요.`);
+        }
+
+        // ==========================================
+        // 🖥️ 5번 탭 UI 렌더링
         // ==========================================
         function renderStepUI(statusMessage) {
             const printArea = document.getElementById('print-area');
@@ -1191,7 +1254,6 @@
                         const isFixedCol = fixedFlags[c];
                         const rowCount = layout[c] || 6;
 
-                        // 💡 보색 대비 디자인: 홀수=인디고/쿨톤, 짝수=호박 오렌지/웜톤
                         const colHeaderClass = isEvenCol ? 'bg-amber-600 text-white border-amber-600' : 'bg-indigo-700 text-white border-indigo-700';
                         const colBgClass = isEvenCol ? 'bg-amber-50/60 border-amber-300' : 'bg-indigo-50/60 border-indigo-300';
 
@@ -1217,7 +1279,7 @@
                                          ondragover="handleDragOver(event)"
                                          ondragleave="handleDragLeave(event)"
                                          ondrop="handleDrop(event, '${room.id}', ${currentIndex})"
-                                         class="p-2 rounded border text-center shadow-2xs transition cursor-grab active:cursor-grabbing ${selfStudyFlag ? 'bg-amber-100 border-amber-400' : 'bg-white border-slate-300 hover:border-indigo-400'}">
+                                         class="p-2 rounded border text-center shadow-2xs transition cursor-grab active:cursor-grabbing ${selfStudyFlag ? 'bg-amber-100 border-amber-400' : 'bg-white border-slate-300 hover:border-indigo-500'}">
                                         <div class="text-[10px] font-mono text-slate-400">${student.id} ${seqBadge}</div>
                                         <div class="font-bold text-sm text-slate-800">${student.name}</div>
                                         <div class="text-[10px] font-semibold ${selfStudyFlag ? 'text-amber-800' : 'text-indigo-600'} mt-0.5">${examSubject}</div>
@@ -1305,7 +1367,7 @@
         }
 
         // ==========================================
-        // 🎟️ [탭 6] 학생별 정기시험 수험표 생성 알고리즘
+        // 🎟️ [v18.1 개선] 6번 탭 수험표 출력 (미반영 및 고사실/좌석 연동)
         // ==========================================
         function generateStudentTickets() {
             const container = document.getElementById('ticket-print-container');
@@ -1328,49 +1390,39 @@
                 return;
             }
 
-            const specIds = getAllSpecialStudentIds();
-
             container.innerHTML = filteredStudents.map(st => {
-                const isSpecial = specIds.includes(st.id);
-                let specialRoomName = "";
-                if(isSpecial) {
-                    const spRoom = appState.rooms.find(r => r.isSpecial && r.assignedStudentIds && r.assignedStudentIds.includes(st.id));
-                    specialRoomName = spRoom ? spRoom.name : "특별실";
-                }
-
                 const rowsHtml = appState.timetableList.map(item => {
-                    let examSubject = "자습";
-                    let targetRoomName = `${st.grade}-${st.classNum}반 (본반)`;
+                    let committedInfo = null;
 
-                    if(isSpecial) {
-                        targetRoomName = specialRoomName;
+                    // 5번 탭에서 [수험표에 반영하기]를 누른 데이터 검색
+                    if(appState.ticketAllocations) {
+                        for(let key in appState.ticketAllocations) {
+                            const [dayPart, periodPart] = key.split('_');
+                            if(item.timeSlot.includes(dayPart) && item.timeSlot.includes(periodPart)) {
+                                if(appState.ticketAllocations[key][st.id]) {
+                                    committedInfo = appState.ticketAllocations[key][st.id];
+                                    break;
+                                }
+                            }
+                        }
                     }
 
-                    if(st.grade === 1) {
-                        examSubject = item.g1;
-                    } else if(st.grade === 2) {
-                        const curExam = item.g2;
-                        if(curExam && curExam !== "자습" && curExam !== "없음") {
-                            const cleanExamName = curExam.replace(/\([^)]*\)/g, '').trim();
-                            const masterObj = appState.openedSubjects[curExam.trim()] || appState.openedSubjects[cleanExamName];
-                            
-                            if(masterObj && masterObj.isCommon) {
-                                examSubject = curExam;
-                            } else if(st.subjects && st.subjects.some(sub => cleanExamName.includes(sub.replace(/\([^)]*\)/g, '').trim()))) {
-                                examSubject = curExam;
-                            } else {
-                                examSubject = "자습";
-                            }
-                        } else {
-                            examSubject = "자습";
-                        }
+                    let examSubjectDisplay = "";
+                    let targetRoomDisplay = "";
+
+                    if(committedInfo) {
+                        examSubjectDisplay = `<span class="font-bold ${committedInfo.subject==='자습'?'text-slate-400':'text-indigo-700'}">${committedInfo.subject}</span>`;
+                        targetRoomDisplay = `<span class="font-semibold text-slate-800">${committedInfo.roomName} ${committedInfo.seatSeq !== '-' ? `(내부${committedInfo.seatSeq}번)` : ''}</span>`;
+                    } else {
+                        examSubjectDisplay = `<span class="text-slate-400 font-normal">미반영</span>`;
+                        targetRoomDisplay = `<span class="text-red-500 font-bold bg-red-50 px-1.5 py-0.5 rounded text-[11px] border border-red-200">미반영</span>`;
                     }
 
                     return `
                         <tr class="border-b text-xs">
                             <td class="p-1.5 font-mono bg-slate-50 font-semibold">${item.timeSlot}</td>
-                            <td class="p-1.5 font-bold ${examSubject==='자습'?'text-slate-400':'text-indigo-700'}">${examSubject}</td>
-                            <td class="p-1.5 font-medium text-slate-700">${targetRoomName}</td>
+                            <td class="p-1.5">${examSubjectDisplay}</td>
+                            <td class="p-1.5">${targetRoomDisplay}</td>
                         </tr>
                     `;
                 }).join('');
@@ -1393,7 +1445,7 @@
                                 <tr>
                                     <th class="p-1">시험 일시</th>
                                     <th class="p-1">응시 과목</th>
-                                    <th class="p-1">시험 장소</th>
+                                    <th class="p-1">시험 장소 및 좌석</th>
                                 </tr>
                             </thead>
                             <tbody>
