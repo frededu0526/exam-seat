@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.5</title>
+    <title>정기시험 좌석배치 시스템 v18.6</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,12 +25,12 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.5</h1>
-            <p class="text-xs text-indigo-200">내부번호 토글 시각화 · 백지 데이터 전체 초기화 · N열 M행 좌표 기반 수험표 생성</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.6</h1>
+            <p class="text-xs text-indigo-200">요일/교시별 독립 좌석 저장 · 데이터 오염 방지 예외 처리 · N열 M행 수험표 출력</p>
         </div>
         <div class="flex gap-2 text-sm flex-wrap items-center">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
-                🟢 로컬 자동저장 활성
+                🟢 안전 데이터 저장 활성
             </span>
             <button onclick="exportJSON()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded transition font-medium text-xs">
                 💾 백업 (.json)
@@ -267,13 +267,13 @@
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-bold text-slate-800">📅 시험 요일/교시 선택 & 3단계 순차 실행</h2>
                     <span class="text-xs text-indigo-600 bg-indigo-50 px-3 py-1 rounded border border-indigo-200 font-bold">
-                        🖐️ 드래그 앤 드롭 시 좌석이 밀어내기(Shift/Insert) 방식으로 순차 재배치됩니다!
+                        🔒 각 요일/교시별 좌석 배치가 완전히 독립 보관되어 타 교시에 영향을 주지 않습니다.
                     </span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600">시험 요일 선택</label>
-                        <select id="select-day" class="w-full border rounded p-2 text-sm mt-1" onchange="updateExamInfoDisplay()">
+                        <select id="select-day" class="w-full border rounded p-2 text-sm mt-1" onchange="onSlotSelectionChange()">
                             <option value="12월 14일 (월)">12월 14일 (월)</option>
                             <option value="12월 15일 (화)">12월 15일 (화)</option>
                             <option value="12월 16일 (수)">12월 16일 (수)</option>
@@ -283,7 +283,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600">교시 선택</label>
-                        <select id="select-period" class="w-full border rounded p-2 text-sm mt-1" onchange="updateExamInfoDisplay()">
+                        <select id="select-period" class="w-full border rounded p-2 text-sm mt-1" onchange="onSlotSelectionChange()">
                             <option value="1교시">1교시</option>
                             <option value="2교시">2교시</option>
                             <option value="3교시">3교시</option>
@@ -295,7 +295,7 @@
                     <span>시험 과목 정보를 불러오려면 1탭에서 기초자료를 업로드하세요.</span>
                 </div>
 
-                <!-- 3단계 실행 및 수험표 반영 컨트롤 바 (내부번호 노출/숨기기 토글 버튼 추가) -->
+                <!-- 3단계 실행 및 수험표 반영 컨트롤 바 -->
                 <div class="grid grid-cols-1 md:grid-cols-6 gap-2 pt-2 border-t">
                     <button onclick="step1_InitialPlace()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
                         1️⃣ Step 1: 좌석 배치
@@ -409,16 +409,34 @@
             subjectRooms: {},   
             openedSubjects: {}, 
             capacityRules: JSON.parse(JSON.stringify(DEFAULT_CAPACITY_RULES)),
-            stepState: {
-                currentStep: 0,
-                roomSeatsMap: {}
-            },
-            showSeqBadge: true, // 💡 [v18.5 신규] 내부번호 시각적 토글 상태
+            // 💡 [v18.6 핵심] 요일_교시 슬롯별 독립 좌석 지도 저장소 구조
+            slotSeatingMap: {}, // format: { "12월 14일 (월)_1교시": { currentStep: 0, roomSeatsMap: { roomId: [...] } } }
+            showSeqBadge: true,
             ticketAllocations: {},
             supabaseConfig: { url: "", key: "" }
         };
 
         let dragSrcData = null;
+
+        // 문자열 비교용 공백/특수문자 정제 도우미 함수
+        function cleanStr(str) {
+            if (!str) return "";
+            return String(str).replace(/\s+/g, '').trim();
+        }
+
+        function getCurSlotKey() {
+            const day = document.getElementById('select-day').value.trim();
+            const period = document.getElementById('select-period').value.trim();
+            return `${day}_${period}`;
+        }
+
+        function getSlotState(slotKey = getCurSlotKey()) {
+            if (!appState.slotSeatingMap) appState.slotSeatingMap = {};
+            if (!appState.slotSeatingMap[slotKey]) {
+                appState.slotSeatingMap[slotKey] = { currentStep: 0, roomSeatsMap: {} };
+            }
+            return appState.slotSeatingMap[slotKey];
+        }
 
         window.onload = function() {
             loadFromLocalStorage();
@@ -432,22 +450,28 @@
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V18_5', JSON.stringify(appState));
-            const statusEl = document.getElementById('save-status');
-            if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
-        }
-
-        function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18_5');
-            if(saved) {
-                try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
+            try {
+                localStorage.setItem('SEAT_PLANNER_V18_6', JSON.stringify(appState));
+                const statusEl = document.getElementById('save-status');
+                if(statusEl) statusEl.innerText = "🟢 안전 저장 완료 (" + new Date().toLocaleTimeString() + ")";
+            } catch (e) {
+                console.error("로컬저장 오류 발생:", e);
             }
         }
 
-        // 💡 [v18.5 신규] 모든 데이터 백지화 초기화 함수
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_6');
+            if(saved) {
+                try { 
+                    appState = JSON.parse(saved); 
+                    if (!appState.slotSeatingMap) appState.slotSeatingMap = {};
+                } catch(e) { console.error(e); }
+            }
+        }
+
         function resetAllData() {
             if (confirm("⚠️ 정말로 저장된 모든 학생, 고사실, 시간표, 수험표 데이터를 초기화하고 백지 상태로 만드시겠습니까?\n\n(5분단 기본 규격만 남고 모든 데이터가 완전히 삭제됩니다.)")) {
-                localStorage.removeItem('SEAT_PLANNER_V18_5');
+                localStorage.removeItem('SEAT_PLANNER_V18_6');
                 appState = {
                     students: [],
                     rooms: [],
@@ -455,13 +479,12 @@
                     subjectRooms: {},   
                     openedSubjects: {}, 
                     capacityRules: JSON.parse(JSON.stringify(DEFAULT_CAPACITY_RULES)),
-                    stepState: { currentStep: 0, roomSeatsMap: {} },
+                    slotSeatingMap: {},
                     showSeqBadge: true,
                     ticketAllocations: {},
                     supabaseConfig: { url: "", key: "" }
                 };
 
-                // UI 재초기화
                 document.getElementById('excel-file').value = '';
                 document.getElementById('status-subjects').innerText = '대기 중';
                 document.getElementById('status-rooms').innerText = '대기 중';
@@ -480,12 +503,12 @@
             }
         }
 
-        // 💡 [v18.5 신규] 내부 번호 시각적 노출/숨기기 토글 함수
         function toggleSeqBadge() {
             appState.showSeqBadge = !appState.showSeqBadge;
             saveToLocalStorage();
             updateToggleButtonUI();
-            if (appState.stepState.currentStep > 0) {
+            const slotState = getSlotState();
+            if (slotState.currentStep > 0) {
                 renderStepUI();
             }
         }
@@ -499,6 +522,16 @@
             } else {
                 btn.className = "bg-slate-500 hover:bg-slate-400 text-white px-2.5 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1";
                 btn.innerHTML = "🙈 내부번호 표시하기";
+            }
+        }
+
+        function onSlotSelectionChange() {
+            updateExamInfoDisplay();
+            const slotState = getSlotState();
+            if (slotState.currentStep > 0) {
+                renderStepUI();
+            } else {
+                document.getElementById('print-area').innerHTML = '<div class="text-center py-12 text-slate-400 no-print bg-white rounded-lg border border-dashed border-slate-300">Step 버튼을 차례대로 눌러 단계별 배치를 검증해 보세요.</div>';
             }
         }
 
@@ -561,7 +594,7 @@
             if(tabId === 'tab2') renderRooms();
             if(tabId === 'tab3') renderCapacityRules();
             if(tabId === 'tab4') renderRoomRules();
-            if(tabId === 'tab5') updateExamInfoDisplay();
+            if(tabId === 'tab5') onSlotSelectionChange();
             if(tabId === 'tab6') generateStudentTickets();
         }
 
@@ -1064,7 +1097,13 @@
         function getSelectedTimetableItem() {
             const day = document.getElementById('select-day').value.trim();
             const period = document.getElementById('select-period').value.trim();
-            return (appState.timetableList || []).find(t => t.timeSlot.includes(day) && t.timeSlot.includes(period));
+            const cleanTargetDay = cleanStr(day);
+            const cleanTargetPeriod = cleanStr(period);
+
+            return (appState.timetableList || []).find(t => {
+                const cleanTimeSlot = cleanStr(t.timeSlot);
+                return cleanTimeSlot.includes(cleanTargetDay) && cleanTimeSlot.includes(cleanTargetPeriod);
+            });
         }
 
         function updateExamInfoDisplay() {
@@ -1084,7 +1123,7 @@
                     </div>
                 `;
             } else {
-                banner.innerHTML = `<span>[${day} ${period}] 1탭에 해당 요일/교시의 정기시험 과목이 존재하지 않습니다.</span>`;
+                banner.innerHTML = `<span>[${day} ${period}] 1탭에 해당 요일/교시의 정기시험 과목이 존재하지 않습니다. (시험 없는 교시)</span>`;
             }
         }
 
@@ -1098,7 +1137,7 @@
             const rawSub = (student.grade === 2) ? item.g2 : item.g3;
             if (!rawSub || rawSub === "자습" || rawSub === "없음") return false;
 
-            const cleanExam = rawSub.replace(/\([^)]*\)/g, '').trim();
+            const cleanExam = cleanStr(rawSub.replace(/\([^)]*\)/g, ''));
             const masterObj = appState.openedSubjects[rawSub.trim()] || appState.openedSubjects[cleanExam];
             if (masterObj && masterObj.isCommon) return true;
 
@@ -1106,24 +1145,30 @@
 
             return student.subjects.some(sub => {
                 if (!sub || sub === "없음") return false;
-                const cleanSub = String(sub).replace(/\([^)]*\)/g, '').trim();
+                const cleanSub = cleanStr(String(sub).replace(/\([^)]*\)/g, ''));
                 return cleanExam.includes(cleanSub) || cleanSub.includes(cleanExam);
             });
         }
 
+        // 💡 [v18.6 예외 처리 강화] 정밀 3단계 학생 상태 판별 (EXAM / SELF / HOME)
         function getStudentStatus(student, dayStr, periodStr) {
             if (!student) return 'HOME';
 
-            const dayItems = (appState.timetableList || []).filter(item => item.timeSlot.includes(dayStr));
+            const cleanTargetDay = cleanStr(dayStr);
+            const cleanTargetPeriod = cleanStr(periodStr);
+
+            const dayItems = (appState.timetableList || []).filter(item => cleanStr(item.timeSlot).includes(cleanTargetDay));
             if (dayItems.length === 0) return 'HOME';
 
-            const curIndex = dayItems.findIndex(item => item.timeSlot.includes(periodStr));
+            const curIndex = dayItems.findIndex(item => cleanStr(item.timeSlot).includes(cleanTargetPeriod));
             if (curIndex === -1) return 'HOME';
 
+            // 1. 해당 교시 시험 응시 여부
             if (checkHasExamInItem(student, dayItems[curIndex])) {
                 return 'EXAM';
             }
 
+            // 2. 당일 이후 교시에 시험 존재 여부
             let hasFutureExam = false;
             for (let i = curIndex + 1; i < dayItems.length; i++) {
                 if (checkHasExamInItem(student, dayItems[i])) {
@@ -1134,16 +1179,18 @@
 
             if (hasFutureExam) return 'SELF';
 
-            const isFirstPeriod = (curIndex === 0) || dayItems[curIndex].timeSlot.includes("1교시");
+            // 3. 1교시인 경우 시험이 없어도 자습 처리
+            const isFirstPeriod = (curIndex === 0) || cleanStr(dayItems[curIndex].timeSlot).includes("1교시");
             if (isFirstPeriod) return 'SELF';
 
+            // 4. 나머지 2교시 이상 시험 미응시생 ➔ 하교
             return 'HOME';
         }
 
         function getStudentExamSubject(student) {
             if(!student) return "";
             const item = getSelectedTimetableItem();
-            if(!item) return "";
+            if(!item) return "하교";
 
             const day = document.getElementById('select-day').value.trim();
             const period = document.getElementById('select-period').value.trim();
@@ -1157,7 +1204,7 @@
         }
 
         // ==========================================
-        // 💡 [STEP 1] 본반/A모드 초기 좌석 배치
+        // 💡 [v18.6 핵심] 요일/교시 독립 슬롯 Step 1
         // ==========================================
         function step1_InitialPlace() {
             if(appState.students.length === 0) {
@@ -1165,69 +1212,88 @@
                 return;
             }
 
+            const slotKey = getCurSlotKey();
+            const slotState = getSlotState(slotKey);
+
+            slotState.currentStep = 1;
+            slotState.roomSeatsMap = {};
+
             const day = document.getElementById('select-day').value.trim();
             const period = document.getElementById('select-period').value.trim();
-
-            appState.stepState.currentStep = 1;
-            appState.stepState.roomSeatsMap = {};
-
             const specIds = getAllSpecialStudentIds();
 
+            // 1학년 배치 (하교생 제외 후 학번순)
             appState.rooms.filter(r => r.targetGrade === 1 && !r.isSpecial).forEach(room => {
                 let sts = appState.students.filter(s => s.grade === 1 && s.classNum === room.targetClass && !specIds.includes(s.id));
                 let validSts = sts.filter(s => getStudentStatus(s, day, period) !== 'HOME').sort((a,b) => a.num - b.num);
-                validSts.forEach(st => delete st.seatSeq);
-                appState.stepState.roomSeatsMap[room.id] = validSts;
+                let clonedSts = JSON.parse(JSON.stringify(validSts));
+                clonedSts.forEach(st => delete st.seatSeq);
+                slotState.roomSeatsMap[room.id] = clonedSts;
             });
 
+            // 2학년 배치 (응시생 ➔ 자습생 순 정렬, 하교생 제외)
             const g2All = appState.students.filter(s => s.grade === 2 && !specIds.includes(s.id));
             let g2Examers = g2All.filter(s => getStudentStatus(s, day, period) === 'EXAM').sort((a,b) => parseInt(a.id) - parseInt(b.id));
             let g2Selfers = g2All.filter(s => getStudentStatus(s, day, period) === 'SELF').sort((a,b) => parseInt(a.id) - parseInt(b.id));
-            let g2Queue = [...g2Examers, ...g2Selfers];
+            let g2Queue = JSON.parse(JSON.stringify([...g2Examers, ...g2Selfers]));
 
             appState.rooms.filter(r => r.targetGrade === 2 && !r.isSpecial).forEach(room => {
                 const roomCap = getRoomTotalCapacity(room);
                 let assigned = g2Queue.splice(0, roomCap);
                 assigned.forEach(st => delete st.seatSeq);
-                appState.stepState.roomSeatsMap[room.id] = assigned;
+                slotState.roomSeatsMap[room.id] = assigned;
             });
 
             saveToLocalStorage();
-            renderStepUI("1단계 완료: 하교생이 자동 제외되고, 응시생 ➔ 자습생 순서로 배치가 완료되었습니다.");
+            renderStepUI(`1단계 완료 [${slotKey}]: 하교생 제외 및 [응시생➔자습생] 순서로 슬롯 독립 배치가 완료되었습니다.`);
         }
 
         // ==========================================
-        // 💡 [STEP 2] 내부일련번호 부여
+        // 💡 [v18.6 핵심] 요일/교시 독립 슬롯 Step 2
         // ==========================================
         function step2_AssignInternalSeq() {
-            if(appState.stepState.currentStep < 1) {
-                alert("먼저 [1단계: 본반/A모드 좌석 배치]를 진행해 주세요.");
+            const slotKey = getCurSlotKey();
+            const slotState = getSlotState(slotKey);
+
+            if(slotState.currentStep < 1 || !slotState.roomSeatsMap) {
+                alert(`[${slotKey}] 먼저 1단계(좌석 배치)를 실행해 주세요.`);
                 return;
             }
 
-            appState.stepState.currentStep = 2;
+            slotState.currentStep = 2;
 
             appState.rooms.filter(r => !r.isSpecial).forEach(room => {
-                let list = appState.stepState.roomSeatsMap[room.id] || [];
+                let list = slotState.roomSeatsMap[room.id] || [];
                 list.forEach((st, idx) => {
                     if(st) st.seatSeq = idx + 1;
                 });
             });
 
             saveToLocalStorage();
-            renderStepUI("2단계 완료: 좌석 배치 순서대로 1번부터 내부일련번호가 부여되었습니다.");
+            renderStepUI(`2단계 완료 [${slotKey}]: 좌석 배치 순서대로 1번부터 내부일련번호가 부여되었습니다.`);
         }
 
         // ==========================================
-        // 💡 [STEP 3] 최종 고사실 이동 적용 & 저장
+        // 💡 [v18.6 핵심] 요일/교시 독립 슬롯 Step 3 (예외 복구 포함)
         // ==========================================
         function step3_ExecuteMovement() {
-            if(appState.stepState.currentStep < 2) {
-                alert("먼저 [2단계: 좌석순 내부일련번호 부여]를 진행해 주세요.");
+            const slotKey = getCurSlotKey();
+            const slotState = getSlotState(slotKey);
+
+            if(slotState.currentStep < 1 || !slotState.roomSeatsMap) {
+                alert(`[${slotKey}] 먼저 1단계(좌석 배치)를 진행해 주세요.`);
                 return;
             }
 
-            const currentSeatsMap = JSON.parse(JSON.stringify(appState.stepState.roomSeatsMap));
+            // Step 2 생략 시 내부일련번호 자동 생성 fallback 처리 (데이터 유실 방지)
+            appState.rooms.filter(r => !r.isSpecial).forEach(room => {
+                let list = slotState.roomSeatsMap[room.id] || [];
+                list.forEach((st, idx) => {
+                    if(st && !st.seatSeq) st.seatSeq = idx + 1;
+                });
+            });
+
+            const currentSeatsMap = JSON.parse(JSON.stringify(slotState.roomSeatsMap));
 
             appState.rooms.filter(r => !r.isSpecial).forEach(room => {
                 const totalCap = getRoomTotalCapacity(room);
@@ -1269,12 +1335,12 @@
                         newRoomSeats.push(student);
                     }
                 }
-                appState.stepState.roomSeatsMap[room.id] = newRoomSeats;
+                slotState.roomSeatsMap[room.id] = newRoomSeats;
             });
 
-            appState.stepState.currentStep = 3;
+            slotState.currentStep = 3;
             saveToLocalStorage();
-            renderStepUI("3단계 완료: 최종 이동 및 가변 고정 배치가 적용되었습니다.");
+            renderStepUI(`3단계 완료 [${slotKey}]: 최종 이동 및 가변 고정 배치가 적용되었습니다.`);
         }
 
         // ==========================================
@@ -1302,12 +1368,13 @@
             
             if(!dragSrcData) return;
 
+            const slotState = getSlotState();
             const srcRoomId = dragSrcData.roomId;
             const srcIdx = parseInt(dragSrcData.idx);
             const tgtIdx = parseInt(targetIdx);
 
-            const srcList = appState.stepState.roomSeatsMap[srcRoomId];
-            const tgtList = appState.stepState.roomSeatsMap[targetRoomId];
+            const srcList = slotState.roomSeatsMap[srcRoomId];
+            const tgtList = slotState.roomSeatsMap[targetRoomId];
 
             if (srcList && tgtList) {
                 if (srcRoomId === targetRoomId) {
@@ -1331,18 +1398,21 @@
         // 📌 5번 탭 N열 M행 좌표 ➔ 6번 탭 수험표 반영
         // ==========================================
         function commitSeatingToTickets() {
-            if(!appState.stepState.currentStep || appState.stepState.currentStep < 1) {
-                alert("좌석배치(Step 1~3)를 먼저 실행한 뒤 반영 버튼을 눌러주세요.");
+            const slotKey = getCurSlotKey();
+            const slotState = getSlotState(slotKey);
+
+            if(!slotState.currentStep || slotState.currentStep < 1) {
+                alert(`[${slotKey}] 좌석배치(Step 1~3)를 먼저 실행한 뒤 반영 버튼을 눌러주세요.`);
                 return;
             }
 
             const day = document.getElementById('select-day').value.trim();
             const period = document.getElementById('select-period').value.trim();
-            const slotKey = `${day}_${period}`;
 
             if(!appState.ticketAllocations) appState.ticketAllocations = {};
             appState.ticketAllocations[slotKey] = {};
 
+            // 1. 하교생 상태 저장
             appState.students.forEach(st => {
                 const status = getStudentStatus(st, day, period);
                 if (status === 'HOME') {
@@ -1354,6 +1424,7 @@
                 }
             });
 
+            // 2. 고사실 및 특별실 좌표 매핑
             appState.rooms.forEach(room => {
                 if(room.isSpecial) {
                     (room.assignedStudentIds || []).forEach(stId => {
@@ -1370,7 +1441,7 @@
                     const totalCap = getRoomTotalCapacity(room);
                     const rule = getCapRule(totalCap);
                     const layout = rule.layout;
-                    const list = appState.stepState.roomSeatsMap[room.id] || [];
+                    const list = slotState.roomSeatsMap[room.id] || [];
 
                     list.forEach((st, idx) => {
                         if(st) {
@@ -1386,11 +1457,11 @@
             });
 
             saveToLocalStorage();
-            alert(`📌 [${day} ${period}] 배치가 'N열 M행' 좌표 표기로 수험표에 성공적으로 반영되었습니다!\n6번 탭에서 확인해 보세요.`);
+            alert(`📌 [${slotKey}] 배치가 수험표 데이터베이스에 완벽히 저장되었습니다!\n6번 탭에서 확인해 보세요.`);
         }
 
         // ==========================================
-        // 🖥️ 5번 탭 UI 렌더링 (보색 시각화 & 내부번호 노출/숨김 조건 반영)
+        // 🖥️ 5번 탭 UI 렌더링
         // ==========================================
         function renderStepUI(statusMessage) {
             const printArea = document.getElementById('print-area');
@@ -1398,7 +1469,8 @@
 
             const day = document.getElementById('select-day').value;
             const period = document.getElementById('select-period').value;
-            const step = appState.stepState.currentStep;
+            const slotState = getSlotState();
+            const step = slotState.currentStep;
 
             appState.rooms.filter(r => !r.isSpecial).forEach(room => {
                 const roomDiv = document.createElement('div');
@@ -1423,7 +1495,7 @@
                     <div class="grid grid-cols-5 gap-2">
                 `;
 
-                let studentList = appState.stepState.roomSeatsMap[room.id] || [];
+                let studentList = slotState.roomSeatsMap[room.id] || [];
                 let sIdx = 0;
 
                 for(let c = 0; c < 5; c++) {
@@ -1449,7 +1521,6 @@
                             const status = getStudentStatus(student, day, period);
                             const examSubject = getStudentExamSubject(student);
                             
-                            // 💡 [v18.5 신규] appState.showSeqBadge 값에 따라 내부번호 시각적 노출/숨기기
                             const seqBadge = (student.seatSeq && appState.showSeqBadge !== false) 
                                 ? `<span class="text-[9px] bg-emerald-600 text-white font-bold px-1 rounded ml-1">내부${student.seatSeq}번</span>` 
                                 : '';
@@ -1489,7 +1560,7 @@
         }
 
         // ==========================================
-        // 🎟️ [6번 탭] 수험표 동적 렌더링
+        // 🎟️ [6번 탭] 수험표 동적 렌더링 (예외 정제 포함)
         // ==========================================
         function generateStudentTickets() {
             const container = document.getElementById('ticket-print-container');
@@ -1519,7 +1590,8 @@
                     if(appState.ticketAllocations) {
                         for(let key in appState.ticketAllocations) {
                             const [dayPart, periodPart] = key.split('_');
-                            if(item.timeSlot.includes(dayPart) && item.timeSlot.includes(periodPart)) {
+                            const cleanSlot = cleanStr(item.timeSlot);
+                            if(cleanSlot.includes(cleanStr(dayPart)) && cleanSlot.includes(cleanStr(periodPart))) {
                                 if(appState.ticketAllocations[key][st.id]) {
                                     committedInfo = appState.ticketAllocations[key][st.id];
                                     break;
