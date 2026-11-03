@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.8.1</title>
+    <title>정기시험 좌석배치 시스템 v18.9</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.8.1</h1>
-            <p class="text-xs text-indigo-200">직관적 인터페이스 명칭 정돈 (들어오는 학년 / 들어오는 범위) · 안전 구동 검증 완료</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.9</h1>
+            <p class="text-xs text-indigo-200">7탭 응시 과목 수 통계 & 감독교사 배치 자동 추천 (수정 가능)</p>
         </div>
         <div class="flex gap-2 text-sm flex-wrap items-center">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -56,6 +56,7 @@
         <button onclick="switchTab('tab4')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab4">4. 이동범위 & 분단고정 설정</button>
         <button onclick="switchTab('tab5')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab5">5. 요일/교시별 선택과목 좌석배치</button>
         <button onclick="switchTab('tab6')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600 text-purple-700 font-bold" id="btn-tab6">6. 🎟️ 학생별 수험표 출력</button>
+        <button onclick="switchTab('tab7')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600 text-emerald-700 font-bold" id="btn-tab7">7. 📊 통계 & 감독배치</button>
     </nav>
 
     <!-- 메인 콘텐츠 -->
@@ -205,7 +206,7 @@
             </div>
         </section>
 
-        <!-- [탭 4] 이동 범위 & 분단 고정 설정 (명칭 명료화 적용) -->
+        <!-- [탭 4] 이동 범위 & 분단 고정 설정 -->
         <section id="tab4" class="tab-content hidden">
             <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200 mb-6">
                 <h2 class="text-md font-bold mb-3 text-indigo-900">⚡ 과목 유형별 이동 설정 이원화 일괄 적용</h2>
@@ -229,7 +230,6 @@
                     </div>
                 </div>
 
-                <!-- 이원화 2개 트랙 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                     <!-- 📘 1. 공통과목용 이동 규칙 -->
                     <div class="bg-white p-4 rounded-lg border border-indigo-200 shadow-xs">
@@ -343,7 +343,6 @@
                     <span>시험 과목 정보를 불러오려면 1탭에서 기초자료를 업로드하세요.</span>
                 </div>
 
-                <!-- 3단계 실행 컨트롤 바 -->
                 <div class="grid grid-cols-1 md:grid-cols-6 gap-2 pt-2 border-t">
                     <button onclick="step1_InitialPlace()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
                         1️⃣ Step 1: 좌석 배치
@@ -412,6 +411,49 @@
             </div>
         </section>
 
+        <!-- [탭 7] 통계 & 감독배치추천 탭 -->
+        <section id="tab7" class="tab-content hidden">
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">📊 고사실별 요일/교시 응시 과목 수 현황 (표 1)</h2>
+                        <p class="text-xs text-slate-500">한 학년 응시: <b>1</b>, 두 학년 응시: <b>2</b> (셀 값을 클릭하여 직접 수정할 수 있습니다)</p>
+                    </div>
+                    <button onclick="resetStatsToAuto()" class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded text-xs font-bold hover:bg-indigo-100 flex items-center gap-1">
+                        🔄 시간표 기반 자동계산으로 초기화
+                    </button>
+                </div>
+                <div class="overflow-x-auto border rounded-lg max-h-96">
+                    <table class="w-full text-xs text-center border-collapse">
+                        <thead class="bg-indigo-50 text-indigo-950 font-bold sticky top-0 border-b">
+                            <tr id="stats-subject-header"></tr>
+                        </thead>
+                        <tbody id="stats-subject-body" class="divide-y divide-slate-200"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">👨‍🏫 고사실별 감독교사 배치 추천 (표 2)</h2>
+                        <p class="text-xs text-slate-500">응시과목 1개: <b>1명 추천</b>, 응시과목 2개: <b>2명 추천</b> (필요시 수동으로 인원 수정 가능)</p>
+                    </div>
+                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-xs font-bold">
+                        🖨️ 감독배치표 인쇄
+                    </button>
+                </div>
+                <div class="overflow-x-auto border rounded-lg max-h-96">
+                    <table class="w-full text-xs text-center border-collapse">
+                        <thead class="bg-emerald-50 text-emerald-950 font-bold sticky top-0 border-b">
+                            <tr id="stats-proctor-header"></tr>
+                        </thead>
+                        <tbody id="stats-proctor-body" class="divide-y divide-slate-200"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- Supabase 모달 -->
@@ -460,6 +502,7 @@
             slotSeatingMap: {},
             showSeqBadge: true,
             ticketAllocations: {},
+            customStats: {}, // v18.9 7탭 수동 수정값 데이터 저장소 { roomId_slotKey: { subjectCount: N, proctorCount: M } }
             supabaseConfig: { url: "", key: "" }
         };
 
@@ -497,7 +540,7 @@
 
         function saveToLocalStorage() {
             try {
-                localStorage.setItem('SEAT_PLANNER_V18_8_1', JSON.stringify(appState));
+                localStorage.setItem('SEAT_PLANNER_V18_9', JSON.stringify(appState));
                 const statusEl = document.getElementById('save-status');
                 if(statusEl) statusEl.innerText = "🟢 안전 저장 완료 (" + new Date().toLocaleTimeString() + ")";
             } catch (e) {
@@ -506,18 +549,19 @@
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18_8_1');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_9');
             if(saved) {
                 try { 
                     appState = JSON.parse(saved); 
                     if (!appState.slotSeatingMap) appState.slotSeatingMap = {};
+                    if (!appState.customStats) appState.customStats = {};
                 } catch(e) { console.error(e); }
             }
         }
 
         function resetAllData() {
-            if (confirm("⚠️ 정말로 저장된 모든 학생, 고사실, 시간표, 수험표 데이터를 초기화하고 백지 상태로 만드시겠습니까?")) {
-                localStorage.removeItem('SEAT_PLANNER_V18_8_1');
+            if (confirm("⚠️ 정말로 저장된 모든 학생, 고사실, 시간표, 수험표, 통계 데이터를 초기화하시겠습니까?")) {
+                localStorage.removeItem('SEAT_PLANNER_V18_9');
                 appState = {
                     students: [],
                     rooms: [],
@@ -528,6 +572,7 @@
                     slotSeatingMap: {},
                     showSeqBadge: true,
                     ticketAllocations: {},
+                    customStats: {},
                     supabaseConfig: { url: "", key: "" }
                 };
 
@@ -642,6 +687,7 @@
             if(tabId === 'tab4') renderRoomRules();
             if(tabId === 'tab5') onSlotSelectionChange();
             if(tabId === 'tab6') generateStudentTickets();
+            if(tabId === 'tab7') renderStatsTab();
         }
 
         function parseRangeOrCount(inputStr, modeType, totalCap) {
@@ -1147,7 +1193,6 @@
             saveToLocalStorage();
         }
 
-        // 💡 [v18.8.1] 4번 탭 고사실별 카드 인터페이스 명칭 정돈
         function renderRoomRules() {
             const container = document.getElementById('room-rule-container');
             const validRooms = appState.rooms.filter(r => !r.isSpecial);
@@ -1180,7 +1225,6 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                            <!-- 📘 공통과목 규칙 -->
                             <div class="bg-indigo-50/50 p-3 rounded border border-indigo-200 space-y-2">
                                 <div class="font-bold text-indigo-900 border-b border-indigo-200 pb-1">📘 공통과목 시험 시 이동 규칙</div>
                                 <div class="grid grid-cols-3 gap-2">
@@ -1210,7 +1254,6 @@
                                 </div>
                             </div>
 
-                            <!-- 📙 선택과목 규칙 -->
                             <div class="bg-amber-50/50 p-3 rounded border border-amber-200 space-y-2">
                                 <div class="font-bold text-amber-900 border-b border-amber-200 pb-1">📙 선택과목 시험 시 이동 규칙</div>
                                 <div class="grid grid-cols-3 gap-2">
@@ -1848,6 +1891,153 @@
                         </table>
                         <div class="mt-2 text-[10px] text-slate-400 text-right">* 시험 시작 10분 전까지 지정 고사실 입실 완료</div>
                     </div>
+                `;
+            }).join('');
+        }
+
+        // ==========================================
+        // 💡 [v18.9 신규] 7번 탭: 통계 & 감독교사 배치 계산/생성/수정 엔진
+        // ==========================================
+        function calculateAutoStats(room, item) {
+            const timeSlot = item.timeSlot;
+            
+            // 본반 학년 및 건너오는 학년
+            const targetGrade = room.targetGrade;
+            const cRule = room.commonRule || {};
+            const eRule = room.electiveRule || {};
+            
+            const moveGrade = cRule.moveGrade || eRule.moveGrade || (targetGrade === 1 ? 2 : 1);
+
+            // 해당 교시에 본반 학년 및 건너오는 학년이 시험 응시 중인지 판별
+            const getGradeExamState = (g) => {
+                const sub = (g === 1) ? item.g1 : (g === 2 ? item.g2 : item.g3);
+                return (sub && sub !== "자습" && sub !== "없음");
+            };
+
+            const gTargetExam = getGradeExamState(targetGrade);
+            const gMoveExam = getGradeExamState(moveGrade);
+
+            let count = 0;
+            if (gTargetExam) count++;
+            if (gMoveExam) count++;
+
+            // 0개인 경우 (자습만 있거나 하교) ➔ 1로 기본 표시 (또는 0 선택 가능)
+            if (count === 0) count = 1;
+
+            return {
+                subjectCount: count,
+                proctorCount: count // 응시과목 수만큼 감독교사 배치 추천 (1개: 1명, 2개: 2명)
+            };
+        }
+
+        function getStatData(roomId, slotKey, autoVal) {
+            if (!appState.customStats) appState.customStats = {};
+            const key = `${roomId}_${slotKey}`;
+            if (appState.customStats[key]) {
+                return appState.customStats[key];
+            }
+            return autoVal;
+        }
+
+        function updateStatData(roomId, slotKey, field, value) {
+            if (!appState.customStats) appState.customStats = {};
+            const key = `${roomId}_${slotKey}`;
+            if (!appState.customStats[key]) {
+                // 자동 계산값을 기반으로 초기화
+                const room = appState.rooms.find(r => r.id === roomId);
+                const item = (appState.timetableList || []).find(t => t.timeSlot === slotKey);
+                appState.customStats[key] = room && item ? calculateAutoStats(room, item) : { subjectCount: 1, proctorCount: 1 };
+            }
+            appState.customStats[key][field] = parseInt(value) || 0;
+            saveToLocalStorage();
+        }
+
+        function resetStatsToAuto() {
+            if (confirm("시간표 기준 자동 계산값으로 모든 수동 수정 내역을 초기화하시겠습니까?")) {
+                appState.customStats = {};
+                saveToLocalStorage();
+                renderStatsTab();
+                alert("통계 및 감독 추천 데이터가 자동 계산값으로 리셋되었습니다.");
+            }
+        }
+
+        function renderStatsTab() {
+            const validRooms = appState.rooms.filter(r => !r.isSpecial);
+            const timeList = appState.timetableList || [];
+
+            const subHeader = document.getElementById('stats-subject-header');
+            const subBody = document.getElementById('stats-subject-body');
+            const procHeader = document.getElementById('stats-proctor-header');
+            const procBody = document.getElementById('stats-proctor-body');
+
+            if (validRooms.length === 0 || timeList.length === 0) {
+                const emptyMsg = `<tr><td colspan="100%" class="py-8 text-slate-400 text-center">기초자료 업로드 및 고사실 생성을 완료해 주세요.</td></tr>`;
+                subHeader.innerHTML = `<th class="p-2">고사실 / 요일·교시</th>`;
+                subBody.innerHTML = emptyMsg;
+                procHeader.innerHTML = `<th class="p-2">고사실 / 요일·교시</th>`;
+                procBody.innerHTML = emptyMsg;
+                return;
+            }
+
+            // 헤더 HTML 생성 (X축: 요일 및 교시)
+            const headerCellsHtml = `<th class="p-2 border text-left bg-slate-100 min-w-[140px]">고사실 명</th>` + 
+                timeList.map(t => `<th class="p-2 border font-semibold min-w-[110px]">${t.timeSlot}</th>`).join('');
+            
+            subHeader.innerHTML = headerCellsHtml;
+            procHeader.innerHTML = headerCellsHtml;
+
+            // 표 1: 과목 수 행렬 바디
+            subBody.innerHTML = validRooms.map(room => {
+                const rowCells = timeList.map(item => {
+                    const autoVal = calculateAutoStats(room, item);
+                    const currentVal = getStatData(room.id, item.timeSlot, autoVal);
+                    const val = currentVal.subjectCount;
+
+                    const colorClass = val >= 2 ? 'bg-amber-100 text-amber-900 font-bold border-amber-300' : 'bg-slate-50 text-slate-700';
+
+                    return `
+                        <td class="p-1 border ${colorClass}">
+                            <input type="number" min="0" max="5" value="${val}" 
+                                   onchange="updateStatData('${room.id}', '${item.timeSlot}', 'subjectCount', this.value)"
+                                   class="w-12 text-center p-1 rounded font-bold border border-slate-300 focus:ring-2 focus:ring-indigo-500 bg-white">
+                        </td>
+                    `;
+                }).join('');
+
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2 border font-bold text-left bg-slate-50 font-mono text-slate-800">${room.name}</td>
+                        ${rowCells}
+                    </tr>
+                `;
+            }).join('');
+
+            // 표 2: 감독교사 추천 인원 행렬 바디
+            procBody.innerHTML = validRooms.map(room => {
+                const rowCells = timeList.map(item => {
+                    const autoVal = calculateAutoStats(room, item);
+                    const currentVal = getStatData(room.id, item.timeSlot, autoVal);
+                    const val = currentVal.proctorCount;
+
+                    const colorClass = val >= 2 ? 'bg-emerald-100 text-emerald-900 font-bold border-emerald-300' : 'bg-slate-50 text-slate-700';
+
+                    return `
+                        <td class="p-1 border ${colorClass}">
+                            <div class="flex items-center justify-center gap-1">
+                                <input type="number" min="0" max="5" value="${val}" 
+                                       onchange="updateStatData('${room.id}', '${item.timeSlot}', 'proctorCount', this.value)"
+                                       class="w-12 text-center p-1 rounded font-bold border border-slate-300 focus:ring-2 focus:ring-emerald-500 bg-white">
+                                <span class="text-[11px] font-semibold">명</span>
+                            </div>
+                        </td>
+                    `;
+                }).join('');
+
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2 border font-bold text-left bg-slate-50 font-mono text-slate-800">${room.name}</td>
+                        ${rowCells}
+                    </tr>
                 `;
             }).join('');
         }
