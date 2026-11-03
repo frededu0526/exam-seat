@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v17.0</title>
+    <title>정기시험 좌석배치 시스템 v18.0</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -13,8 +13,11 @@
     <style>
         @media print {
             .no-print { display: none !important; }
-            .print-page { page-break-after: always; margin: 0; padding: 20px; }
+            .print-page { page-break-after: always; margin: 0; padding: 15px; }
+            .ticket-page { page-break-after: always; }
         }
+        .dragging { opacity: 0.4; transform: scale(0.95); }
+        .drag-over { border: 2px dashed #4f46e5 !important; background-color: #e0e7ff !important; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
@@ -22,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v17.0</h1>
-            <p class="text-xs text-indigo-200">특별실 학생 배정 및 실정원 재조정 · 1~5분단 가변 고정 · 좌석별 과목 병기 및 열 색상 구분</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.0</h1>
+            <p class="text-xs text-indigo-200">드래그앤드롭 수동 교체 · 학생별 수험표 발급 · 34명 규격(6-7-7-7-7) 반영 · 보색 시각화</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -49,6 +52,7 @@
         <button onclick="switchTab('tab3')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab3">3. 정원별 5분단 규격 규칙</button>
         <button onclick="switchTab('tab4')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab4">4. 이동범위 & 분단고정 설정</button>
         <button onclick="switchTab('tab5')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab5">5. 요일/교시별 선택과목 좌석배치</button>
+        <button onclick="switchTab('tab6')" class="tab-btn py-3 border-b-2 border-transparent hover:text-indigo-600 text-purple-700 font-bold" id="btn-tab6">6. 🎟️ 학생별 수험표 출력</button>
     </nav>
 
     <!-- 메인 콘텐츠 -->
@@ -174,7 +178,7 @@
                 <div class="flex justify-between items-center mb-3">
                     <div>
                         <h2 class="text-lg font-bold text-slate-800">⚙️ 정원별 5분단 배치 규격 & 고정 분단 선택</h2>
-                        <p class="text-xs text-slate-500">체크박스로 분단별 고정(Fixed) 여부를 자유롭게 설정할 수 있습니다.</p>
+                        <p class="text-xs text-slate-500">34명 규격 기본값: <b>6 - 7 - 7 - 7 - 7</b> 반영 완료</p>
                     </div>
                     <button onclick="addNewCapacityRule()" class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded text-xs font-bold hover:bg-indigo-100">+ 규격 추가</button>
                 </div>
@@ -254,10 +258,15 @@
             </div>
         </section>
 
-        <!-- [탭 5] 선택과목 배치 & 시각화/출력 -->
+        <!-- [탭 5] 선택과목 배치 & 드래그앤드롭 수동 교체 -->
         <section id="tab5" class="tab-content hidden">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6 no-print">
-                <h2 class="text-lg font-bold mb-3 text-slate-800">📅 시험 요일/교시 선택 & 3단계 순차 실행</h2>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-bold text-slate-800">📅 시험 요일/교시 선택 & 3단계 순차 실행</h2>
+                    <span class="text-xs text-indigo-600 bg-indigo-50 px-3 py-1 rounded border border-indigo-200 font-bold">
+                        🖐️ 배치 후 좌석 카드를 드래그해서 위치를 서로 교체할 수 있습니다!
+                    </span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600">시험 요일 선택</label>
@@ -295,7 +304,7 @@
                         3️⃣ Step 3: 최종 고사실 이동 통제
                     </button>
                     <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
-                        🖨️ 전체 좌석배치도 출력
+                        🖨️ 전체 좌석배치도 인쇄
                     </button>
                 </div>
             </div>
@@ -306,6 +315,46 @@
                 </div>
             </div>
         </section>
+
+        <!-- [탭 6] 🎟️ 학생별 수험표 발급 및 출력 -->
+        <section id="tab6" class="tab-content hidden">
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6 no-print">
+                <h2 class="text-lg font-bold mb-3 text-slate-800">🎟️ 학생 개별 시험 수험표 생성 및 A4 일괄 인쇄</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600">대상 학년</label>
+                        <select id="ticket-grade" class="w-full border rounded p-2 text-sm mt-1" onchange="generateStudentTickets()">
+                            <option value="ALL">전체 학년</option>
+                            <option value="1">1학년만</option>
+                            <option value="2">2학년만</option>
+                            <option value="3">3학년만</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600">대상 학급</label>
+                        <select id="ticket-class" class="w-full border rounded p-2 text-sm mt-1" onchange="generateStudentTickets()">
+                            <option value="ALL">전체 학급</option>
+                            <option value="1">1반</option><option value="2">2반</option><option value="3">3반</option>
+                            <option value="4">4반</option><option value="5">5반</option><option value="6">6반</option>
+                            <option value="7">7반</option><option value="8">8반</option><option value="9">9반</option>
+                            <option value="10">10반</option><option value="11">11반</option><option value="12">12반</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="window.print()" class="w-full bg-purple-700 hover:bg-purple-600 text-white py-2 px-4 rounded text-xs font-bold shadow flex items-center justify-center gap-1">
+                            🖨️ 생성된 수험표 전체 인쇄 (A4 4분할)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ticket-print-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="text-center py-12 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300 col-span-2">
+                    기초자료 업로드 후 5번 탭 배치를 진행하면 학생별 개인 수험표가 자동 생성됩니다.
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- Supabase 모달 -->
@@ -343,10 +392,10 @@
                 28: { layout: [4, 7, 5, 7, 5], fixed: [false, true, false, true, false] },
                 29: { layout: [5, 7, 5, 7, 5], fixed: [false, true, false, true, false] },
                 30: { layout: [5, 7, 6, 7, 5], fixed: [false, true, false, true, false] },
-                31: { layout: [5, 7, 6, 7, 6], fixed: [false, true, false, true, false] }, // 31명 추가
+                31: { layout: [5, 7, 6, 7, 6], fixed: [false, true, false, true, false] },
                 32: { layout: [6, 7, 6, 7, 6], fixed: [false, true, false, true, false] },
                 33: { layout: [6, 7, 7, 7, 6], fixed: [false, true, false, true, false] },
-                34: { layout: [7, 7, 7, 7, 6], fixed: [false, true, false, true, false] },
+                34: { layout: [6, 7, 7, 7, 7], fixed: [false, true, false, true, false] }, // 💡 6-7-7-7-7 수정!
                 35: { layout: [7, 7, 7, 7, 7], fixed: [false, true, false, true, false] }
             },
             stepState: {
@@ -355,6 +404,9 @@
             },
             supabaseConfig: { url: "", key: "" }
         };
+
+        // 드래그 앤 드롭 상태 변수
+        let draggedStudentData = null;
 
         window.onload = function() {
             loadFromLocalStorage();
@@ -367,13 +419,13 @@
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V17', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V18', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
             if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V17');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18');
             if(saved) {
                 try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
             }
@@ -382,7 +434,7 @@
         function getCapRule(cap) {
             let rule = appState.capacityRules[cap];
             if (!rule) {
-                return { layout: [6, 7, 6, 7, 6], fixed: [false, true, false, true, false] };
+                return { layout: [6, 7, 7, 7, 7], fixed: [false, true, false, true, false] };
             }
             if (Array.isArray(rule)) {
                 return { layout: rule, fixed: [false, true, false, true, false] };
@@ -402,7 +454,6 @@
 
         function getRoomTotalCapacity(room) {
             if (room.isSpecial) return 0;
-
             const specIds = getAllSpecialStudentIds();
             const baseStudents = appState.students.filter(s => 
                 s.grade === room.targetGrade && 
@@ -426,6 +477,7 @@
             if(tabId === 'tab3') renderCapacityRules();
             if(tabId === 'tab4') renderRoomRules();
             if(tabId === 'tab5') updateExamInfoDisplay();
+            if(tabId === 'tab6') generateStudentTickets();
         }
 
         function parseInputString(inputStr, mode, totalCount) {
@@ -729,7 +781,7 @@
                 if(!room.assignedStudentIds.includes(st.id)) {
                     room.assignedStudentIds.push(st.id);
                     renderRooms(); renderStudents(); renderRoomRules(); saveToLocalStorage();
-                    alert(`${st.name}(${st.id}) 학생이 ${room.name}에 배치되었습니다. (본반 정원 자동 1명 감소)`);
+                    alert(`${st.name}(${st.id}) 학생이 ${room.name}에 배치되었습니다.`);
                 }
             }
         }
@@ -986,7 +1038,7 @@
         }
 
         // ==========================================
-        // 💡 [STEP 1] 본반/A모드 초기 좌석 배치 (특별실 학생 자동 제외)
+        // 💡 [STEP 1] 본반/A모드 초기 좌석 배치
         // ==========================================
         function step1_InitialPlace() {
             if(appState.students.length === 0) {
@@ -999,14 +1051,12 @@
 
             const specIds = getAllSpecialStudentIds();
 
-            // 1학년: 본반 학번순 배치 (특별실 학생 제외)
             appState.rooms.filter(r => r.targetGrade === 1 && !r.isSpecial).forEach(room => {
                 let sts = appState.students.filter(s => s.grade === 1 && s.classNum === room.targetClass && !specIds.includes(s.id)).sort((a,b) => a.num - b.num);
                 sts.forEach(st => delete st.seatSeq);
                 appState.stepState.roomSeatsMap[room.id] = sts;
             });
 
-            // 2학년: A모드 전교생 큐 (응시생 학번순 ➔ 자습생 학번순, 특별실 학생 제외)
             const g2All = appState.students.filter(s => s.grade === 2 && !specIds.includes(s.id));
             let g2Examers = g2All.filter(s => !isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
             let g2SelfStudiers = g2All.filter(s => isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
@@ -1019,7 +1069,7 @@
                 appState.stepState.roomSeatsMap[room.id] = assigned;
             });
 
-            renderStepUI("1단계 완료: 선택한 시간표 과목 기준으로 A모드 기본 배치가 완료되었습니다. (특별실 지정자 제외)");
+            renderStepUI("1단계 완료: 선택한 시간표 과목 기준으로 A모드 기본 배치가 완료되었습니다.");
         }
 
         // ==========================================
@@ -1044,7 +1094,7 @@
         }
 
         // ==========================================
-        // 💡 [STEP 3] 부여된 내부일련번호 기반 최종 고사실 이동 및 가변 분단 고정 적용
+        // 💡 [STEP 3] 부여된 내부일련번호 기반 최종 고사실 이동 적용
         // ==========================================
         function step3_ExecuteMovement() {
             if(appState.stepState.currentStep < 2) {
@@ -1057,7 +1107,48 @@
         }
 
         // ==========================================
-        // 🖥️ 단계별 좌석배치도 UI 렌더링 함수 (홀/짝 색상 구분 & 과목 병기)
+        // 🖐️ [드래그 앤 드롭 핸들러] 좌석 수동 위치 교체
+        // ==========================================
+        function handleDragStart(e, roomId, index) {
+            draggedStudentData = { roomId, index };
+            e.dataTransfer.setData('text/plain', JSON.stringify({ roomId, index }));
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e, targetRoomId, targetIndex) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            if(!draggedStudentData) return;
+
+            const sourceRoomId = draggedStudentData.roomId;
+            const sourceIndex = draggedStudentData.index;
+
+            const sourceList = appState.stepState.roomSeatsMap[sourceRoomId];
+            const targetList = appState.stepState.roomSeatsMap[targetRoomId];
+
+            if(sourceList && targetList) {
+                const temp = sourceList[sourceIndex];
+                sourceList[sourceIndex] = targetList[targetIndex];
+                targetList[targetIndex] = temp;
+
+                saveToLocalStorage();
+                renderStepUI("🖐️ 수동으로 좌석 위치가 교체(Swap)되었습니다.");
+            }
+            draggedStudentData = null;
+        }
+
+        // ==========================================
+        // 🖥️ UI 렌더링 (보색 계열 색상 대비 & 과목 병기)
         // ==========================================
         function renderStepUI(statusMessage) {
             const printArea = document.getElementById('print-area');
@@ -1090,52 +1181,66 @@
                     <div class="grid grid-cols-5 gap-2">
                 `;
 
+                let studentList = appState.stepState.roomSeatsMap[room.id] || [];
+
                 if (step === 1 || step === 2) {
-                    let studentList = appState.stepState.roomSeatsMap[room.id] || [];
                     let sIdx = 0;
 
                     for(let c = 0; c < 5; c++) {
-                        const isEvenCol = (c % 2 === 1); // 짝수 분단(2, 4분단)
+                        const isEvenCol = (c % 2 === 1); 
                         const isFixedCol = fixedFlags[c];
                         const rowCount = layout[c] || 6;
 
-                        // 홀수/짝수 분단 색상 구별 (홀수: Indigo계열, 짝수: Emerald계열)
-                        const colHeaderClass = isEvenCol ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : 'bg-indigo-100 text-indigo-900 border-indigo-300';
-                        const colBgClass = isEvenCol ? 'bg-emerald-50/40 border-emerald-200' : 'bg-indigo-50/40 border-indigo-200';
+                        // 💡 보색 대비 디자인: 홀수=인디고/쿨톤, 짝수=호박 오렌지/웜톤
+                        const colHeaderClass = isEvenCol ? 'bg-amber-600 text-white border-amber-600' : 'bg-indigo-700 text-white border-indigo-700';
+                        const colBgClass = isEvenCol ? 'bg-amber-50/60 border-amber-300' : 'bg-indigo-50/60 border-indigo-300';
 
                         html += `
                             <div class="flex flex-col gap-2 p-2 rounded border ${colBgClass}">
-                                <div class="text-center font-bold text-xs p-1 border-b rounded ${colHeaderClass}">
-                                    ${c+1}분단 (${rowCount}행) ${isFixedCol ? '<span class="text-[10px] text-amber-700 font-bold block">[고정분단]</span>' : ''}
+                                <div class="text-center font-bold text-xs p-1.5 rounded shadow-2xs ${colHeaderClass}">
+                                    ${c+1}분단 (${rowCount}행) ${isFixedCol ? '<span class="text-[10px] text-amber-200 block">[고정분단]</span>' : ''}
                                 </div>
                         `;
 
                         for(let r = 0; r < rowCount; r++) {
+                            const currentIndex = sIdx;
                             let student = (sIdx < studentList.length) ? studentList[sIdx++] : null;
+
                             if(student) {
                                 const selfStudyFlag = isStudentSelfStudy(student);
                                 const examSubject = getStudentExamSubject(student);
                                 const seqBadge = (step === 2 && student.seatSeq) ? `<span class="text-[9px] bg-emerald-600 text-white font-bold px-1 rounded ml-1">내부${student.seatSeq}번</span>` : '';
 
                                 html += `
-                                    <div class="p-2 rounded border text-center shadow-2xs ${selfStudyFlag ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-300'}">
+                                    <div draggable="true" 
+                                         ondragstart="handleDragStart(event, '${room.id}', ${currentIndex})"
+                                         ondragover="handleDragOver(event)"
+                                         ondragleave="handleDragLeave(event)"
+                                         ondrop="handleDrop(event, '${room.id}', ${currentIndex})"
+                                         class="p-2 rounded border text-center shadow-2xs transition cursor-grab active:cursor-grabbing ${selfStudyFlag ? 'bg-amber-100 border-amber-400' : 'bg-white border-slate-300 hover:border-indigo-400'}">
                                         <div class="text-[10px] font-mono text-slate-400">${student.id} ${seqBadge}</div>
                                         <div class="font-bold text-sm text-slate-800">${student.name}</div>
-                                        <div class="text-[10px] font-semibold ${selfStudyFlag ? 'text-amber-700' : 'text-indigo-600'} mt-0.5">${examSubject}</div>
+                                        <div class="text-[10px] font-semibold ${selfStudyFlag ? 'text-amber-800' : 'text-indigo-600'} mt-0.5">${examSubject}</div>
                                     </div>
                                 `;
                             } else {
-                                html += `<div class="bg-slate-100 p-2 rounded border border-dashed border-slate-300 text-center text-xs text-slate-300 py-3">빈 좌석</div>`;
+                                html += `
+                                    <div ondragover="handleDragOver(event)"
+                                         ondragleave="handleDragLeave(event)"
+                                         ondrop="handleDrop(event, '${room.id}', ${currentIndex})"
+                                         class="bg-slate-100/70 p-2 rounded border border-dashed border-slate-300 text-center text-xs text-slate-300 py-3">
+                                         빈 좌석
+                                    </div>
+                                `;
                             }
                         }
                         html += `</div>`;
                     }
                 } else if (step === 3) {
-                    let allRoomSts = appState.stepState.roomSeatsMap[room.id] || [];
                     const homeSeqList = parseInputString(room.homeRange || "15-28", room.modeType || "RANGE", totalCap);
                     const moveSeqList = parseInputString(room.moveRange || "1-14, 29-35", room.modeType || "RANGE", totalCap);
 
-                    let homeGroup = allRoomSts.filter(s => homeSeqList.includes(s.seatSeq)).sort((a,b) => a.seatSeq - b.seatSeq);
+                    let homeGroup = studentList.filter(s => homeSeqList.includes(s.seatSeq)).sort((a,b) => a.seatSeq - b.seatSeq);
                     let moveGroup = [];
 
                     const moveTargetRoom = appState.rooms.find(r => r.targetGrade === room.moveGrade && r.targetClass === room.targetClass);
@@ -1152,16 +1257,16 @@
 
                     for(let c = 0; c < 5; c++) {
                         const isEvenCol = (c % 2 === 1);
-                        const isFixedCol = fixedFlags[c]; // 3탭 가변 고정 적용
+                        const isFixedCol = fixedFlags[c];
                         const rowCount = layout[c] || 6;
 
-                        const colHeaderClass = isEvenCol ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : 'bg-indigo-100 text-indigo-900 border-indigo-300';
-                        const colBgClass = isEvenCol ? 'bg-emerald-50/40 border-emerald-200' : 'bg-indigo-50/40 border-indigo-200';
+                        const colHeaderClass = isEvenCol ? 'bg-amber-600 text-white border-amber-600' : 'bg-indigo-700 text-white border-indigo-700';
+                        const colBgClass = isEvenCol ? 'bg-amber-50/60 border-amber-300' : 'bg-indigo-50/60 border-indigo-300';
 
                         html += `
                             <div class="flex flex-col gap-2 p-2 rounded border ${colBgClass}">
-                                <div class="text-center font-bold text-xs p-1 border-b rounded ${colHeaderClass}">
-                                    ${c+1}분단 (${rowCount}행) ${isFixedCol ? '<span class="text-[10px] text-amber-700 font-bold block">[고정]</span>' : ''}
+                                <div class="text-center font-bold text-xs p-1.5 rounded shadow-2xs ${colHeaderClass}">
+                                    ${c+1}분단 (${rowCount}행) ${isFixedCol ? '<span class="text-[10px] text-amber-200 block">[고정]</span>' : ''}
                                 </div>
                         `;
 
@@ -1177,14 +1282,14 @@
                                 const selfStudyFlag = isStudentSelfStudy(student);
                                 const examSubject = getStudentExamSubject(student);
                                 html += `
-                                    <div class="p-2 rounded border text-center shadow-2xs ${selfStudyFlag ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-300'}">
+                                    <div class="p-2 rounded border text-center shadow-2xs ${selfStudyFlag ? 'bg-amber-100 border-amber-400' : 'bg-white border-slate-300'}">
                                         <div class="text-[10px] font-mono text-slate-400">${student.id} <span class="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-1 rounded ml-0.5">내부${student.seatSeq}번</span></div>
                                         <div class="font-bold text-sm text-slate-800">${student.name}</div>
-                                        <div class="text-[10px] font-semibold ${selfStudyFlag ? 'text-amber-700' : 'text-indigo-600'} mt-0.5">${examSubject}</div>
+                                        <div class="text-[10px] font-semibold ${selfStudyFlag ? 'text-amber-800' : 'text-indigo-600'} mt-0.5">${examSubject}</div>
                                     </div>
                                 `;
                             } else {
-                                html += `<div class="bg-slate-100 p-2 rounded border border-dashed border-slate-300 text-center text-xs text-slate-300 py-3">빈 좌석</div>`;
+                                html += `<div class="bg-slate-100/70 p-2 rounded border border-dashed border-slate-300 text-center text-xs text-slate-300 py-3">빈 좌석</div>`;
                             }
                         }
                         html += `</div>`;
@@ -1196,7 +1301,109 @@
                 printArea.appendChild(roomDiv);
             });
 
-            alert(statusMessage);
+            if(statusMessage) alert(statusMessage);
+        }
+
+        // ==========================================
+        // 🎟️ [탭 6] 학생별 정기시험 수험표 생성 알고리즘
+        // ==========================================
+        function generateStudentTickets() {
+            const container = document.getElementById('ticket-print-container');
+            if(appState.students.length === 0 || !appState.timetableList || appState.timetableList.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300 col-span-2">기초자료 및 시험 시간표가 필요합니다.</div>`;
+                return;
+            }
+
+            const targetGrade = document.getElementById('ticket-grade').value;
+            const targetClass = document.getElementById('ticket-class').value;
+
+            let filteredStudents = appState.students.filter(st => {
+                if(targetGrade !== 'ALL' && String(st.grade) !== targetGrade) return false;
+                if(targetClass !== 'ALL' && String(st.classNum) !== targetClass) return false;
+                return true;
+            }).sort((a,b) => parseInt(a.id) - parseInt(b.id));
+
+            if(filteredStudents.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300 col-span-2">조건에 일치하는 학생이 없습니다.</div>`;
+                return;
+            }
+
+            const specIds = getAllSpecialStudentIds();
+
+            container.innerHTML = filteredStudents.map(st => {
+                const isSpecial = specIds.includes(st.id);
+                let specialRoomName = "";
+                if(isSpecial) {
+                    const spRoom = appState.rooms.find(r => r.isSpecial && r.assignedStudentIds && r.assignedStudentIds.includes(st.id));
+                    specialRoomName = spRoom ? spRoom.name : "특별실";
+                }
+
+                const rowsHtml = appState.timetableList.map(item => {
+                    let examSubject = "자습";
+                    let targetRoomName = `${st.grade}-${st.classNum}반 (본반)`;
+
+                    if(isSpecial) {
+                        targetRoomName = specialRoomName;
+                    }
+
+                    if(st.grade === 1) {
+                        examSubject = item.g1;
+                    } else if(st.grade === 2) {
+                        const curExam = item.g2;
+                        if(curExam && curExam !== "자습" && curExam !== "없음") {
+                            const cleanExamName = curExam.replace(/\([^)]*\)/g, '').trim();
+                            const masterObj = appState.openedSubjects[curExam.trim()] || appState.openedSubjects[cleanExamName];
+                            
+                            if(masterObj && masterObj.isCommon) {
+                                examSubject = curExam;
+                            } else if(st.subjects && st.subjects.some(sub => cleanExamName.includes(sub.replace(/\([^)]*\)/g, '').trim()))) {
+                                examSubject = curExam;
+                            } else {
+                                examSubject = "자습";
+                            }
+                        } else {
+                            examSubject = "자습";
+                        }
+                    }
+
+                    return `
+                        <tr class="border-b text-xs">
+                            <td class="p-1.5 font-mono bg-slate-50 font-semibold">${item.timeSlot}</td>
+                            <td class="p-1.5 font-bold ${examSubject==='자습'?'text-slate-400':'text-indigo-700'}">${examSubject}</td>
+                            <td class="p-1.5 font-medium text-slate-700">${targetRoomName}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="bg-white border-2 border-indigo-200 rounded-lg p-4 shadow-xs text-slate-800 ticket-page">
+                        <div class="flex justify-between items-center border-b-2 border-indigo-600 pb-2 mb-3">
+                            <div>
+                                <h4 class="font-bold text-base text-indigo-900">📄 정기시험 수험표</h4>
+                                <p class="text-[11px] text-slate-500">${st.grade}학년 ${st.classNum}반 ${st.num}번</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-bold text-base text-slate-900">${st.name}</span>
+                                <span class="block font-mono text-xs text-indigo-600 font-bold">학번: ${st.id}</span>
+                            </div>
+                        </div>
+
+                        <table class="w-full text-center border rounded">
+                            <thead class="bg-indigo-50 text-[11px] text-indigo-900 font-bold border-b">
+                                <tr>
+                                    <th class="p-1">시험 일시</th>
+                                    <th class="p-1">응시 과목</th>
+                                    <th class="p-1">시험 장소</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                        <div class="mt-2 text-[10px] text-slate-400 text-right">* 시험 시작 10분 전까지 지정 고사실 입실 완료</div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function exportJSON() {
