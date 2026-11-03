@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.8</title>
+    <title>정기시험 좌석배치 시스템 v18.9</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.8</h1>
-            <p class="text-xs text-indigo-200">무한 루프 방지 단방향 결합 엔진 적용 · 1~3학년 전체 복구 완벽 완료</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.9</h1>
+            <p class="text-xs text-indigo-200">데이터 전체 초기화(Reset) 기능 추가 · 1~3학년 통합 완전 안전 버전</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -39,6 +39,10 @@
                 📂 복원 (.json)
                 <input type="file" id="json-input" accept=".json" class="hidden" onchange="importJSON(event)">
             </label>
+            <!-- 💡 데이터 초기화 버튼 추가 -->
+            <button onclick="resetAllSystemData()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded transition font-medium text-xs font-bold shadow">
+                🗑️ 데이터 초기화
+            </button>
             <button onclick="openSupabaseModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded transition font-medium text-xs">
                 ☁️ Supabase 연동
             </button>
@@ -393,33 +397,36 @@
 
     <!-- 스크립트 엔진 -->
     <script>
-        let appState = {
-            students: [],
-            rooms: [],
-            timetableList: [],  
-            subjectRooms: {},   
-            openedSubjects: {}, 
-            capacityRules: {
-                26: { layout: [4, 7, 4, 7, 4], fixed: [false, true, false, true, false] },
-                27: { layout: [4, 7, 5, 7, 4], fixed: [false, true, false, true, false] },
-                28: { layout: [4, 7, 5, 7, 5], fixed: [false, true, false, true, false] },
-                29: { layout: [5, 7, 5, 7, 5], fixed: [false, true, false, true, false] },
-                30: { layout: [5, 7, 6, 7, 5], fixed: [false, true, false, true, false] },
-                31: { layout: [5, 7, 6, 7, 6], fixed: [false, true, false, true, false] },
-                32: { layout: [6, 7, 6, 7, 6], fixed: [false, true, false, true, false] },
-                33: { layout: [6, 7, 7, 7, 6], fixed: [false, true, false, true, false] },
-                34: { layout: [6, 7, 7, 7, 7], fixed: [false, true, false, true, false] },
-                35: { layout: [7, 7, 7, 7, 7], fixed: [false, true, false, true, false] }
-            },
-            stepState: {
-                currentStep: 0,
-                roomSeatsMap: {}
-            },
-            ticketAllocations: {},
-            showInternalSeq: true,
-            supabaseConfig: { url: "", key: "" }
-        };
+        function getDefaultState() {
+            return {
+                students: [],
+                rooms: [],
+                timetableList: [],  
+                subjectRooms: {},   
+                openedSubjects: {}, 
+                capacityRules: {
+                    26: { layout: [4, 7, 4, 7, 4], fixed: [false, true, false, true, false] },
+                    27: { layout: [4, 7, 5, 7, 4], fixed: [false, true, false, true, false] },
+                    28: { layout: [4, 7, 5, 7, 5], fixed: [false, true, false, true, false] },
+                    29: { layout: [5, 7, 5, 7, 5], fixed: [false, true, false, true, false] },
+                    30: { layout: [5, 7, 6, 7, 5], fixed: [false, true, false, true, false] },
+                    31: { layout: [5, 7, 6, 7, 6], fixed: [false, true, false, true, false] },
+                    32: { layout: [6, 7, 6, 7, 6], fixed: [false, true, false, true, false] },
+                    33: { layout: [6, 7, 7, 7, 6], fixed: [false, true, false, true, false] },
+                    34: { layout: [6, 7, 7, 7, 7], fixed: [false, true, false, true, false] },
+                    35: { layout: [7, 7, 7, 7, 7], fixed: [false, true, false, true, false] }
+                },
+                stepState: {
+                    currentStep: 0,
+                    roomSeatsMap: {}
+                },
+                ticketAllocations: {},
+                showInternalSeq: true,
+                supabaseConfig: { url: "", key: "" }
+            };
+        }
 
+        let appState = getDefaultState();
         let dragSrcData = null;
 
         function normalizeStr(str) {
@@ -439,18 +446,33 @@
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V18_8', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V18_9', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
             if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18_8');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_9');
             if(saved) {
                 try { 
                     appState = JSON.parse(saved); 
                     if(appState.showInternalSeq === undefined) appState.showInternalSeq = true;
                 } catch(e) { console.error(e); }
+            }
+        }
+
+        // 💡 [핵심 신규 기능] 전체 데이터 초기화 함수
+        function resetAllSystemData() {
+            if (confirm("⚠️ 경고: 업로드된 학생 명단, 고사실 목록, 좌석배치 기록 및 저장소 데이터가 모두 삭제됩니다.\n\n정말로 전체 데이터를 초기화하시겠습니까?")) {
+                localStorage.removeItem('SEAT_PLANNER_V18_9');
+                // 기존 버전 저장 키가 있을 경우 함께 정리
+                localStorage.removeItem('SEAT_PLANNER_V18_8');
+                localStorage.removeItem('SEAT_PLANNER_V18_7');
+                localStorage.removeItem('SEAT_PLANNER_V18_6');
+                
+                appState = getDefaultState();
+                alert("🗑️ 모든 시스템 데이터가 초기화되었습니다. 웹 페이지를 새로고침합니다.");
+                window.location.reload();
             }
         }
 
@@ -1109,7 +1131,6 @@
             }
         }
 
-        // 💡 [v18.8 무한루프 방지] 단방향 과목 응시 판단 연산
         function checkHasExamInItem(student, item) {
             if (!student || !item) return false;
             
@@ -1144,7 +1165,7 @@
             const normPeriod = normalizeStr(periodStr);
 
             const dayItems = (appState.timetableList || []).filter(item => normalizeStr(item.timeSlot || "").includes(normDay));
-            if (dayItems.length === 0) return 'EXAM'; // 시간표 없으면 기본 응시 처리
+            if (dayItems.length === 0) return 'EXAM';
 
             const curIndex = dayItems.findIndex(item => normalizeStr(item.timeSlot || "").includes(normPeriod));
             if (curIndex === -1) return 'EXAM';
@@ -1165,9 +1186,6 @@
             return (curIndex === 0) ? 'SELF' : 'HOME';
         }
 
-        // ==========================================
-        // 💡 [v18.8 안전 렌더링 적용] Step 1 배치 실행
-        // ==========================================
         function step1_InitialPlace() {
             if(!appState.students || appState.students.length === 0) {
                 alert("학생 명단이 없습니다. 1탭에서 기초자료를 업로드해 주세요.");
@@ -1204,7 +1222,6 @@
                 saveToLocalStorage();
                 renderStepUI("1단계 완료 (B모드): 하교생 제외 후 학번 순서대로 1열 1행부터 배치되었습니다.");
             } else {
-                // 1학년 배치
                 appState.rooms.filter(r => r.targetGrade === 1 && !r.isSpecial).forEach(room => {
                     let sts = appState.students.filter(s => s.grade === 1 && s.classNum === room.targetClass && !specIds.includes(s.id));
                     let validSts = sts.filter(s => getStudentStatus(s, day, period) !== 'HOME').sort((a,b) => (a.num||1) - (b.num||1));
@@ -1212,7 +1229,6 @@
                     appState.stepState.roomSeatsMap[room.id] = validSts;
                 });
 
-                // 2학년 배치
                 const g2All = appState.students.filter(s => s.grade === 2 && !specIds.includes(s.id));
                 let g2Examers = g2All.filter(s => getStudentStatus(s, day, period) === 'EXAM').sort((a,b) => parseInt(a.id) - parseInt(b.id));
                 let g2Selfers = g2All.filter(s => getStudentStatus(s, day, period) === 'SELF').sort((a,b) => parseInt(a.id) - parseInt(b.id));
@@ -1225,7 +1241,6 @@
                     appState.stepState.roomSeatsMap[room.id] = assigned;
                 });
 
-                // 3학년 배치
                 const g3All = appState.students.filter(s => s.grade === 3 && !specIds.includes(s.id));
                 let g3Examers = g3All.filter(s => getStudentStatus(s, day, period) === 'EXAM').sort((a,b) => parseInt(a.id) - parseInt(b.id));
                 let g3Selfers = g3All.filter(s => getStudentStatus(s, day, period) === 'SELF').sort((a,b) => parseInt(a.id) - parseInt(b.id));
@@ -1416,7 +1431,6 @@
             alert(`📌 [${day} ${period}] 배치가 수험표에 반영되었습니다! 6번 탭에서 확인하세요.`);
         }
 
-        // 💡 [v18.8 렌더링 붕괴 해결] 안전한 화면 출력 엔진
         function renderStepUI(statusMessage) {
             const printArea = document.getElementById('print-area');
             if(!printArea) return;
