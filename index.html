@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.7</title>
+    <title>정기시험 좌석배치 시스템 v18.7.1</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.7</h1>
-            <p class="text-xs text-indigo-200">공통/선택 과목 이동 규칙 이원화 · 출발지 우선 추출 원칙 · 정원 변동에 따른 동적 규격 적용</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.7.1</h1>
+            <p class="text-xs text-indigo-200">공통/선택 과목 이동 규칙 이원화 · 직관적 이동/목적지 용어 적용 · 출발지 우선 추출 원칙</p>
         </div>
         <div class="flex gap-2 text-sm flex-wrap items-center">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -205,13 +205,11 @@
             </div>
         </section>
 
-        <!-- [탭 4] 이동 범위 & 분단 고정 설정 (이원화 적용) -->
+        <!-- [탭 4] 이동 범위 & 분단 고정 설정 (개선된 용어 반영) -->
         <section id="tab4" class="tab-content hidden">
-            <!-- 공통과목 / 선택과목 이원화 일괄 적용 영역 -->
             <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200 mb-6">
                 <h2 class="text-md font-bold mb-3 text-indigo-900">⚡ 과목 유형별 이동 설정 이원화 일괄 적용</h2>
                 
-                <!-- 상단 공통 컨트롤 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pb-4 border-b border-indigo-200">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700">일괄 적용 대상 고사실</label>
@@ -231,7 +229,7 @@
                     </div>
                 </div>
 
-                <!-- 이원화 2개 트랙: 공통과목용 vs 선택과목용 -->
+                <!-- 이원화 2개 트랙 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                     <!-- 📘 1. 공통과목용 이동 규칙 -->
                     <div class="bg-white p-4 rounded-lg border border-indigo-200 shadow-xs">
@@ -246,12 +244,12 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-slate-600 font-semibold">본반 남아있는 조건</label>
-                                <input type="text" id="bulk-common-home" value="15-28" class="w-full border rounded p-1.5 mt-1">
+                                <label class="block text-slate-600 font-semibold">본반 남는 범위</label>
+                                <input type="text" id="bulk-common-home" value="15-35" class="w-full border rounded p-1.5 mt-1" placeholder="예: 15-35">
                             </div>
                             <div class="flex gap-2">
                                 <div class="w-1/3">
-                                    <label class="block text-slate-600 font-semibold">이동 학년</label>
+                                    <label class="block text-slate-600 font-semibold">이동/목적지 학년</label>
                                     <select id="bulk-common-move-grade" class="w-full border rounded p-1.5 mt-1 bg-slate-50">
                                         <option value="1">1학년</option>
                                         <option value="2" selected>2학년</option>
@@ -259,8 +257,8 @@
                                     </select>
                                 </div>
                                 <div class="w-2/3">
-                                    <label class="block text-slate-600 font-semibold">이동해오는 조건</label>
-                                    <input type="text" id="bulk-common-move" value="1-14, 29-35" class="w-full border rounded p-1.5 mt-1">
+                                    <label class="block text-slate-600 font-semibold">이동 나가는 범위</label>
+                                    <input type="text" id="bulk-common-move" value="1-14" class="w-full border rounded p-1.5 mt-1" placeholder="예: 1-14">
                                 </div>
                             </div>
                         </div>
@@ -279,12 +277,12 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-slate-600 font-semibold">본반 남아있는 조건</label>
-                                <input type="text" id="bulk-elective-home" value="15-28" class="w-full border rounded p-1.5 mt-1">
+                                <label class="block text-slate-600 font-semibold">본반 남는 범위</label>
+                                <input type="text" id="bulk-elective-home" value="15-35" class="w-full border rounded p-1.5 mt-1" placeholder="예: 15-35">
                             </div>
                             <div class="flex gap-2">
                                 <div class="w-1/3">
-                                    <label class="block text-slate-600 font-semibold">이동 학년</label>
+                                    <label class="block text-slate-600 font-semibold">이동/목적지 학년</label>
                                     <select id="bulk-elective-move-grade" class="w-full border rounded p-1.5 mt-1 bg-slate-50">
                                         <option value="1">1학년</option>
                                         <option value="2" selected>2학년</option>
@@ -292,8 +290,8 @@
                                     </select>
                                 </div>
                                 <div class="w-2/3">
-                                    <label class="block text-slate-600 font-semibold">이동해오는 조건</label>
-                                    <input type="text" id="bulk-elective-move" value="1-14, 29-35" class="w-full border rounded p-1.5 mt-1">
+                                    <label class="block text-slate-600 font-semibold">이동 나가는 범위</label>
+                                    <input type="text" id="bulk-elective-move" value="1-14" class="w-full border rounded p-1.5 mt-1" placeholder="예: 1-14">
                                 </div>
                             </div>
                         </div>
@@ -311,13 +309,13 @@
             </div>
         </section>
 
-        <!-- [탭 5] 선택과목 배치 & 밀어내기 드래그 조정 & 수험표 연동 -->
+        <!-- [탭 5] 좌석배치 시뮬레이션 -->
         <section id="tab5" class="tab-content hidden">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6 no-print">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-bold text-slate-800">📅 시험 요일/교시 선택 & 3단계 순차 실행</h2>
                     <span class="text-xs text-indigo-600 bg-indigo-50 px-3 py-1 rounded border border-indigo-200 font-bold">
-                        🔒 과목 성격(공통/선택)을 자동 판별하여 출발지 우선 원칙 기반으로 이동이 수행됩니다.
+                        🔒 과목 성격을 자동 판별하여 출발지 우선 원칙 기반으로 이동이 수행됩니다.
                     </span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -345,7 +343,7 @@
                     <span>시험 과목 정보를 불러오려면 1탭에서 기초자료를 업로드하세요.</span>
                 </div>
 
-                <!-- 3단계 실행 및 수험표 반영 컨트롤 바 -->
+                <!-- 3단계 실행 컨트롤 바 -->
                 <div class="grid grid-cols-1 md:grid-cols-6 gap-2 pt-2 border-t">
                     <button onclick="step1_InitialPlace()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
                         1️⃣ Step 1: 좌석 배치
@@ -375,7 +373,7 @@
             </div>
         </section>
 
-        <!-- [탭 6] 🎟️ 학생별 수험표 발급 및 출력 -->
+        <!-- [탭 6] 학생별 수험표 출력 -->
         <section id="tab6" class="tab-content hidden">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6 no-print">
                 <h2 class="text-lg font-bold mb-3 text-slate-800">🎟️ 학생 개별 시험 수험표 생성 및 A4 일괄 인쇄</h2>
@@ -459,7 +457,7 @@
             subjectRooms: {},   
             openedSubjects: {}, 
             capacityRules: JSON.parse(JSON.stringify(DEFAULT_CAPACITY_RULES)),
-            slotSeatingMap: {}, // 요일/교시별 독립 저장소
+            slotSeatingMap: {},
             showSeqBadge: true,
             ticketAllocations: {},
             supabaseConfig: { url: "", key: "" }
@@ -499,7 +497,7 @@
 
         function saveToLocalStorage() {
             try {
-                localStorage.setItem('SEAT_PLANNER_V18_7', JSON.stringify(appState));
+                localStorage.setItem('SEAT_PLANNER_V18_7_1', JSON.stringify(appState));
                 const statusEl = document.getElementById('save-status');
                 if(statusEl) statusEl.innerText = "🟢 안전 저장 완료 (" + new Date().toLocaleTimeString() + ")";
             } catch (e) {
@@ -508,7 +506,7 @@
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18_7');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_7_1');
             if(saved) {
                 try { 
                     appState = JSON.parse(saved); 
@@ -518,8 +516,8 @@
         }
 
         function resetAllData() {
-            if (confirm("⚠️ 정말로 저장된 모든 학생, 고사실, 시간표, 수험표 데이터를 초기화하고 백지 상태로 만드시겠습니까?\n\n(5분단 기본 규격만 남고 모든 데이터가 완전히 삭제됩니다.)")) {
-                localStorage.removeItem('SEAT_PLANNER_V18_7');
+            if (confirm("⚠️ 정말로 저장된 모든 학생, 고사실, 시간표, 수험표 데이터를 초기화하고 백지 상태로 만드시겠습니까?")) {
+                localStorage.removeItem('SEAT_PLANNER_V18_7_1');
                 appState = {
                     students: [],
                     rooms: [],
@@ -620,8 +618,8 @@
             for (let c = 0; c < layout.length; c++) {
                 const countInCol = layout[c] || 6;
                 if (index < current + countInCol) {
-                    const row = (index - current) + 1; // M행
-                    const col = c + 1;                 // N열
+                    const row = (index - current) + 1;
+                    const col = c + 1;
                     return `${col}열 ${row}행`;
                 }
                 current += countInCol;
@@ -646,13 +644,11 @@
             if(tabId === 'tab6') generateStudentTickets();
         }
 
-        // 💡 [v18.7 정밀 파서] 모드에 맞게 숫자 배열 파싱 (학번 범위, 학번시작:인원, 내부번호)
         function parseRangeOrCount(inputStr, modeType, totalCap) {
             if (!inputStr) return [];
             const result = [];
 
             if (modeType === 'STUDENT_COUNT') {
-                // 예: "1:15" ➔ 1번부터 15명 (1~15)
                 const parts = inputStr.split(',');
                 parts.forEach(part => {
                     const [startStr, countStr] = (part || '').split(':').map(s => s.trim());
@@ -665,7 +661,6 @@
                     }
                 });
             } else {
-                // 범위 예: "1-14, 29-35" 또는 "15-28"
                 const parts = inputStr.split(',');
                 parts.forEach(part => {
                     const trimmed = part.trim();
@@ -911,18 +906,17 @@
                     targetGrade: grade, targetClass: c,
                     isSpecial: false,
                     fixedGroup: "HOMEROOM",
-                    // 💡 v18.7 공통/선택 이원화 객체 초기화
                     commonRule: {
                         modeType: "STUDENT_RANGE",
-                        homeRange: "15-28",
+                        homeRange: "15-35",
                         moveGrade: grade === 1 ? 2 : 1,
-                        moveRange: "1-14, 29-35"
+                        moveRange: "1-14"
                     },
                     electiveRule: {
                         modeType: "SEQ_RANGE",
-                        homeRange: "15-28",
+                        homeRange: "15-35",
                         moveGrade: grade === 1 ? 2 : 1,
-                        moveRange: "1-14, 29-35"
+                        moveRange: "1-14"
                     }
                 });
             }
@@ -1078,18 +1072,15 @@
             }
         }
 
-        // 💡 [v18.7 핵심] 공통/선택 과목 이원화 일괄 적용
         function applyBulkMovementRules() {
             const targetFilter = document.getElementById('bulk-target-grade').value;
             const fixedGroup = document.getElementById('bulk-fixed-group').value;
 
-            // 공통 과목 설정값
             const commonMode = document.getElementById('bulk-common-mode').value;
             const commonHome = document.getElementById('bulk-common-home').value;
             const commonMoveGrade = parseInt(document.getElementById('bulk-common-move-grade').value);
             const commonMove = document.getElementById('bulk-common-move').value;
 
-            // 선택 과목 설정값
             const electiveMode = document.getElementById('bulk-elective-mode').value;
             const electiveHome = document.getElementById('bulk-elective-home').value;
             const electiveMoveGrade = parseInt(document.getElementById('bulk-elective-move-grade').value);
@@ -1128,7 +1119,6 @@
             saveToLocalStorage();
         }
 
-        // 💡 [v18.7 핵심] 고사실별 4번 탭 이원화 설정 UI 렌더링
         function renderRoomRules() {
             const container = document.getElementById('room-rule-container');
             const validRooms = appState.rooms.filter(r => !r.isSpecial);
@@ -1141,8 +1131,8 @@
                 const rule = getCapRule(totalCap);
                 const layout = rule.layout;
 
-                const cRule = room.commonRule || { modeType: "STUDENT_RANGE", homeRange: "15-28", moveGrade: room.targetGrade === 1 ? 2 : 1, moveRange: "1-14, 29-35" };
-                const eRule = room.electiveRule || { modeType: "SEQ_RANGE", homeRange: "15-28", moveGrade: room.targetGrade === 1 ? 2 : 1, moveRange: "1-14, 29-35" };
+                const cRule = room.commonRule || { modeType: "STUDENT_RANGE", homeRange: "15-35", moveGrade: room.targetGrade === 1 ? 2 : 1, moveRange: "1-14" };
+                const eRule = room.electiveRule || { modeType: "SEQ_RANGE", homeRange: "15-35", moveGrade: room.targetGrade === 1 ? 2 : 1, moveRange: "1-14" };
 
                 return `
                     <div class="border rounded-lg p-4 bg-slate-50 space-y-3">
@@ -1160,7 +1150,6 @@
                             </div>
                         </div>
 
-                        <!-- 2개 트랙 영역 -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                             <!-- 📘 공통과목 규칙 -->
                             <div class="bg-indigo-50/50 p-3 rounded border border-indigo-200 space-y-2">
@@ -1175,18 +1164,18 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-[11px] text-indigo-700 font-bold">🏠 본반 조건</label>
-                                        <input type="text" value="${cRule.homeRange || '15-28'}" onchange="updateRoomRuleNested(${idx}, 'commonRule', 'homeRange', this.value)" class="border rounded px-1 py-0.5 w-full bg-white mt-0.5">
+                                        <label class="block text-[11px] text-indigo-700 font-bold">🏠 본반 남는 범위</label>
+                                        <input type="text" value="${cRule.homeRange || '15-35'}" onchange="updateRoomRuleNested(${idx}, 'commonRule', 'homeRange', this.value)" class="border rounded px-1 py-0.5 w-full bg-white mt-0.5">
                                     </div>
                                     <div>
-                                        <label class="block text-[11px] text-emerald-700 font-bold">🚌 이동 학년/조건</label>
+                                        <label class="block text-[11px] text-emerald-700 font-bold">🚌 이동/목적지 학년 & 나가는 범위</label>
                                         <div class="flex gap-1 mt-0.5">
                                             <select onchange="updateRoomRuleNested(${idx}, 'commonRule', 'moveGrade', parseInt(this.value))" class="border rounded px-0.5 py-0.5 bg-white">
-                                                <option value="1" ${cRule.moveGrade===1?'selected':''}>1</option>
-                                                <option value="2" ${cRule.moveGrade===2?'selected':''}>2</option>
-                                                <option value="3" ${cRule.moveGrade===3?'selected':''}>3</option>
+                                                <option value="1" ${cRule.moveGrade===1?'selected':''}>1학년</option>
+                                                <option value="2" ${cRule.moveGrade===2?'selected':''}>2학년</option>
+                                                <option value="3" ${cRule.moveGrade===3?'selected':''}>3학년</option>
                                             </select>
-                                            <input type="text" value="${cRule.moveRange || '1-14, 29-35'}" onchange="updateRoomRuleNested(${idx}, 'commonRule', 'moveRange', this.value)" class="border rounded px-1 py-0.5 w-full bg-white">
+                                            <input type="text" value="${cRule.moveRange || '1-14'}" onchange="updateRoomRuleNested(${idx}, 'commonRule', 'moveRange', this.value)" class="border rounded px-1 py-0.5 w-full bg-white" placeholder="1-14">
                                         </div>
                                     </div>
                                 </div>
@@ -1205,18 +1194,18 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-[11px] text-indigo-700 font-bold">🏠 본반 조건</label>
-                                        <input type="text" value="${eRule.homeRange || '15-28'}" onchange="updateRoomRuleNested(${idx}, 'electiveRule', 'homeRange', this.value)" class="border rounded px-1 py-0.5 w-full bg-white mt-0.5">
+                                        <label class="block text-[11px] text-indigo-700 font-bold">🏠 본반 남는 범위</label>
+                                        <input type="text" value="${eRule.homeRange || '15-35'}" onchange="updateRoomRuleNested(${idx}, 'electiveRule', 'homeRange', this.value)" class="border rounded px-1 py-0.5 w-full bg-white mt-0.5">
                                     </div>
                                     <div>
-                                        <label class="block text-[11px] text-emerald-700 font-bold">🚌 이동 학년/조건</label>
+                                        <label class="block text-[11px] text-emerald-700 font-bold">🚌 이동/목적지 학년 & 나가는 범위</label>
                                         <div class="flex gap-1 mt-0.5">
                                             <select onchange="updateRoomRuleNested(${idx}, 'electiveRule', 'moveGrade', parseInt(this.value))" class="border rounded px-0.5 py-0.5 bg-white">
-                                                <option value="1" ${eRule.moveGrade===1?'selected':''}>1</option>
-                                                <option value="2" ${eRule.moveGrade===2?'selected':''}>2</option>
-                                                <option value="3" ${eRule.moveGrade===3?'selected':''}>3</option>
+                                                <option value="1" ${eRule.moveGrade===1?'selected':''}>1학년</option>
+                                                <option value="2" ${eRule.moveGrade===2?'selected':''}>2학년</option>
+                                                <option value="3" ${eRule.moveGrade===3?'selected':''}>3학년</option>
                                             </select>
-                                            <input type="text" value="${eRule.moveRange || '1-14, 29-35'}" onchange="updateRoomRuleNested(${idx}, 'electiveRule', 'moveRange', this.value)" class="border rounded px-1 py-0.5 w-full bg-white">
+                                            <input type="text" value="${eRule.moveRange || '1-14'}" onchange="updateRoomRuleNested(${idx}, 'electiveRule', 'moveRange', this.value)" class="border rounded px-1 py-0.5 w-full bg-white" placeholder="1-14">
                                         </div>
                                     </div>
                                 </div>
@@ -1260,7 +1249,6 @@
             }
         }
 
-        // 💡 [v18.7 핵심] 특정 학년의 특정 요일/교시 과목이 공통과목인지 판별
         function isCommonSubjectForGrade(grade, dayStr, periodStr) {
             const item = getSelectedTimetableItem();
             if (!item) return true;
@@ -1274,7 +1262,7 @@
             if (masterObj && typeof masterObj.isCommon === 'boolean') {
                 return masterObj.isCommon;
             }
-            return (grade === 1); // 1학년 기본값 공통과목
+            return (grade === 1);
         }
 
         function checkHasExamInItem(student, item) {
@@ -1348,7 +1336,6 @@
             return rawSub || "자습";
         }
 
-        // Step 1: 좌석 배치
         function step1_InitialPlace() {
             if(appState.students.length === 0) {
                 alert("학생 명단이 없습니다. 1탭에서 기초자료를 업로드해 주세요.");
@@ -1389,7 +1376,6 @@
             renderStepUI(`1단계 완료 [${slotKey}]: 하교생 제외 및 [응시생➔자습생] 순서로 슬롯 독립 배치가 완료되었습니다.`);
         }
 
-        // Step 2: 내부일련번호 부여
         function step2_AssignInternalSeq() {
             const slotKey = getCurSlotKey();
             const slotState = getSlotState(slotKey);
@@ -1412,25 +1398,19 @@
             renderStepUI(`2단계 완료 [${slotKey}]: 좌석 배치 순서대로 1번부터 내부일련번호가 부여되었습니다.`);
         }
 
-        // 💡 [v18.7 핵심] 조건별 학생 필터링 도우미 함수 (학번 vs 내부번호)
         function filterStudentsByRule(studentList, targetSeqList, modeType) {
             if (!studentList || !targetSeqList || targetSeqList.length === 0) return [];
 
             return studentList.filter(s => {
                 if (!s) return false;
                 if (modeType === 'STUDENT_RANGE' || modeType === 'STUDENT_COUNT') {
-                    // 원래 학번 끝자리(s.num) 기준
                     return targetSeqList.includes(s.num);
                 } else {
-                    // 내부일련번호(s.seatSeq) 기준
                     return targetSeqList.includes(s.seatSeq);
                 }
             });
         }
 
-        // ==========================================
-        // 💡 [v18.7 핵심] Step 3: 출발지 우선 추출 원칙 & 정원 변동 동적 규격 전환
-        // ==========================================
         function step3_ExecuteMovement() {
             const slotKey = getCurSlotKey();
             const slotState = getSlotState(slotKey);
@@ -1443,7 +1423,6 @@
             const day = document.getElementById('select-day').value.trim();
             const period = document.getElementById('select-period').value.trim();
 
-            // 내부번호 누락 대비 자동 부여 (Fallback)
             appState.rooms.filter(r => !r.isSpecial).forEach(room => {
                 let list = slotState.roomSeatsMap[room.id] || [];
                 list.forEach((st, idx) => {
@@ -1456,18 +1435,15 @@
             appState.rooms.filter(r => !r.isSpecial).forEach(room => {
                 const origCap = getRoomTotalCapacity(room);
 
-                // 1. 해당 고사실(도착지)의 과목 성격 판별 ➔ 적용 규칙 선택
                 const isRoomCommon = isCommonSubjectForGrade(room.targetGrade, day, period);
                 const roomRule = isRoomCommon ? (room.commonRule || {}) : (room.electiveRule || {});
 
-                // 본반 잔류 조건 해석 및 추출
                 const homeModeType = roomRule.modeType || (isRoomCommon ? 'STUDENT_RANGE' : 'SEQ_RANGE');
-                const homeTargetSeqList = parseRangeOrCount(roomRule.homeRange || "15-28", homeModeType, origCap);
+                const homeTargetSeqList = parseRangeOrCount(roomRule.homeRange || "15-35", homeModeType, origCap);
 
                 let studentList = currentSeatsMap[room.id] || [];
                 let homeGroup = filterStudentsByRule(studentList, homeTargetSeqList, homeModeType);
 
-                // 2. 🌟 [출발지 우선 원칙] 이동해오는 고사실(출발지)의 과목 성격 판별 ➔ 출발지 규칙으로 추출!
                 let moveGroup = [];
                 const moveTargetGrade = roomRule.moveGrade || (room.targetGrade === 1 ? 2 : 1);
                 const moveTargetRoom = appState.rooms.find(r => r.targetGrade === moveTargetGrade && r.targetClass === room.targetClass);
@@ -1477,21 +1453,16 @@
                     const moveTargetRule = isMoveTargetCommon ? (moveTargetRoom.commonRule || {}) : (moveTargetRoom.electiveRule || {});
                     
                     const moveModeType = moveTargetRule.modeType || (isMoveTargetCommon ? 'STUDENT_RANGE' : 'SEQ_RANGE');
-                    const moveTargetSeqList = parseRangeOrCount(moveTargetRule.moveRange || "1-14, 29-35", moveModeType, getRoomTotalCapacity(moveTargetRoom));
+                    const moveTargetSeqList = parseRangeOrCount(moveTargetRule.moveRange || "1-14", moveModeType, getRoomTotalCapacity(moveTargetRoom));
 
                     let moveTargetSts = currentSeatsMap[moveTargetRoom.id] || [];
-                    // 출발지의 규칙을 적용해서 대상자 추출 (학번 기준이면 자퇴생 제외 13명만 정확히 추출!)
                     moveGroup = filterStudentsByRule(moveTargetSts, moveTargetSeqList, moveModeType);
                 }
 
-                // 학번/내부번호 순 정렬
                 homeGroup.sort((a,b) => (a.seatSeq || a.num) - (b.seatSeq || b.num));
                 moveGroup.sort((a,b) => (a.seatSeq || a.num) - (b.seatSeq || b.num));
 
-                // 3. 🌟 [정원 변동 동적 규격 적용]
                 const finalCount = homeGroup.length + moveGroup.length;
-                
-                // 인원 증가 시에만 확장 규격 적용, 인원 유지/감소 시 원래 규격 유지!
                 const effectiveCap = (finalCount > origCap) ? finalCount : origCap;
                 const rule = getCapRule(effectiveCap);
                 const layout = rule.layout;
@@ -1504,7 +1475,6 @@
                 let newRoomSeats = [];
                 let fixedIdx = 0, flexIdx = 0;
 
-                // 4. 🌟 [고정분단 빈 좌석 격리 및 본반 학생 침범 방지]
                 for(let c = 0; c < 5; c++) {
                     const isFixedCol = fixedFlags[c];
                     const rowCount = layout[c] || 6;
@@ -1512,12 +1482,10 @@
                     for(let r = 0; r < rowCount; r++) {
                         let student = null;
                         if(isFixedCol) {
-                            // 고정분단: 고정 그룹 인원이 부족하면 남은 자리는 빈 좌석(null) 처리 (본반 학생 침범 불가)
                             if(fixedIdx < fixedGroupStudents.length) {
                                 student = fixedGroupStudents[fixedIdx++];
                             }
                         } else {
-                            // 가변분단: 가변 그룹 인원 순차 배치
                             if(flexIdx < flexGroupStudents.length) {
                                 student = flexGroupStudents[flexIdx++];
                             }
@@ -1533,7 +1501,6 @@
             renderStepUI(`3단계 완료 [${slotKey}]: 이원화 규칙 및 출발지 우선 원칙 기반 이동 배치가 최종 완료되었습니다.`);
         }
 
-        // 밀어내기/삽입(Shift/Insert) 방식 드래그 앤 드롭
         function handleDragStart(e, roomId, idx) {
             dragSrcData = { roomId, idx: parseInt(idx) };
             e.dataTransfer.setData('text/plain', JSON.stringify(dragSrcData));
@@ -1582,7 +1549,6 @@
             dragSrcData = null;
         }
 
-        // N열 M행 좌표 수험표 반영
         function commitSeatingToTickets() {
             const slotKey = getCurSlotKey();
             const slotState = getSlotState(slotKey);
@@ -1647,7 +1613,6 @@
             alert(`📌 [${slotKey}] 배치가 수험표 데이터베이스에 'N열 M행' 좌표로 완벽히 저장되었습니다!\n6번 탭에서 확인해 보세요.`);
         }
 
-        // 5번 탭 UI 렌더링
         function renderStepUI(statusMessage) {
             const printArea = document.getElementById('print-area');
             printArea.innerHTML = "";
@@ -1747,7 +1712,6 @@
             if(statusMessage) alert(statusMessage);
         }
 
-        // 수험표 동적 렌더링
         function generateStudentTickets() {
             const container = document.getElementById('ticket-print-container');
             if(appState.students.length === 0 || !appState.timetableList || appState.timetableList.length === 0) {
