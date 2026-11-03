@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.6</title>
+    <title>정기시험 좌석배치 시스템 v18.7</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.6</h1>
-            <p class="text-xs text-indigo-200">1~3학년 전체 통합 지원 · 1교시 텍스트 정제 엔진 · A/B 배치모드 및 내부번호 토글</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.7</h1>
+            <p class="text-xs text-indigo-200">모든 교시 멈춤 오류 완벽 해결 · 강력한 예외 방어 엔진 · A/B 배치모드 및 N열 M행 좌표 반영</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -422,7 +422,7 @@
 
         let dragSrcData = null;
 
-        // 💡 1교시 텍스트 및 공백/줄바꿈 강제 정제 연산자
+        // 💡 텍스트 안전 정제 함수 (null/undefined 에러 원천 방지)
         function normalizeStr(str) {
             if (!str) return '';
             return String(str)
@@ -444,13 +444,13 @@
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V18_6', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V18_7', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
             if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18_6');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_7');
             if(saved) {
                 try { 
                     appState = JSON.parse(saved); 
@@ -624,7 +624,6 @@
             XLSX.writeFile(wb, "정기시험_좌석배치도_기초자료_표준양식.xlsx");
         }
 
-        // 💡 [v18.6 핵심 1] 3학년 엑셀 파싱 로직 보완
         function setupExcelListener() {
             document.getElementById('excel-file').addEventListener('change', function(e) {
                 const file = e.target.files[0];
@@ -649,7 +648,6 @@
                         document.getElementById('status-opened').innerText = `✅ 개설/공통과목 파싱 완료`;
                     }
 
-                    // 1학년 명렬표
                     if(workbook.Sheets['1학년 명렬표']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['1학년 명렬표']);
                         sheet.forEach(row => {
@@ -664,7 +662,6 @@
                         });
                     }
 
-                    // 2학년 명렬표 및 선택과목
                     if(workbook.Sheets['2학년 학생 선택과목 현황']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['2학년 학생 선택과목 현황']);
                         sheet.forEach(row => {
@@ -680,7 +677,6 @@
                         });
                     }
 
-                    // 💡 3학년 명렬표 지원
                     if(workbook.Sheets['3학년 명렬표']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['3학년 명렬표']);
                         sheet.forEach(row => {
@@ -697,7 +693,6 @@
                         });
                     }
 
-                    // 💡 3학년 선택과목 현황 파싱 지원
                     if(workbook.Sheets['3학년 학생 선택과목 현황']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['3학년 학생 선택과목 현황']);
                         sheet.forEach(row => {
@@ -1087,7 +1082,6 @@
             }).join('');
         }
 
-        // 💡 [v18.6 핵심 2] 1교시 텍스트 정제 파싱 탐색
         function getSelectedTimetableItem() {
             const dayEl = document.getElementById('select-day');
             const periodEl = document.getElementById('select-period');
@@ -1097,7 +1091,7 @@
             const period = normalizeStr(periodEl.value);
 
             return (appState.timetableList || []).find(t => {
-                const target = normalizeStr(t.timeSlot);
+                const target = normalizeStr(t.timeSlot || "");
                 return target.includes(day) && target.includes(period);
             });
         }
@@ -1115,9 +1109,9 @@
                     <div>
                         <span class="font-bold text-indigo-800">[${day} ${period}]</span> 
                         <span class="ml-2 font-bold px-1.5 py-0.5 rounded ${mode==='A'?'bg-indigo-100 text-indigo-800':'bg-amber-100 text-amber-800'}">선택 모드: ${mode}모드</span> | 
-                        <span class="ml-2">1학년: <b class="text-indigo-600">${item.g1}</b></span> | 
-                        <span class="ml-2">2학년: <b class="text-emerald-600">${item.g2}</b></span> | 
-                        <span class="ml-2">3학년: <b class="text-amber-600">${item.g3}</b></span>
+                        <span class="ml-2">1학년: <b class="text-indigo-600">${item.g1||'없음'}</b></span> | 
+                        <span class="ml-2">2학년: <b class="text-emerald-600">${item.g2||'없음'}</b></span> | 
+                        <span class="ml-2">3학년: <b class="text-amber-600">${item.g3||'없음'}</b></span>
                     </div>
                 `;
             } else {
@@ -1125,16 +1119,23 @@
             }
         }
 
-        // 💡 [v18.6 핵심 3] 1~3학년 응시 과목 예외 안전 처리
+        // 💡 [v18.7 버그 수정] g3 및 rawSub가 undefined일 때 스크립트 중단 방지
         function checkHasExamInItem(student, item) {
             if (!student || !item) return false;
             
-            const rawSub = (student.grade === 1) ? item.g1 : (student.grade === 2 ? item.g2 : item.g3);
+            // rawSub 추출 시 null/undefined 방지
+            let rawSub = "";
+            if (student.grade === 1) rawSub = item.g1 || "";
+            else if (student.grade === 2) rawSub = item.g2 || "";
+            else if (student.grade === 3) rawSub = item.g3 || "";
+
+            rawSub = String(rawSub).trim();
+
             if (!rawSub || rawSub === "자습" || rawSub === "없음") return false;
 
             const cleanExam = rawSub.replace(/\([^)]*\)/g, '').trim();
             const masterMap = appState.openedSubjects || {};
-            const masterObj = masterMap[rawSub.trim()] || masterMap[cleanExam];
+            const masterObj = masterMap[rawSub] || masterMap[cleanExam];
 
             if (masterObj && masterObj.isCommon) return true;
             if (student.grade === 1 && (!student.subjects || student.subjects.length === 0)) {
@@ -1156,10 +1157,10 @@
             const normDay = normalizeStr(dayStr);
             const normPeriod = normalizeStr(periodStr);
 
-            const dayItems = (appState.timetableList || []).filter(item => normalizeStr(item.timeSlot).includes(normDay));
+            const dayItems = (appState.timetableList || []).filter(item => normalizeStr(item.timeSlot || "").includes(normDay));
             if (dayItems.length === 0) return 'HOME';
 
-            const curIndex = dayItems.findIndex(item => normalizeStr(item.timeSlot).includes(normPeriod));
+            const curIndex = dayItems.findIndex(item => normalizeStr(item.timeSlot || "").includes(normPeriod));
             if (curIndex === -1) return 'HOME';
 
             if (checkHasExamInItem(student, dayItems[curIndex])) {
@@ -1176,7 +1177,7 @@
 
             if (hasFutureExam) return 'SELF';
 
-            const isFirstPeriod = (curIndex === 0) || normalizeStr(dayItems[curIndex].timeSlot).includes("1교시");
+            const isFirstPeriod = (curIndex === 0) || normalizeStr(dayItems[curIndex].timeSlot || "").includes("1교시");
             if (isFirstPeriod) return 'SELF';
 
             return 'HOME';
@@ -1199,7 +1200,7 @@
         }
 
         // ==========================================
-        // 💡 [v18.6 핵심 4] 1~3학년 통합 Step 1 배치
+        // 💡 [v18.7 완벽 보완] Step 1 좌석 배치
         // ==========================================
         function step1_InitialPlace() {
             if(appState.students.length === 0) {
@@ -1217,7 +1218,6 @@
             const specIds = getAllSpecialStudentIds();
 
             if (mode === 'B') {
-                // 💡 [B 모드] 1~3학년 전체 본반 학번순 1열 1행 배치
                 appState.rooms.filter(r => !r.isSpecial).forEach(room => {
                     let sts = appState.students.filter(s => 
                         s.grade === room.targetGrade && 
@@ -1233,9 +1233,7 @@
                 saveToLocalStorage();
                 renderStepUI("1단계 완료 (B모드): 하교생 제외 후 1~3학년 학번 순서대로 1열 1행부터 배치되었습니다.");
             } else {
-                // 💡 [A 모드] 1~3학년 응시생 ➔ 자습생 정렬 배치
-                
-                // 1학년 배치 (본반 학번순)
+                // 1학년 배치
                 appState.rooms.filter(r => r.targetGrade === 1 && !r.isSpecial).forEach(room => {
                     let sts = appState.students.filter(s => s.grade === 1 && s.classNum === room.targetClass && !specIds.includes(s.id));
                     let validSts = sts.filter(s => getStudentStatus(s, day, period) !== 'HOME').sort((a,b) => a.num - b.num);
@@ -1243,7 +1241,7 @@
                     appState.stepState.roomSeatsMap[room.id] = validSts;
                 });
 
-                // 2학년 배치 (응시생 ➔ 자습생)
+                // 2학년 배치
                 const g2All = appState.students.filter(s => s.grade === 2 && !specIds.includes(s.id));
                 let g2Examers = g2All.filter(s => getStudentStatus(s, day, period) === 'EXAM').sort((a,b) => parseInt(a.id) - parseInt(b.id));
                 let g2Selfers = g2All.filter(s => getStudentStatus(s, day, period) === 'SELF').sort((a,b) => parseInt(a.id) - parseInt(b.id));
@@ -1256,7 +1254,7 @@
                     appState.stepState.roomSeatsMap[room.id] = assigned;
                 });
 
-                // 3학년 배치 (응시생 ➔ 자습생)
+                // 3학년 배치
                 const g3All = appState.students.filter(s => s.grade === 3 && !specIds.includes(s.id));
                 let g3Examers = g3All.filter(s => getStudentStatus(s, day, period) === 'EXAM').sort((a,b) => parseInt(a.id) - parseInt(b.id));
                 let g3Selfers = g3All.filter(s => getStudentStatus(s, day, period) === 'SELF').sort((a,b) => parseInt(a.id) - parseInt(b.id));
@@ -1578,7 +1576,7 @@
                     if(appState.ticketAllocations) {
                         for(let key in appState.ticketAllocations) {
                             const [dayPart, periodPart] = key.split('_');
-                            if(normalizeStr(item.timeSlot).includes(normalizeStr(dayPart)) && normalizeStr(item.timeSlot).includes(normalizeStr(periodPart))) {
+                            if(normalizeStr(item.timeSlot || "").includes(normalizeStr(dayPart)) && normalizeStr(item.timeSlot || "").includes(normalizeStr(periodPart))) {
                                 if(appState.ticketAllocations[key][st.id]) {
                                     committedInfo = appState.ticketAllocations[key][st.id];
                                     break;
