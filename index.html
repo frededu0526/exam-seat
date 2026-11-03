@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.9</title>
+    <title>정기시험 좌석배치 시스템 v18.9.1</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.9</h1>
-            <p class="text-xs text-indigo-200">7탭 응시 과목 수 통계 & 감독교사 배치 자동 추천 (수정 가능)</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.9.1</h1>
+            <p class="text-xs text-indigo-200">7탭 학생 개별 응시상태(EXAM/SELF) 기반 통계 및 감독추천 로직 정밀화 완료</p>
         </div>
         <div class="flex gap-2 text-sm flex-wrap items-center">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -231,7 +231,6 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                    <!-- 📘 1. 공통과목용 이동 규칙 -->
                     <div class="bg-white p-4 rounded-lg border border-indigo-200 shadow-xs">
                         <h3 class="text-xs font-bold text-indigo-800 mb-2 border-b pb-1">📘 1. 공통과목 시험 시 적용 규칙</h3>
                         <div class="space-y-3 text-xs">
@@ -264,7 +263,6 @@
                         </div>
                     </div>
 
-                    <!-- 📙 2. 선택과목용 이동 규칙 -->
                     <div class="bg-white p-4 rounded-lg border border-amber-200 shadow-xs">
                         <h3 class="text-xs font-bold text-amber-800 mb-2 border-b pb-1">📙 2. 선택과목 시험 시 적용 규칙</h3>
                         <div class="space-y-3 text-xs">
@@ -411,7 +409,7 @@
             </div>
         </section>
 
-        <!-- [탭 7] 통계 & 감독배치추천 탭 -->
+        <!-- [탭 7] 통계 & 감독배치추천 탭 (v18.9.1 학생단위 검증 적용) -->
         <section id="tab7" class="tab-content hidden">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
                 <div class="flex justify-between items-center mb-4">
@@ -502,7 +500,7 @@
             slotSeatingMap: {},
             showSeqBadge: true,
             ticketAllocations: {},
-            customStats: {}, // v18.9 7탭 수동 수정값 데이터 저장소 { roomId_slotKey: { subjectCount: N, proctorCount: M } }
+            customStats: {},
             supabaseConfig: { url: "", key: "" }
         };
 
@@ -540,7 +538,7 @@
 
         function saveToLocalStorage() {
             try {
-                localStorage.setItem('SEAT_PLANNER_V18_9', JSON.stringify(appState));
+                localStorage.setItem('SEAT_PLANNER_V18_9_1', JSON.stringify(appState));
                 const statusEl = document.getElementById('save-status');
                 if(statusEl) statusEl.innerText = "🟢 안전 저장 완료 (" + new Date().toLocaleTimeString() + ")";
             } catch (e) {
@@ -549,7 +547,7 @@
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18_9');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_9_1');
             if(saved) {
                 try { 
                     appState = JSON.parse(saved); 
@@ -561,7 +559,7 @@
 
         function resetAllData() {
             if (confirm("⚠️ 정말로 저장된 모든 학생, 고사실, 시간표, 수험표, 통계 데이터를 초기화하시겠습니까?")) {
-                localStorage.removeItem('SEAT_PLANNER_V18_9');
+                localStorage.removeItem('SEAT_PLANNER_V18_9_1');
                 appState = {
                     students: [],
                     rooms: [],
@@ -1896,37 +1894,54 @@
         }
 
         // ==========================================
-        // 💡 [v18.9 신규] 7번 탭: 통계 & 감독교사 배치 계산/생성/수정 엔진
+        // 💡 [v18.9.1 정밀 수정] 7번 탭: 학생 단위 EXAM/SELF 응시 상태 검증 엔진
         // ==========================================
         function calculateAutoStats(room, item) {
-            const timeSlot = item.timeSlot;
-            
-            // 본반 학년 및 건너오는 학년
-            const targetGrade = room.targetGrade;
+            if (!item || !item.timeSlot) return { subjectCount: 1, proctorCount: 1 };
+
+            const slotKey = item.timeSlot;
+            const parts = slotKey.split(' ');
+            const periodStr = parts[parts.length - 1]; // "2교시"
+            const dayStr = slotKey.replace(periodStr, '').trim(); // "12월 14일 (월)"
+
+            const specIds = getAllSpecialStudentIds();
+            let examGrades = new Set();
+
+            // 1) 고사실 본반 학년 학생 중 실제 EXAM 응시자 검사
+            const homeStudents = appState.students.filter(s => 
+                s.grade === room.targetGrade && 
+                s.classNum === room.targetClass && 
+                !specIds.includes(s.id)
+            );
+            homeStudents.forEach(st => {
+                if (getStudentStatus(st, dayStr, periodStr) === 'EXAM') {
+                    examGrades.add(st.grade);
+                }
+            });
+
+            // 2) 건너오는 학년 학생 중 실제 EXAM 응시자 검사
             const cRule = room.commonRule || {};
             const eRule = room.electiveRule || {};
-            
-            const moveGrade = cRule.moveGrade || eRule.moveGrade || (targetGrade === 1 ? 2 : 1);
+            const moveGrade = cRule.moveGrade || eRule.moveGrade || (room.targetGrade === 1 ? 2 : 1);
 
-            // 해당 교시에 본반 학년 및 건너오는 학년이 시험 응시 중인지 판별
-            const getGradeExamState = (g) => {
-                const sub = (g === 1) ? item.g1 : (g === 2 ? item.g2 : item.g3);
-                return (sub && sub !== "자습" && sub !== "없음");
-            };
+            const moveStudents = appState.students.filter(s => 
+                s.grade === moveGrade && 
+                s.classNum === room.targetClass && 
+                !specIds.includes(s.id)
+            );
+            moveStudents.forEach(st => {
+                if (getStudentStatus(st, dayStr, periodStr) === 'EXAM') {
+                    examGrades.add(st.grade);
+                }
+            });
 
-            const gTargetExam = getGradeExamState(targetGrade);
-            const gMoveExam = getGradeExamState(moveGrade);
-
-            let count = 0;
-            if (gTargetExam) count++;
-            if (gMoveExam) count++;
-
-            // 0개인 경우 (자습만 있거나 하교) ➔ 1로 기본 표시 (또는 0 선택 가능)
+            let count = examGrades.size;
+            // 만약 두 학년 모두 자습/하교라면 기본값 1
             if (count === 0) count = 1;
 
             return {
                 subjectCount: count,
-                proctorCount: count // 응시과목 수만큼 감독교사 배치 추천 (1개: 1명, 2개: 2명)
+                proctorCount: count
             };
         }
 
@@ -1943,7 +1958,6 @@
             if (!appState.customStats) appState.customStats = {};
             const key = `${roomId}_${slotKey}`;
             if (!appState.customStats[key]) {
-                // 자동 계산값을 기반으로 초기화
                 const room = appState.rooms.find(r => r.id === roomId);
                 const item = (appState.timetableList || []).find(t => t.timeSlot === slotKey);
                 appState.customStats[key] = room && item ? calculateAutoStats(room, item) : { subjectCount: 1, proctorCount: 1 };
@@ -1979,7 +1993,6 @@
                 return;
             }
 
-            // 헤더 HTML 생성 (X축: 요일 및 교시)
             const headerCellsHtml = `<th class="p-2 border text-left bg-slate-100 min-w-[140px]">고사실 명</th>` + 
                 timeList.map(t => `<th class="p-2 border font-semibold min-w-[110px]">${t.timeSlot}</th>`).join('');
             
