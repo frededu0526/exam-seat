@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.8</title>
+    <title>정기시험 좌석배치 시스템 v18.8.1</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.8</h1>
-            <p class="text-xs text-indigo-200">3학년 선택과목 파싱 완전 연동 · 전 학년 좌석배치 및 수험표 연동 · 출발지 우선 원칙</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.8.1</h1>
+            <p class="text-xs text-indigo-200">직관적 인터페이스 명칭 정돈 (들어오는 학년 / 들어오는 범위) · 안전 구동 검증 완료</p>
         </div>
         <div class="flex gap-2 text-sm flex-wrap items-center">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -205,7 +205,7 @@
             </div>
         </section>
 
-        <!-- [탭 4] 이동 범위 & 분단 고정 설정 -->
+        <!-- [탭 4] 이동 범위 & 분단 고정 설정 (명칭 명료화 적용) -->
         <section id="tab4" class="tab-content hidden">
             <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200 mb-6">
                 <h2 class="text-md font-bold mb-3 text-indigo-900">⚡ 과목 유형별 이동 설정 이원화 일괄 적용</h2>
@@ -249,7 +249,7 @@
                             </div>
                             <div class="flex gap-2">
                                 <div class="w-1/3">
-                                    <label class="block text-slate-600 font-semibold">이동/목적지 학년</label>
+                                    <label class="block text-slate-600 font-semibold">들어오는 학년 (출처)</label>
                                     <select id="bulk-common-move-grade" class="w-full border rounded p-1.5 mt-1 bg-slate-50">
                                         <option value="1">1학년</option>
                                         <option value="2" selected>2학년</option>
@@ -257,7 +257,7 @@
                                     </select>
                                 </div>
                                 <div class="w-2/3">
-                                    <label class="block text-slate-600 font-semibold">이동 나가는 범위</label>
+                                    <label class="block text-slate-600 font-semibold">들어오는 범위 (가져올 학번/좌석)</label>
                                     <input type="text" id="bulk-common-move" value="1-14" class="w-full border rounded p-1.5 mt-1" placeholder="예: 1-14">
                                 </div>
                             </div>
@@ -282,7 +282,7 @@
                             </div>
                             <div class="flex gap-2">
                                 <div class="w-1/3">
-                                    <label class="block text-slate-600 font-semibold">이동/목적지 학년</label>
+                                    <label class="block text-slate-600 font-semibold">들어오는 학년 (출처)</label>
                                     <select id="bulk-elective-move-grade" class="w-full border rounded p-1.5 mt-1 bg-slate-50">
                                         <option value="1">1학년</option>
                                         <option value="2" selected>2학년</option>
@@ -290,7 +290,7 @@
                                     </select>
                                 </div>
                                 <div class="w-2/3">
-                                    <label class="block text-slate-600 font-semibold">이동 나가는 범위</label>
+                                    <label class="block text-slate-600 font-semibold">들어오는 범위 (가져올 학번/좌석)</label>
                                     <input type="text" id="bulk-elective-move" value="1-14" class="w-full border rounded p-1.5 mt-1" placeholder="예: 1-14">
                                 </div>
                             </div>
@@ -497,7 +497,7 @@
 
         function saveToLocalStorage() {
             try {
-                localStorage.setItem('SEAT_PLANNER_V18_8', JSON.stringify(appState));
+                localStorage.setItem('SEAT_PLANNER_V18_8_1', JSON.stringify(appState));
                 const statusEl = document.getElementById('save-status');
                 if(statusEl) statusEl.innerText = "🟢 안전 저장 완료 (" + new Date().toLocaleTimeString() + ")";
             } catch (e) {
@@ -506,7 +506,7 @@
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18_8');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_8_1');
             if(saved) {
                 try { 
                     appState = JSON.parse(saved); 
@@ -517,7 +517,7 @@
 
         function resetAllData() {
             if (confirm("⚠️ 정말로 저장된 모든 학생, 고사실, 시간표, 수험표 데이터를 초기화하고 백지 상태로 만드시겠습니까?")) {
-                localStorage.removeItem('SEAT_PLANNER_V18_8');
+                localStorage.removeItem('SEAT_PLANNER_V18_8_1');
                 appState = {
                     students: [],
                     rooms: [],
@@ -731,7 +731,6 @@
             XLSX.writeFile(wb, "정기시험_좌석배치도_기초자료_표준양식.xlsx");
         }
 
-        // 💡 [v18.8 핵심] 3학년 파싱 로직 완전 통합
         function setupExcelListener() {
             document.getElementById('excel-file').addEventListener('change', function(e) {
                 const file = e.target.files[0];
@@ -785,7 +784,6 @@
                         });
                     }
 
-                    // 🌟 3학년 학생 선택과목 현황 추가 파싱
                     if(workbook.Sheets['3학년 학생 선택과목 현황']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['3학년 학생 선택과목 현황']);
                         sheet.forEach(row => {
@@ -811,7 +809,6 @@
                         });
                     }
 
-                    // 🌟 3학년 선택과목 정보 추가 파싱
                     if(workbook.Sheets['3학년 선택과목 정보']) {
                         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets['3학년 선택과목 정보']);
                         sheet.forEach(row => {
@@ -1150,6 +1147,7 @@
             saveToLocalStorage();
         }
 
+        // 💡 [v18.8.1] 4번 탭 고사실별 카드 인터페이스 명칭 정돈
         function renderRoomRules() {
             const container = document.getElementById('room-rule-container');
             const validRooms = appState.rooms.filter(r => !r.isSpecial);
@@ -1199,7 +1197,7 @@
                                         <input type="text" value="${cRule.homeRange || '15-35'}" onchange="updateRoomRuleNested(${idx}, 'commonRule', 'homeRange', this.value)" class="border rounded px-1 py-0.5 w-full bg-white mt-0.5">
                                     </div>
                                     <div>
-                                        <label class="block text-[11px] text-emerald-700 font-bold">🚌 이동/목적지 학년 & 나가는 범위</label>
+                                        <label class="block text-[11px] text-emerald-700 font-bold">🚌 들어오는 학년 & 범위</label>
                                         <div class="flex gap-1 mt-0.5">
                                             <select onchange="updateRoomRuleNested(${idx}, 'commonRule', 'moveGrade', parseInt(this.value))" class="border rounded px-0.5 py-0.5 bg-white">
                                                 <option value="1" ${cRule.moveGrade===1?'selected':''}>1학년</option>
@@ -1229,7 +1227,7 @@
                                         <input type="text" value="${eRule.homeRange || '15-35'}" onchange="updateRoomRuleNested(${idx}, 'electiveRule', 'homeRange', this.value)" class="border rounded px-1 py-0.5 w-full bg-white mt-0.5">
                                     </div>
                                     <div>
-                                        <label class="block text-[11px] text-emerald-700 font-bold">🚌 이동/목적지 학년 & 나가는 범위</label>
+                                        <label class="block text-[11px] text-emerald-700 font-bold">🚌 들어오는 학년 & 범위</label>
                                         <div class="flex gap-1 mt-0.5">
                                             <select onchange="updateRoomRuleNested(${idx}, 'electiveRule', 'moveGrade', parseInt(this.value))" class="border rounded px-0.5 py-0.5 bg-white">
                                                 <option value="1" ${eRule.moveGrade===1?'selected':''}>1학년</option>
@@ -1367,7 +1365,6 @@
             return rawSub || "자습";
         }
 
-        // 💡 [v18.8 핵심] 1, 2, 3학년 통합 Step 1 좌석 배치 로직
         function step1_InitialPlace() {
             if(appState.students.length === 0) {
                 alert("학생 명단이 없습니다. 1탭에서 기초자료를 업로드해 주세요.");
@@ -1384,7 +1381,6 @@
             const period = document.getElementById('select-period').value.trim();
             const specIds = getAllSpecialStudentIds();
 
-            // 1학년 배치 (본반 기준)
             appState.rooms.filter(r => r.targetGrade === 1 && !r.isSpecial).forEach(room => {
                 let sts = appState.students.filter(s => s.grade === 1 && s.classNum === room.targetClass && !specIds.includes(s.id));
                 let validSts = sts.filter(s => getStudentStatus(s, day, period) !== 'HOME').sort((a,b) => a.num - b.num);
@@ -1393,7 +1389,6 @@
                 slotState.roomSeatsMap[room.id] = clonedSts;
             });
 
-            // 2학년 배치 (응시 ➔ 자습 순)
             const g2All = appState.students.filter(s => s.grade === 2 && !specIds.includes(s.id));
             if (g2All.length > 0) {
                 let g2Examers = g2All.filter(s => getStudentStatus(s, day, period) === 'EXAM').sort((a,b) => parseInt(a.id) - parseInt(b.id));
@@ -1408,7 +1403,6 @@
                 });
             }
 
-            // 🌟 3학년 배치 (응시 ➔ 자습 순)
             const g3All = appState.students.filter(s => s.grade === 3 && !specIds.includes(s.id));
             if (g3All.length > 0) {
                 let g3Examers = g3All.filter(s => getStudentStatus(s, day, period) === 'EXAM').sort((a,b) => parseInt(a.id) - parseInt(b.id));
