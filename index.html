@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v16.0</title>
+    <title>정기시험 좌석배치 시스템 v16.1</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -22,8 +22,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v16.0</h1>
-            <p class="text-xs text-indigo-200">5탭 3단계 디버깅 세분화 (1.배치 ➔ 2.내부번호 부여 ➔ 3.이동 통제)</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v16.1</h1>
+            <p class="text-xs text-indigo-200">요일/교시 시간표 직접 매칭 · 3단계 순차 디버그 엔진</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -248,7 +248,7 @@
             </div>
         </section>
 
-        <!-- [탭 5] 단계별 선택과목 좌석배치 (디버깅 세분화) -->
+        <!-- [탭 5] 선택과목 배치 & 인쇄 (디버깅 세분화) -->
         <section id="tab5" class="tab-content hidden">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6 no-print">
                 <h2 class="text-lg font-bold mb-3 text-slate-800">📅 시험 요일/교시 선택 & 3단계 순차 실행</h2>
@@ -277,7 +277,7 @@
                     <span>시험 과목 정보를 불러오려면 1탭에서 기초자료를 업로드하세요.</span>
                 </div>
 
-                <!-- 💡 3단계 세분화 컨트롤 버튼 바 -->
+                <!-- 3단계 순차 실행 버튼 -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t">
                     <button onclick="step1_InitialPlace()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded font-bold text-xs shadow-sm flex items-center justify-center gap-1">
                         1️⃣ Step 1: 본반/A모드 좌석 배치
@@ -339,10 +339,9 @@
                 34: [7, 7, 7, 7, 6],
                 35: [7, 7, 7, 7, 7]
             },
-            // 단계별 디버깅용 실행 상태 데이터
             stepState: {
                 currentStep: 0,
-                roomSeatsMap: {} // roomId -> studentList[]
+                roomSeatsMap: {}
             },
             supabaseConfig: { url: "", key: "" }
         };
@@ -358,13 +357,13 @@
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V16', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V16_1', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
             if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V16');
+            const saved = localStorage.getItem('SEAT_PLANNER_V16_1');
             if(saved) {
                 try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
             }
@@ -792,12 +791,22 @@
             }).join('');
         }
 
+        // 💡 [시간표 매칭 보완] 1탭의 시간표와 5탭 선택값을 단순 명확히 매칭
+        function getSelectedTimetableItem() {
+            const day = document.getElementById('select-day').value.trim(); // 예: "12월 14일 (월)"
+            const period = document.getElementById('select-period').value.trim(); // 예: "1교시"
+            
+            return (appState.timetableList || []).find(t => 
+                t.timeSlot.includes(day) && t.timeSlot.includes(period)
+            );
+        }
+
         function updateExamInfoDisplay() {
             const day = document.getElementById('select-day').value;
             const period = document.getElementById('select-period').value;
             const banner = document.getElementById('exam-info-banner');
 
-            const item = (appState.timetableList || []).find(t => t.timeSlot.includes(day.split(' ')[0]) && t.timeSlot.includes(period));
+            const item = getSelectedTimetableItem();
 
             if(item) {
                 banner.innerHTML = `
@@ -809,7 +818,7 @@
                     </div>
                 `;
             } else {
-                banner.innerHTML = `<span>[${day} ${period}] 시험 과목 정보가 로드되어 자습생 및 응시생 자동 분류가 적용됩니다.</span>`;
+                banner.innerHTML = `<span>[${day} ${period}] 1탭에 해당 요일/교시의 정기시험 과목이 존재하지 않습니다.</span>`;
             }
         }
 
@@ -817,9 +826,7 @@
             if(!student) return false;
             if(student.grade === 1) return false;
 
-            const day = document.getElementById('select-day').value;
-            const period = document.getElementById('select-period').value;
-            const item = (appState.timetableList || []).find(t => t.timeSlot.includes(day.split(' ')[0]) && t.timeSlot.includes(period));
+            const item = getSelectedTimetableItem();
             const currentExamName = item ? item.g2 : "";
 
             if(!currentExamName || currentExamName === "자습" || currentExamName === "없음") return false;
@@ -863,7 +870,7 @@
                 appState.stepState.roomSeatsMap[room.id] = assigned;
             });
 
-            renderStepUI("1단계 완료: 학생들이 고사실에 원래 및 A모드 순서대로 기본 배치되었습니다.");
+            renderStepUI("1단계 완료: 선택한 시간표 과목 기준으로 A모드 순서대로 기본 배치되었습니다.");
         }
 
         // ==========================================
