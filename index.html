@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.3</title>
+    <title>정기시험 좌석배치 시스템 v18.4</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.3</h1>
-            <p class="text-xs text-indigo-200">밀어내기식(Shift) 드래그 앤 드롭 · N행 M열 좌표 기반 수험표 생성 엔진</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.4</h1>
+            <p class="text-xs text-indigo-200">응시생·자습생·하교생 3단계 정밀 분류 · 하교생 배치 제외 · N열 M행 수험표 좌표 출력</p>
         </div>
         <div class="flex gap-2 text-sm">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -264,7 +264,7 @@
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-bold text-slate-800">📅 시험 요일/교시 선택 & 3단계 순차 실행</h2>
                     <span class="text-xs text-indigo-600 bg-indigo-50 px-3 py-1 rounded border border-indigo-200 font-bold">
-                        🖐️ 드래그 앤 드롭 시 좌석이 밀어내기(Shift/Insert) 방식으로 순차 재배치됩니다!
+                        🚫 하교생은 좌석 배치에서 자동 제외되며, 응시생➔자습생 순으로 정렬 배치됩니다.
                     </span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -422,13 +422,13 @@
         };
 
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_PLANNER_V18_3', JSON.stringify(appState));
+            localStorage.setItem('SEAT_PLANNER_V18_4', JSON.stringify(appState));
             const statusEl = document.getElementById('save-status');
             if(statusEl) statusEl.innerText = "🟢 자동저장 완료 (" + new Date().toLocaleTimeString() + ")";
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18_3');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_4');
             if(saved) {
                 try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
             }
@@ -466,15 +466,15 @@
             return baseStudents.length > 0 ? baseStudents.length : 34;
         }
 
-        // 💡 1차원 배열 인덱스를 5분단 규격(layout) 기준 "N행 M열" 좌표로 실시간 계산
+        // 💡 [v18.4 핵심 1] 1차원 인덱스를 "N열 M행" 좌표로 계산 (N: 분단/열, M: 행)
         function indexToCoordinate(index, layout) {
             let current = 0;
             for (let c = 0; c < layout.length; c++) {
                 const countInCol = layout[c] || 6;
                 if (index < current + countInCol) {
-                    const row = (index - current) + 1;
-                    const col = c + 1;
-                    return `${row}행 ${col}열`;
+                    const row = (index - current) + 1; // M행
+                    const col = c + 1;                 // N열
+                    return `${col}열 ${row}행`;
                 }
                 current += countInCol;
             }
@@ -1021,43 +1021,82 @@
             }
         }
 
-        // 💡 괄호 및 교사명이 포함된 과목명(예: "윤리와 사상(솔)") 정밀 정제 및 포함관계 판단
-        function isStudentSelfStudy(student) {
-            if(!student) return false;
-            if(student.grade === 1) return false;
+        // 💡 특정 요일/교시의 특정 시간표 항목에서 학생이 시험에 응시하는지 판별
+        function checkHasExamInItem(student, item) {
+            if (!student || !item) return false;
+            
+            if (student.grade === 1) {
+                return item.g1 && item.g1 !== "자습" && item.g1 !== "없음";
+            }
+            
+            const rawSub = (student.grade === 2) ? item.g2 : item.g3;
+            if (!rawSub || rawSub === "자습" || rawSub === "없음") return false;
 
-            const item = getSelectedTimetableItem();
-            let currentExamName = item ? item.g2 : "";
+            const cleanExam = rawSub.replace(/\([^)]*\)/g, '').trim();
+            const masterObj = appState.openedSubjects[rawSub.trim()] || appState.openedSubjects[cleanExam];
+            if (masterObj && masterObj.isCommon) return true;
 
-            if(!currentExamName || currentExamName === "자습" || currentExamName === "없음") return false;
+            if (!student.subjects || student.subjects.length === 0) return false;
 
-            const cleanExamName = currentExamName.replace(/\([^)]*\)/g, '').trim();
-
-            const masterObj = appState.openedSubjects[currentExamName.trim()] || appState.openedSubjects[cleanExamName];
-            if(masterObj && masterObj.isCommon) return false;
-
-            if(!student.subjects || student.subjects.length === 0) return true;
-
-            const isEnrolled = student.subjects.some(sub => {
-                if(!sub || sub === "없음") return false;
+            return student.subjects.some(sub => {
+                if (!sub || sub === "없음") return false;
                 const cleanSub = String(sub).replace(/\([^)]*\)/g, '').trim();
-                return cleanExamName.includes(cleanSub) || cleanSub.includes(cleanExamName);
+                return cleanExam.includes(cleanSub) || cleanSub.includes(cleanExam);
             });
+        }
 
-            return !isEnrolled;
+        // 💡 [v18.4 핵심 2] 요일/교시별 3단계 학생 상태 정밀 분류 함수 (EXAM / SELF / HOME)
+        function getStudentStatus(student, dayStr, periodStr) {
+            if (!student) return 'HOME';
+
+            const dayItems = (appState.timetableList || []).filter(item => item.timeSlot.includes(dayStr));
+            if (dayItems.length === 0) return 'HOME';
+
+            const curIndex = dayItems.findIndex(item => item.timeSlot.includes(periodStr));
+            if (curIndex === -1) return 'HOME';
+
+            // 1. 해당 교시에 시험이 있는 경우 ➔ 응시생
+            if (checkHasExamInItem(student, dayItems[curIndex])) {
+                return 'EXAM';
+            }
+
+            // 2. 당일 이후 교시에 시험이 남아있는지 확인
+            let hasFutureExam = false;
+            for (let i = curIndex + 1; i < dayItems.length; i++) {
+                if (checkHasExamInItem(student, dayItems[i])) {
+                    hasFutureExam = true;
+                    break;
+                }
+            }
+
+            if (hasFutureExam) return 'SELF'; // ➔ 자습생 (이후 시험 존재)
+
+            // 3. 당일 시험이 아예 없거나 현 교시 이후 시험이 없더라도 1교시인 경우 ➔ 자습생
+            const isFirstPeriod = (curIndex === 0) || dayItems[curIndex].timeSlot.includes("1교시");
+            if (isFirstPeriod) return 'SELF';
+
+            // 4. 현 교시/이후 교시 시험이 없고 1교시도 아닌 경우 ➔ 하교생
+            return 'HOME';
         }
 
         function getStudentExamSubject(student) {
             if(!student) return "";
             const item = getSelectedTimetableItem();
             if(!item) return "";
+
+            const day = document.getElementById('select-day').value.trim();
+            const period = document.getElementById('select-period').value.trim();
+            const status = getStudentStatus(student, day, period);
+
+            if(status === 'HOME') return "하교";
+            if(status === 'SELF') return "자습";
+            
             const rawSub = (student.grade === 1) ? item.g1 : (student.grade === 2 ? item.g2 : item.g3);
-            if(isStudentSelfStudy(student)) return "자습";
             return rawSub || "자습";
         }
 
         // ==========================================
-        // 💡 [STEP 1] 본반/A모드 초기 좌석 배치
+        // 💡 [v18.4 핵심 3] Step 1: 응시생 ➔ 자습생 순 정렬 및 하교생 완전 제외
         // ==========================================
         function step1_InitialPlace() {
             if(appState.students.length === 0) {
@@ -1065,21 +1104,27 @@
                 return;
             }
 
+            const day = document.getElementById('select-day').value.trim();
+            const period = document.getElementById('select-period').value.trim();
+
             appState.stepState.currentStep = 1;
             appState.stepState.roomSeatsMap = {};
 
             const specIds = getAllSpecialStudentIds();
 
+            // 1학년 배치 (하교생 제외 후 학번순)
             appState.rooms.filter(r => r.targetGrade === 1 && !r.isSpecial).forEach(room => {
-                let sts = appState.students.filter(s => s.grade === 1 && s.classNum === room.targetClass && !specIds.includes(s.id)).sort((a,b) => a.num - b.num);
-                sts.forEach(st => delete st.seatSeq);
-                appState.stepState.roomSeatsMap[room.id] = sts;
+                let sts = appState.students.filter(s => s.grade === 1 && s.classNum === room.targetClass && !specIds.includes(s.id));
+                let validSts = sts.filter(s => getStudentStatus(s, day, period) !== 'HOME').sort((a,b) => a.num - b.num);
+                validSts.forEach(st => delete st.seatSeq);
+                appState.stepState.roomSeatsMap[room.id] = validSts;
             });
 
+            // 2학년 배치 (응시생 ➔ 자습생 순 정렬, 하교생 제외)
             const g2All = appState.students.filter(s => s.grade === 2 && !specIds.includes(s.id));
-            let g2Examers = g2All.filter(s => !isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
-            let g2SelfStudiers = g2All.filter(s => isStudentSelfStudy(s)).sort((a,b) => parseInt(a.id) - parseInt(b.id));
-            let g2Queue = [...g2Examers, ...g2SelfStudiers];
+            let g2Examers = g2All.filter(s => getStudentStatus(s, day, period) === 'EXAM').sort((a,b) => parseInt(a.id) - parseInt(b.id));
+            let g2Selfers = g2All.filter(s => getStudentStatus(s, day, period) === 'SELF').sort((a,b) => parseInt(a.id) - parseInt(b.id));
+            let g2Queue = [...g2Examers, ...g2Selfers]; // 하교생(HOME)은 큐에서 제외
 
             appState.rooms.filter(r => r.targetGrade === 2 && !r.isSpecial).forEach(room => {
                 const roomCap = getRoomTotalCapacity(room);
@@ -1089,11 +1134,11 @@
             });
 
             saveToLocalStorage();
-            renderStepUI("1단계 완료: 선택한 시간표 과목 기준으로 A모드 기본 배치가 완료되었습니다.");
+            renderStepUI("1단계 완료: 하교생이 자동 제외되고, 응시생 ➔ 자습생 순서로 배치가 완료되었습니다.");
         }
 
         // ==========================================
-        // 💡 [STEP 2] 배치된 좌석 순서대로 내부일련번호 부여
+        // 💡 [STEP 2] 내부일련번호 부여
         // ==========================================
         function step2_AssignInternalSeq() {
             if(appState.stepState.currentStep < 1) {
@@ -1111,11 +1156,11 @@
             });
 
             saveToLocalStorage();
-            renderStepUI("2단계 완료: 좌석 배치 순서대로 1번부터 내부일련번호가 새로 부여되었습니다.");
+            renderStepUI("2단계 완료: 좌석 배치 순서대로 1번부터 내부일련번호가 부여되었습니다.");
         }
 
         // ==========================================
-        // 💡 [STEP 3] 부여된 내부일련번호 기반 최종 고사실 이동 적용 & 저장
+        // 💡 [STEP 3] 최종 고사실 이동 적용 & 저장
         // ==========================================
         function step3_ExecuteMovement() {
             if(appState.stepState.currentStep < 2) {
@@ -1170,11 +1215,11 @@
 
             appState.stepState.currentStep = 3;
             saveToLocalStorage();
-            renderStepUI("3단계 완료: 새로 부여받은 내부일련번호를 기준으로 최종 이동 및 가변 고정 배치가 구체적으로 갱신되었습니다.");
+            renderStepUI("3단계 완료: 최종 이동 및 가변 고정 배치가 적용되었습니다.");
         }
 
         // ==========================================
-        // 🖐️ [v18.3 핵심] 밀어내기/삽입(Shift/Insert) 방식 드래그 앤 드롭
+        // 🖐️ 밀어내기/삽입(Shift/Insert) 방식 드래그 앤 드롭
         // ==========================================
         function handleDragStart(e, roomId, idx) {
             dragSrcData = { roomId, idx: parseInt(idx) };
@@ -1208,18 +1253,14 @@
             if (srcList && tgtList) {
                 if (srcRoomId === targetRoomId) {
                     if (srcIdx !== tgtIdx) {
-                        // 💡 동일 고사실 내 1차원 밀어내기 (Splice Extract -> Insert)
                         const [movedStudent] = srcList.splice(srcIdx, 1);
                         srcList.splice(tgtIdx, 0, movedStudent);
-
                         saveToLocalStorage();
                         renderStepUI("🖐️ 좌석이 밀어내기(Shift) 방식으로 연쇄 이동 배치되었습니다.");
                     }
                 } else {
-                    // 💡 다른 고사실 간 밀어내기
                     const [movedStudent] = srcList.splice(srcIdx, 1);
                     tgtList.splice(tgtIdx, 0, movedStudent);
-
                     saveToLocalStorage();
                     renderStepUI("🖐️ 타 고사실로 이동하며 좌석이 밀어내기 배치되었습니다.");
                 }
@@ -1228,7 +1269,7 @@
         }
 
         // ==========================================
-        // 📌 [v18.3 핵심] 5번 탭 좌표(N행 M열) 계산 ➔ 6번 탭 수험표 반영
+        // 📌 5번 탭 N열 M행 좌표 ➔ 6번 탭 수험표 반영
         // ==========================================
         function commitSeatingToTickets() {
             if(!appState.stepState.currentStep || appState.stepState.currentStep < 1) {
@@ -1243,6 +1284,19 @@
             if(!appState.ticketAllocations) appState.ticketAllocations = {};
             appState.ticketAllocations[slotKey] = {};
 
+            // 전교생 대상 상태 반영
+            appState.students.forEach(st => {
+                const status = getStudentStatus(st, day, period);
+                if (status === 'HOME') {
+                    appState.ticketAllocations[slotKey][st.id] = {
+                        roomName: "하교",
+                        seatCoord: "-",
+                        subject: "하교"
+                    };
+                }
+            });
+
+            // 고사실 및 특별실 좌표 매핑
             appState.rooms.forEach(room => {
                 if(room.isSpecial) {
                     (room.assignedStudentIds || []).forEach(stId => {
@@ -1263,7 +1317,6 @@
 
                     list.forEach((st, idx) => {
                         if(st) {
-                            // 💡 1차원 좌석 인덱스 기반 N행 M열 좌표 산출
                             const coordStr = indexToCoordinate(idx, layout);
                             appState.ticketAllocations[slotKey][st.id] = {
                                 roomName: room.name,
@@ -1276,7 +1329,7 @@
             });
 
             saveToLocalStorage();
-            alert(`📌 [${day} ${period}] 배치가 'N행 M열' 좌표 표기로 수험표에 반영되었습니다!\n6번 탭에서 확인해 보세요.`);
+            alert(`📌 [${day} ${period}] 배치가 'N열 M행' 좌표 표기로 수험표에 성공적으로 반영되었습니다!\n6번 탭에서 확인해 보세요.`);
         }
 
         // ==========================================
@@ -1321,7 +1374,6 @@
                     const isFixedCol = fixedFlags[c];
                     const rowCount = layout[c] || 6;
 
-                    // 💡 보색 대비 (홀수: 쿨톤 인디고, 짝수: 웜톤 오렌지)
                     const colHeaderClass = isEvenCol ? 'bg-amber-600 text-white border-amber-600' : 'bg-indigo-700 text-white border-indigo-700';
                     const colBgClass = isEvenCol ? 'bg-amber-50/60 border-amber-300' : 'bg-indigo-50/60 border-indigo-300';
 
@@ -1337,7 +1389,7 @@
                         let student = (sIdx < studentList.length) ? studentList[sIdx++] : null;
 
                         if(student) {
-                            const selfStudyFlag = isStudentSelfStudy(student);
+                            const status = getStudentStatus(student, day, period);
                             const examSubject = getStudentExamSubject(student);
                             const seqBadge = student.seatSeq ? `<span class="text-[9px] bg-emerald-600 text-white font-bold px-1 rounded ml-1">내부${student.seatSeq}번</span>` : '';
 
@@ -1347,10 +1399,10 @@
                                      ondragover="handleDragOver(event)"
                                      ondragleave="handleDragLeave(event)"
                                      ondrop="handleDrop(event, '${room.id}', ${currentIndex})"
-                                     class="p-2 rounded border text-center shadow-2xs transition cursor-grab active:cursor-grabbing ${selfStudyFlag ? 'bg-amber-100 border-amber-400' : 'bg-white border-slate-300 hover:border-indigo-500'}">
+                                     class="p-2 rounded border text-center shadow-2xs transition cursor-grab active:cursor-grabbing ${status==='SELF' ? 'bg-amber-100 border-amber-400' : 'bg-white border-slate-300 hover:border-indigo-500'}">
                                     <div class="text-[10px] font-mono text-slate-400">${student.id} ${seqBadge}</div>
                                     <div class="font-bold text-sm text-slate-800">${student.name}</div>
-                                    <div class="text-[10px] font-semibold ${selfStudyFlag ? 'text-amber-800' : 'text-indigo-600'} mt-0.5">${examSubject}</div>
+                                    <div class="text-[10px] font-semibold ${status==='SELF' ? 'text-amber-800' : 'text-indigo-600'} mt-0.5">${examSubject}</div>
                                 </div>
                             `;
                         } else {
@@ -1376,7 +1428,7 @@
         }
 
         // ==========================================
-        // 🎟️ [v18.3 수험표 표기] 'N행 M열' 좌표 출력
+        // 🎟️ [v18.4 수험표 표기] 'N열 M행' 및 '하교' 표기 출력
         // ==========================================
         function generateStudentTickets() {
             const container = document.getElementById('ticket-print-container');
@@ -1419,10 +1471,14 @@
                     let targetRoomDisplay = "";
 
                     if(committedInfo) {
-                        examSubjectDisplay = `<span class="font-bold ${committedInfo.subject==='자습'?'text-slate-400':'text-indigo-700'}">${committedInfo.subject}</span>`;
-                        // 💡 N행 M열 좌표 표기 출력
-                        const coordStr = (committedInfo.seatCoord === '특별실' || committedInfo.seatCoord === '-') ? '' : `(${committedInfo.seatCoord})`;
-                        targetRoomDisplay = `<span class="font-semibold text-slate-800">${committedInfo.roomName} ${coordStr}</span>`;
+                        if (committedInfo.subject === "하교") {
+                            examSubjectDisplay = `<span class="text-slate-400 font-semibold">하교</span>`;
+                            targetRoomDisplay = `<span class="text-slate-400 font-semibold">하교 (시험 없음)</span>`;
+                        } else {
+                            examSubjectDisplay = `<span class="font-bold ${committedInfo.subject==='자습'?'text-amber-700':'text-indigo-700'}">${committedInfo.subject}</span>`;
+                            const coordStr = (committedInfo.seatCoord === '특별실' || committedInfo.seatCoord === '-') ? '' : `(${committedInfo.seatCoord})`;
+                            targetRoomDisplay = `<span class="font-semibold text-slate-800">${committedInfo.roomName} ${coordStr}</span>`;
+                        }
                     } else {
                         examSubjectDisplay = `<span class="text-slate-400 font-normal">미반영</span>`;
                         targetRoomDisplay = `<span class="text-red-500 font-bold bg-red-50 px-1.5 py-0.5 rounded text-[11px] border border-red-200">미반영</span>`;
