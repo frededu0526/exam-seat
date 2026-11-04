@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.9.3</title>
+    <title>정기시험 좌석배치 시스템 v18.9.1</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.9.3</h1>
-            <p class="text-xs text-indigo-200">고정분단 여유분 기반 자율분단 규격 자동 보완 알고리즘(C=14-B) 적용 완료</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.9.1</h1>
+            <p class="text-xs text-indigo-200">7탭 학생 개별 응시상태(EXAM/SELF) 기반 통계 및 감독추천 로직 정밀화 완료</p>
         </div>
         <div class="flex gap-2 text-sm flex-wrap items-center">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -409,7 +409,7 @@
             </div>
         </section>
 
-        <!-- [탭 7] 통계 & 감독배치추천 탭 -->
+        <!-- [탭 7] 통계 & 감독배치추천 탭 (v18.9.1 학생단위 검증 적용) -->
         <section id="tab7" class="tab-content hidden">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
                 <div class="flex justify-between items-center mb-4">
@@ -538,7 +538,7 @@
 
         function saveToLocalStorage() {
             try {
-                localStorage.setItem('SEAT_PLANNER_V18_9_3', JSON.stringify(appState));
+                localStorage.setItem('SEAT_PLANNER_V18_9_1', JSON.stringify(appState));
                 const statusEl = document.getElementById('save-status');
                 if(statusEl) statusEl.innerText = "🟢 안전 저장 완료 (" + new Date().toLocaleTimeString() + ")";
             } catch (e) {
@@ -547,7 +547,7 @@
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18_9_3');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_9_1');
             if(saved) {
                 try { 
                     appState = JSON.parse(saved); 
@@ -559,7 +559,7 @@
 
         function resetAllData() {
             if (confirm("⚠️ 정말로 저장된 모든 학생, 고사실, 시간표, 수험표, 통계 데이터를 초기화하시겠습니까?")) {
-                localStorage.removeItem('SEAT_PLANNER_V18_9_3');
+                localStorage.removeItem('SEAT_PLANNER_V18_9_1');
                 appState = {
                     students: [],
                     rooms: [],
@@ -627,9 +627,6 @@
         function getCapRule(cap) {
             let rule = appState.capacityRules[cap];
             if (!rule) {
-                if (cap > 35) {
-                    return { layout: [7, 7, 7, 7, 7], fixed: [false, true, false, true, false] };
-                }
                 return { layout: [6, 7, 7, 7, 7], fixed: [false, true, false, true, false] };
             }
             if (Array.isArray(rule)) {
@@ -769,11 +766,9 @@
             const openSub = [
                 { "학년": "1학년", "과목": "공통국어2", "정기시험": "시행", "공통과목": "True" },
                 { "학년": "2학년", "과목": "화법과 언어", "정기시험": "시행", "공통과목": "True" },
-                { "학년": "2학년", "과목": "일본어회화", "정기시험": "시행", "공통과목": "True" },
-                { "학년": "2학년", "과목": "중국어회화", "정기시험": "시행", "공통과목": "True" },
-                { "학년": "2학년", "과목": "프로그래밍", "정기시험": "시행", "공통과목": "True" },
                 { "학년": "2학년", "과목": "법과사회", "정기시험": "시행", "공통과목": "False" },
-                { "학년": "3학년", "과목": "화학Ⅱ", "정기시험": "시행", "공통과목": "False" }
+                { "학년": "3학년", "과목": "화학Ⅱ", "정기시험": "시행", "공통과목": "False" },
+                { "학년": "3학년", "과목": "미적분", "정기시험": "시행", "공통과목": "False" }
             ];
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(openSub), "개설과목현황");
 
@@ -1332,23 +1327,11 @@
             if (!rawSub || rawSub === "자습" || rawSub === "없음") return true;
 
             const cleanExam = cleanStr(rawSub.replace(/\([^)]*\)/g, ''));
+            const masterObj = appState.openedSubjects[rawSub.trim()] || appState.openedSubjects[cleanExam];
 
-            if (appState.openedSubjects[rawSub.trim()]) {
-                return appState.openedSubjects[rawSub.trim()].isCommon;
+            if (masterObj && typeof masterObj.isCommon === 'boolean') {
+                return masterObj.isCommon;
             }
-            if (appState.openedSubjects[cleanExam]) {
-                return appState.openedSubjects[cleanExam].isCommon;
-            }
-
-            for (let subKey in appState.openedSubjects) {
-                const cleanKey = cleanStr(subKey.replace(/\([^)]*\)/g, ''));
-                if (cleanExam.includes(cleanKey) || cleanKey.includes(cleanExam)) {
-                    if (appState.openedSubjects[subKey].isCommon === true) {
-                        return true;
-                    }
-                }
-            }
-
             return (grade === 1);
         }
 
@@ -1363,25 +1346,8 @@
             if (!rawSub || rawSub === "자습" || rawSub === "없음") return false;
 
             const cleanExam = cleanStr(rawSub.replace(/\([^)]*\)/g, ''));
-
-            let isCommon = false;
-            if (appState.openedSubjects[rawSub.trim()] && appState.openedSubjects[rawSub.trim()].isCommon) {
-                isCommon = true;
-            } else if (appState.openedSubjects[cleanExam] && appState.openedSubjects[cleanExam].isCommon) {
-                isCommon = true;
-            } else {
-                for (let subKey in appState.openedSubjects) {
-                    const cleanKey = cleanStr(subKey.replace(/\([^)]*\)/g, ''));
-                    if (cleanExam.includes(cleanKey) || cleanKey.includes(cleanExam)) {
-                        if (appState.openedSubjects[subKey].isCommon) {
-                            isCommon = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (isCommon) return true;
+            const masterObj = appState.openedSubjects[rawSub.trim()] || appState.openedSubjects[cleanExam];
+            if (masterObj && masterObj.isCommon) return true;
 
             if (!student.subjects || student.subjects.length === 0) return false;
 
@@ -1531,7 +1497,6 @@
             });
         }
 
-        // 💡 [v18.9.3 핵심 보완] 나간 학생 B < 14 인 경우 C = 14 - B 부족분 반영 규격 확장 알고리즘
         function step3_ExecuteMovement() {
             const slotKey = getCurSlotKey();
             const slotState = getSlotState(slotKey);
@@ -1583,17 +1548,8 @@
                 homeGroup.sort((a,b) => (a.seatSeq || a.num) - (b.seatSeq || b.num));
                 moveGroup.sort((a,b) => (a.seatSeq || a.num) - (b.seatSeq || b.num));
 
-                // 💡 [B < 14 인 경우 C = 14 - B 규격 확장 연산]
-                const B = origCap - homeGroup.length; // 실제 빠져나간 본반 인원 수
-                let extraCapNeeded = 0;
-                if (B < 14) {
-                    extraCapNeeded = 14 - B; // 자율분단 부족 좌석 수 C
-                }
-
                 const finalCount = homeGroup.length + moveGroup.length;
-                const requiredCap = finalCount + extraCapNeeded;
-                const effectiveCap = (requiredCap > origCap) ? requiredCap : origCap;
-
+                const effectiveCap = (finalCount > origCap) ? finalCount : origCap;
                 const rule = getCapRule(effectiveCap);
                 const layout = rule.layout;
                 const fixedFlags = rule.fixed;
@@ -1628,7 +1584,7 @@
 
             slotState.currentStep = 3;
             saveToLocalStorage();
-            renderStepUI(`3단계 완료 [${slotKey}]: 나간 학생 수(B < 14)에 따른 부족분 C=(14-B) 보완 알고리즘이 적용되어 황진인, 홍성엽 등 끝번호 잘림 없이 배치가 완벽하게 끝났습니다.`);
+            renderStepUI(`3단계 완료 [${slotKey}]: 이원화 규칙 및 출발지 우선 원칙 기반 이동 배치가 최종 완료되었습니다.`);
         }
 
         function handleDragStart(e, roomId, idx) {
@@ -1937,17 +1893,21 @@
             }).join('');
         }
 
+        // ==========================================
+        // 💡 [v18.9.1 정밀 수정] 7번 탭: 학생 단위 EXAM/SELF 응시 상태 검증 엔진
+        // ==========================================
         function calculateAutoStats(room, item) {
             if (!item || !item.timeSlot) return { subjectCount: 1, proctorCount: 1 };
 
             const slotKey = item.timeSlot;
             const parts = slotKey.split(' ');
-            const periodStr = parts[parts.length - 1]; 
-            const dayStr = slotKey.replace(periodStr, '').trim(); 
+            const periodStr = parts[parts.length - 1]; // "2교시"
+            const dayStr = slotKey.replace(periodStr, '').trim(); // "12월 14일 (월)"
 
             const specIds = getAllSpecialStudentIds();
             let examGrades = new Set();
 
+            // 1) 고사실 본반 학년 학생 중 실제 EXAM 응시자 검사
             const homeStudents = appState.students.filter(s => 
                 s.grade === room.targetGrade && 
                 s.classNum === room.targetClass && 
@@ -1959,6 +1919,7 @@
                 }
             });
 
+            // 2) 건너오는 학년 학생 중 실제 EXAM 응시자 검사
             const cRule = room.commonRule || {};
             const eRule = room.electiveRule || {};
             const moveGrade = cRule.moveGrade || eRule.moveGrade || (room.targetGrade === 1 ? 2 : 1);
@@ -1975,6 +1936,7 @@
             });
 
             let count = examGrades.size;
+            // 만약 두 학년 모두 자습/하교라면 기본값 1
             if (count === 0) count = 1;
 
             return {
@@ -2037,6 +1999,7 @@
             subHeader.innerHTML = headerCellsHtml;
             procHeader.innerHTML = headerCellsHtml;
 
+            // 표 1: 과목 수 행렬 바디
             subBody.innerHTML = validRooms.map(room => {
                 const rowCells = timeList.map(item => {
                     const autoVal = calculateAutoStats(room, item);
@@ -2062,6 +2025,7 @@
                 `;
             }).join('');
 
+            // 표 2: 감독교사 추천 인원 행렬 바디
             procBody.innerHTML = validRooms.map(room => {
                 const rowCells = timeList.map(item => {
                     const autoVal = calculateAutoStats(room, item);
