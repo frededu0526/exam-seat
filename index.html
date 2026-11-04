@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v18.9.1</title>
+    <title>정기시험 좌석배치 시스템 v18.9.2</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,8 +25,8 @@
     <!-- 상단 헤더 -->
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.9.1</h1>
-            <p class="text-xs text-indigo-200">7탭 학생 개별 응시상태(EXAM/SELF) 기반 통계 및 감독추천 로직 정밀화 완료</p>
+            <h1 class="text-xl font-bold">🏫 정기시험 좌석배치 시스템 v18.9.2</h1>
+            <p class="text-xs text-indigo-200">교양 교과군(일본어회화, 중국어회화, 프로그래밍 등) 부분일치 공통과목 자동인식 보완 완료</p>
         </div>
         <div class="flex gap-2 text-sm flex-wrap items-center">
             <span id="save-status" class="bg-indigo-800 px-3 py-1.5 rounded text-xs flex items-center">
@@ -409,7 +409,7 @@
             </div>
         </section>
 
-        <!-- [탭 7] 통계 & 감독배치추천 탭 (v18.9.1 학생단위 검증 적용) -->
+        <!-- [탭 7] 통계 & 감독배치추천 탭 -->
         <section id="tab7" class="tab-content hidden">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
                 <div class="flex justify-between items-center mb-4">
@@ -538,7 +538,7 @@
 
         function saveToLocalStorage() {
             try {
-                localStorage.setItem('SEAT_PLANNER_V18_9_1', JSON.stringify(appState));
+                localStorage.setItem('SEAT_PLANNER_V18_9_2', JSON.stringify(appState));
                 const statusEl = document.getElementById('save-status');
                 if(statusEl) statusEl.innerText = "🟢 안전 저장 완료 (" + new Date().toLocaleTimeString() + ")";
             } catch (e) {
@@ -547,7 +547,7 @@
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('SEAT_PLANNER_V18_9_1');
+            const saved = localStorage.getItem('SEAT_PLANNER_V18_9_2');
             if(saved) {
                 try { 
                     appState = JSON.parse(saved); 
@@ -559,7 +559,7 @@
 
         function resetAllData() {
             if (confirm("⚠️ 정말로 저장된 모든 학생, 고사실, 시간표, 수험표, 통계 데이터를 초기화하시겠습니까?")) {
-                localStorage.removeItem('SEAT_PLANNER_V18_9_1');
+                localStorage.removeItem('SEAT_PLANNER_V18_9_2');
                 appState = {
                     students: [],
                     rooms: [],
@@ -766,9 +766,11 @@
             const openSub = [
                 { "학년": "1학년", "과목": "공통국어2", "정기시험": "시행", "공통과목": "True" },
                 { "학년": "2학년", "과목": "화법과 언어", "정기시험": "시행", "공통과목": "True" },
+                { "학년": "2학년", "과목": "일본어회화", "정기시험": "시행", "공통과목": "True" },
+                { "학년": "2학년", "과목": "중국어회화", "정기시험": "시행", "공통과목": "True" },
+                { "학년": "2학년", "과목": "프로그래밍", "정기시험": "시행", "공통과목": "True" },
                 { "학년": "2학년", "과목": "법과사회", "정기시험": "시행", "공통과목": "False" },
-                { "학년": "3학년", "과목": "화학Ⅱ", "정기시험": "시행", "공통과목": "False" },
-                { "학년": "3학년", "과목": "미적분", "정기시험": "시행", "공통과목": "False" }
+                { "학년": "3학년", "과목": "화학Ⅱ", "정기시험": "시행", "공통과목": "False" }
             ];
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(openSub), "개설과목현황");
 
@@ -877,7 +879,7 @@
                         alert(`총 ${parsedStudents.length}명의 학생 데이터(1,2,3학년) 파싱이 완료되었습니다!`);
                     }
                 };
-                reader.readAsArrayBuffer(file);
+                reader.readAsBuffer(file);
             });
         }
 
@@ -1319,6 +1321,7 @@
             }
         }
 
+        // 💡 [v18.9.2 보완] 시간표 과목명이 개설과목현황 시트 명칭과 부분 일치하더라도 공통과목(TRUE) 인식
         function isCommonSubjectForGrade(grade, dayStr, periodStr) {
             const item = getSelectedTimetableItem();
             if (!item) return true;
@@ -1327,14 +1330,29 @@
             if (!rawSub || rawSub === "자습" || rawSub === "없음") return true;
 
             const cleanExam = cleanStr(rawSub.replace(/\([^)]*\)/g, ''));
-            const masterObj = appState.openedSubjects[rawSub.trim()] || appState.openedSubjects[cleanExam];
 
-            if (masterObj && typeof masterObj.isCommon === 'boolean') {
-                return masterObj.isCommon;
+            // 1) 완전 일치 체크
+            if (appState.openedSubjects[rawSub.trim()]) {
+                return appState.openedSubjects[rawSub.trim()].isCommon;
             }
+            if (appState.openedSubjects[cleanExam]) {
+                return appState.openedSubjects[cleanExam].isCommon;
+            }
+
+            // 2) 괄호 제거 후 부분 포함 검사 (예: "일본어회화(조)" ↔ "일본어회화")
+            for (let subKey in appState.openedSubjects) {
+                const cleanKey = cleanStr(subKey.replace(/\([^)]*\)/g, ''));
+                if (cleanExam.includes(cleanKey) || cleanKey.includes(cleanExam)) {
+                    if (appState.openedSubjects[subKey].isCommon === true) {
+                        return true;
+                    }
+                }
+            }
+
             return (grade === 1);
         }
 
+        // 💡 [v18.9.2 보완] 학생 개별 응시 검사 시 부분 포함 공통과목 정확 인식
         function checkHasExamInItem(student, item) {
             if (!student || !item) return false;
             
@@ -1346,9 +1364,28 @@
             if (!rawSub || rawSub === "자습" || rawSub === "없음") return false;
 
             const cleanExam = cleanStr(rawSub.replace(/\([^)]*\)/g, ''));
-            const masterObj = appState.openedSubjects[rawSub.trim()] || appState.openedSubjects[cleanExam];
-            if (masterObj && masterObj.isCommon) return true;
 
+            // 개설과목현황 시트에 공통과목(isCommon: true)으로 등록된 과목인지 부분 일치 검사
+            let isCommon = false;
+            if (appState.openedSubjects[rawSub.trim()] && appState.openedSubjects[rawSub.trim()].isCommon) {
+                isCommon = true;
+            } else if (appState.openedSubjects[cleanExam] && appState.openedSubjects[cleanExam].isCommon) {
+                isCommon = true;
+            } else {
+                for (let subKey in appState.openedSubjects) {
+                    const cleanKey = cleanStr(subKey.replace(/\([^)]*\)/g, ''));
+                    if (cleanExam.includes(cleanKey) || cleanKey.includes(cleanExam)) {
+                        if (appState.openedSubjects[subKey].isCommon) {
+                            isCommon = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (isCommon) return true;
+
+            // 공통과목이 아닌 순수 선택과목일 때만 학생 개인 수강 과목과 대조
             if (!student.subjects || student.subjects.length === 0) return false;
 
             return student.subjects.some(sub => {
@@ -1893,21 +1930,17 @@
             }).join('');
         }
 
-        // ==========================================
-        // 💡 [v18.9.1 정밀 수정] 7번 탭: 학생 단위 EXAM/SELF 응시 상태 검증 엔진
-        // ==========================================
         function calculateAutoStats(room, item) {
             if (!item || !item.timeSlot) return { subjectCount: 1, proctorCount: 1 };
 
             const slotKey = item.timeSlot;
             const parts = slotKey.split(' ');
-            const periodStr = parts[parts.length - 1]; // "2교시"
-            const dayStr = slotKey.replace(periodStr, '').trim(); // "12월 14일 (월)"
+            const periodStr = parts[parts.length - 1]; 
+            const dayStr = slotKey.replace(periodStr, '').trim(); 
 
             const specIds = getAllSpecialStudentIds();
             let examGrades = new Set();
 
-            // 1) 고사실 본반 학년 학생 중 실제 EXAM 응시자 검사
             const homeStudents = appState.students.filter(s => 
                 s.grade === room.targetGrade && 
                 s.classNum === room.targetClass && 
@@ -1919,7 +1952,6 @@
                 }
             });
 
-            // 2) 건너오는 학년 학생 중 실제 EXAM 응시자 검사
             const cRule = room.commonRule || {};
             const eRule = room.electiveRule || {};
             const moveGrade = cRule.moveGrade || eRule.moveGrade || (room.targetGrade === 1 ? 2 : 1);
@@ -1936,7 +1968,6 @@
             });
 
             let count = examGrades.size;
-            // 만약 두 학년 모두 자습/하교라면 기본값 1
             if (count === 0) count = 1;
 
             return {
