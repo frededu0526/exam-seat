@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v20.08</title>
+    <title>정기시험 좌석배치 시스템 v20.09</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,7 +25,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.08</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.09</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">스토리지 완전 초기화 · 비고정 정원 동적 승격 · 개별 이동 옵션 완비 패치</p>
         </div>
@@ -335,7 +335,7 @@
 
         <!-- [5번 탭] 좌석 배치 -->
         <section id="tab5" class="tab-content hidden">
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6 no-print">
                 <div class="flex gap-4 items-center flex-wrap mb-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">시험 날짜 / 요일 선택</label>
@@ -1483,13 +1483,7 @@ function onPeriodChange() {
                 const seats = appState.currentSeats[room.id] || [];
                 const spec = getSpecForCount(seats.length);
 
-                const t2Info = appState.internalTable2[room.id] || {
-                    totalCap: spec.capacity,
-                    fixedCap: 14,
-                    nonFixedCap: spec.capacity - 14,
-                    fixedTargetGroup: '들어온 학생',
-                    nonFixedTargetGroup: '잔류 학생'
-                };
+                const t2Info = appState.internalTable2[room.id] || { totalCap: spec.capacity };
 
                 let seatIdx = 0;
                 return `
@@ -1499,8 +1493,7 @@ function onPeriodChange() {
                                 <h3 class="text-base font-bold text-slate-800">${room.name} 좌석배치도</h3>
                                 <p class="text-xs text-indigo-700 font-medium mt-0.5">
                                     총 정원(기준): <b>${t2Info.totalCap}명</b> | 
-                                    고정분단: <b>${t2Info.fixedCap}명 [${t2Info.fixedTargetGroup}]</b> | 
-                                    비고정분단: <b>${t2Info.nonFixedCap}명 [${t2Info.nonFixedTargetGroup}]</b>
+                                    총 정원(이동후): <b>${seats.length}명</b>
                                 </p>
                             </div>
                             <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded">교탁 방향 ⬆️</span>
@@ -1518,18 +1511,25 @@ function onPeriodChange() {
                                             const seat = seats[currentSeatIdx] || { studentId: '', studentName: '빈좌석' };
                                             seatIdx++;
 
+                                            // 학년별 시각적 대비 카드 스타일 설정
+                                            const gradeChar = seat.studentId ? seat.studentId.charAt(0) : '';
+                                            let cardBgStyle = "bg-white border-slate-200";
+                                            if (gradeChar === '1') cardBgStyle = "bg-sky-50/90 border-sky-300 text-sky-950";
+                                            else if (gradeChar === '2') cardBgStyle = "bg-emerald-50/90 border-emerald-300 text-emerald-950";
+                                            else if (gradeChar === '3') cardBgStyle = "bg-amber-50/90 border-amber-300 text-amber-950";
+
                                             return `
                                                 <div draggable="true" 
                                                      ondragstart="handleDragStart(event, '${room.id}', ${currentSeatIdx})"
                                                      ondragover="handleDragOver(event)"
                                                      ondragleave="handleDragLeave(event)"
                                                      ondrop="handleDrop(event, '${room.id}', ${currentSeatIdx})"
-                                                     class="w-24 h-16 border rounded p-1.5 bg-white text-center flex flex-col justify-between shadow-xs cursor-move hover:border-indigo-500 transition">
+                                                     class="w-24 h-16 border rounded p-1.5 ${cardBgStyle} text-center flex flex-col justify-between shadow-xs cursor-move hover:border-indigo-500 transition">
                                                     <div class="flex justify-between items-center text-[10px]">
-                                                        <span class="font-bold text-slate-500">${seat.studentId || '-'}</span>
+                                                        <span class="font-bold text-slate-600">${seat.studentId || '-'}</span>
                                                         ${appState.showSeqNumber && seat.seatSeq ? `<span class="bg-indigo-600 text-white font-bold px-1 rounded text-[9px]">${seat.seatSeq}</span>` : ''}
                                                     </div>
-                                                    <div class="font-bold text-xs truncate ${seat.studentName === '빈좌석' ? 'text-slate-300' : 'text-slate-800'}">
+                                                    <div class="font-bold text-xs truncate ${seat.studentName === '빈좌석' ? 'text-slate-300' : 'text-slate-900'}">
                                                         ${seat.studentName}
                                                     </div>
                                                     <div class="text-[9px] text-indigo-700 font-semibold truncate">
@@ -1552,6 +1552,9 @@ function onPeriodChange() {
             if (!scheduleKey) return;
 
             let count = 0;
+            const assignedStIds = new Set();
+
+            // 1. 배치된 좌석 학생 반영
             Object.keys(appState.currentSeats).forEach(roomId => {
                 const room = appState.rooms.find(r => r.id === roomId);
                 const roomName = room ? room.name : roomId;
@@ -1565,17 +1568,32 @@ function onPeriodChange() {
                         const row = (idx % 7) + 1;
 
                         appState.ticketDB[seat.studentId][scheduleKey] = {
-                            subject: seat.subject,
+                            subject: seat.subject || '자습',
                             roomName: roomName,
                             seatInfo: `${col}열 ${row}행`
                         };
+                        assignedStIds.add(seat.studentId);
                         count++;
                     }
                 });
             });
 
+            // 2. 미배치 하교 학생 처리 (응시과목: 없음, 장소: 하교)
+            let dismissCount = 0;
+            appState.students.forEach(st => {
+                if (!assignedStIds.has(st.id)) {
+                    if (!appState.ticketDB[st.id]) appState.ticketDB[st.id] = {};
+                    appState.ticketDB[st.id][scheduleKey] = {
+                        subject: '없음',
+                        roomName: '하교',
+                        seatInfo: '-'
+                    };
+                    dismissCount++;
+                }
+            });
+
             saveToLocalStorage();
-            alert(`📌 ${count}명 학생의 좌석배치가 수험표 DB에 완벽 반영되었습니다!`);
+            alert(`📌 배치 학생 ${count}명 및 하교 학생 ${dismissCount}명의 정보가 수험표 DB에 반영되었습니다!`);
         }
 
         // ==========================================
