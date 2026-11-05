@@ -599,23 +599,46 @@
             return false;
         }
 
-        function determineSelfStudyOrDismiss(student, dayPeriodRow, gradeKey) {
-            const totalPeriodsInDay = appState.rawTimetable.filter(r => r['날짜/교시'].split(' ')[0] === dayPeriodRow['날짜/교시'].split(' ')[0]);
-            const currentPeriodIdx = totalPeriodsInDay.findIndex(r => r['날짜/교시'] === dayPeriodRow['날짜/교시']);
+        // 현재 교시에 학생이 실제 시험을 치르는지 여부 판별 헬퍼 함수
+function isStudentTakingExamInPeriod(student, row, gradeKey) {
+    const subjStr = row[gradeKey] || "없음";
+    if (!subjStr || subjStr === "없음" || subjStr === "자습") return false;
 
-            if (currentPeriodIdx === 0) return "자습";
+    const grade = parseInt(gradeKey.charAt(0));
+    if (grade === 1) return true; // 1학년은 시험 교시면 무조건 공통 응시
 
-            let hasLaterExam = false;
-            for (let i = currentPeriodIdx + 1; i < totalPeriodsInDay.length; i++) {
-                const laterRow = totalPeriodsInDay[i];
-                const laterSubjStr = laterRow[gradeKey];
-                if (laterSubjStr && laterSubjStr !== "없음" && laterSubjStr !== "자습") {
-                    hasLaterExam = true;
-                    break;
-                }
-            }
-            return hasLaterExam ? "자습" : "하교";
+    if (subjStr.includes('/') || subjStr.includes('·') || subjStr.includes(',')) return true;
+
+    const cleanSubj = normalizeSubjectName(subjStr);
+    return (student.choices || []).some(c => normalizeSubjectName(c) === cleanSubj);
+}
+
+// 학생별 응시 / 자습 / 하교 상태 정밀 판별 함수
+function determineSelfStudyOrDismiss(student, dayPeriodRow, gradeKey) {
+    // 1. 현재 교시에 시험이 있는 경우 -> 무조건 시험 응시 처리
+    if (isStudentTakingExamInPeriod(student, dayPeriodRow, gradeKey)) {
+        return "응시";
+    }
+
+    // 2. 현재 교시에 시험이 없는 경우 -> 당일(getDatePart) 기준 자습/하교 판별
+    const currentDate = getDatePart(dayPeriodRow['날짜/교시']);
+    const dayPeriods = appState.rawTimetable.filter(r => getDatePart(r['날짜/교시']) === currentDate);
+    const currentIdx = dayPeriods.findIndex(r => r['날짜/교시'] === dayPeriodRow['날짜/교시']);
+
+    // 당일 1교시는 무조건 자습 배치
+    if (currentIdx === 0) return "자습";
+
+    // 당일 남은 후속 교시에 응시할 시험이 있는지 확인
+    let hasLaterExam = false;
+    for (let i = currentIdx + 1; i < dayPeriods.length; i++) {
+        if (isStudentTakingExamInPeriod(student, dayPeriods[i], gradeKey)) {
+            hasLaterExam = true;
+            break;
         }
+    }
+
+    return hasLaterExam ? "자습" : "하교";
+}
 
         // ==========================================
         // 3. 고사실 관리 (탭 2)
