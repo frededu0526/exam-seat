@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v20.04</title>
+    <title>정기시험 좌석배치 시스템 v20.05</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,7 +25,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.03</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.05</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">스토리지 완전 초기화 · 비고정 정원 동적 승격 · 개별 이동 옵션 완비 패치</p>
         </div>
@@ -344,8 +344,8 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">교시 선택</label>
-                        <select id="seat-period-select" class="border rounded px-3 py-1.5 text-xs font-bold bg-white" onchange="onPeriodChange()">
-                        </select>
+                        <select id="seat-period-select" class="border rounded px-3 py-1.5 text-xs font-bold bg-white" onchange="onSeatScheduleChange()">
+</select>
                     </div>
                     <div class="flex-1 bg-slate-50 p-2.5 rounded border border-slate-200 text-xs">
                         <span class="font-bold text-slate-700">해당 시간 시험과목:</span>
@@ -1100,6 +1100,24 @@
     daySel.innerHTML = days.map(d => `<option value="${d}">${d}</option>`).join('');
 
     onSeatScheduleChange();
+}
+
+function onSeatScheduleChange() {
+    const dayVal = document.getElementById('seat-day-select').value;
+    const perSel = document.getElementById('seat-period-select');
+
+    const filteredRows = appState.rawTimetable.filter(r => r['날짜/교시'].startsWith(dayVal));
+    perSel.innerHTML = filteredRows.map(r => {
+        const pText = r['날짜/교시'].replace(dayVal, '').trim();
+        return `<option value="${r['날짜/교시']}">${pText}</option>`;
+    }).join('');
+
+    updateCurrentSubjectDisplay();
+}
+
+// 교시 변경 시 목록 재생성 없이 과목 디스플레이만 업데이트
+function onPeriodChange() {
+    updateCurrentSubjectDisplay();
 }
 
         function updateCurrentSubjectDisplay() {
