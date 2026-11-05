@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v20.02</title>
+    <title>정기시험 좌석배치 시스템 v20.03</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,9 +25,9 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.02</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.03</span>
             </h1>
-            <p class="text-xs text-indigo-200 mt-0.5">파싱 호환성 강화 · 고사실 생성 정상화 · 이동설정 라벨 개선 완료</p>
+            <p class="text-xs text-indigo-200 mt-0.5">스토리지 완전 초기화 · 비고정 정원 동적 승격 · 개별 이동 옵션 완비 패치</p>
         </div>
         <div class="flex gap-2 text-xs flex-wrap items-center">
             <button onclick="exportJSON()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded transition font-medium flex items-center gap-1 shadow-sm">
@@ -89,20 +89,22 @@
                 </div>
             </div>
 
+            <!-- 시간표 디스플레이 개선 (날짜별 하위 범주화 & 학년별 교과목 색상) -->
             <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
-                <h2 class="text-base font-bold text-slate-800 mb-3">📅 업로드된 시험 시간표</h2>
-                <div class="overflow-x-auto border rounded-lg max-h-60">
-                    <table class="w-full text-sm text-left text-slate-600">
-                        <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+                <h2 class="text-base font-bold text-slate-800 mb-3">📅 업로드된 시험 시간표 (날짜별 시각화)</h2>
+                <div class="overflow-x-auto border rounded-lg max-h-80">
+                    <table class="w-full text-xs text-left text-slate-600 border-collapse">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-10">
                             <tr>
-                                <th class="px-4 py-2 border-b">날짜 / 교시</th>
-                                <th class="px-4 py-2 border-b">1학년 과목</th>
-                                <th class="px-4 py-2 border-b">2학년 과목</th>
-                                <th class="px-4 py-2 border-b">3학년 과목</th>
+                                <th class="px-4 py-2.5 border-b border-r w-32 text-center">날짜</th>
+                                <th class="px-4 py-2.5 border-b border-r w-24 text-center">교시</th>
+                                <th class="px-4 py-2.5 border-b border-r text-sky-900 bg-sky-50/50">1학년 과목</th>
+                                <th class="px-4 py-2.5 border-b border-r text-emerald-900 bg-emerald-50/50">2학년 과목</th>
+                                <th class="px-4 py-2.5 border-b text-amber-900 bg-amber-50/50">3학년 과목</th>
                             </tr>
                         </thead>
                         <tbody id="timetable-display-body">
-                            <tr><td colspan="4" class="text-center py-6 text-slate-400">엑셀 파일을 업로드하면 시험 시간표가 디스플레이됩니다.</td></tr>
+                            <tr><td colspan="5" class="text-center py-6 text-slate-400">엑셀 파일을 업로드하면 시험 시간표가 디스플레이됩니다.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -274,9 +276,9 @@
                             <div>
                                 <label class="block text-slate-600 font-bold mb-1">이동 목적지 학년</label>
                                 <select id="bulk-common-dest" class="border rounded px-2.5 py-1.5 w-full bg-white font-semibold">
-                                    <option value="2">2학년 고사실로 이동 (1-1 ↔ 2-1)</option>
-                                    <option value="3">3학년 고사실로 이동 (1-1 ↔ 3-1)</option>
                                     <option value="1">1학년 고사실로 이동</option>
+                                    <option value="2" selected>2학년 고사실로 이동</option>
+                                    <option value="3">3학년 고사실로 이동</option>
                                 </select>
                             </div>
                         </div>
@@ -308,9 +310,9 @@
                             <div>
                                 <label class="block text-slate-600 font-bold mb-1">이동 목적지 학년</label>
                                 <select id="bulk-select-dest" class="border rounded px-2.5 py-1.5 w-full bg-white font-semibold">
-                                    <option value="1">1학년 고사실로 이동 (2-1 ↔ 1-1)</option>
-                                    <option value="3">3학년 고사실로 이동</option>
+                                    <option value="1" selected>1학년 고사실로 이동</option>
                                     <option value="2">2학년 고사실로 이동</option>
+                                    <option value="3">3학년 고사실로 이동</option>
                                 </select>
                             </div>
                         </div>
@@ -414,7 +416,7 @@
     <!-- 스크립트 메인 로직 -->
     <script>
         // ==========================================
-        // 1. 애플리케이션 상태
+        // 1. 애플리케이션 상태 (State Management)
         // ==========================================
         let appState = {
             rawTimetable: [],
@@ -434,6 +436,7 @@
                 { capacity: 35, cols: [7, 7, 7, 7, 7], fixed: [false, true, false, true, false] }
             ],
             moveRules: {},
+            internalTable2: {}, // [roomId]: { totalCap, fixedCap, nonFixedCap, fixedTargetGroup, nonFixedTargetGroup }
             currentSeats: {},
             ticketDB: {},
             showSeqNumber: true
@@ -455,7 +458,7 @@
             activeBtn.classList.remove('border-transparent');
             activeBtn.classList.add('border-indigo-600', 'text-indigo-600');
 
-            if (tabId === 'tab2') renderTab2Rooms(); // 2번 탭 전환 시 고사실 렌더링
+            if (tabId === 'tab2') renderTab2Rooms();
             if (tabId === 'tab4') renderTab4Rules();
             if (tabId === 'tab5') setupTab5ScheduleSelects();
             if (tabId === 'tab6') renderTickets();
@@ -510,7 +513,6 @@
             XLSX.writeFile(wb, "정기시험_좌석배치도_기초자료_양식.xlsx");
         }
 
-        // 유연한 시트 데이터 추출 함수
         function getSheetRowsFlexible(workbook, targetName) {
             const cleanTarget = targetName.replace(/\s+/g, '');
             const foundName = workbook.SheetNames.find(s => s.replace(/\s+/g, '') === cleanTarget);
@@ -533,7 +535,6 @@
 
                     const parseStudents = [];
 
-                    // 1학년 명렬표
                     const g1Rows = getSheetRowsFlexible(workbook, "1학년 명렬표");
                     g1Rows.forEach(r => {
                         const stId = String(r['학번'] || r['학생학번'] || '').trim();
@@ -543,7 +544,6 @@
                         }
                     });
 
-                    // 2/3학년 선택과목 현황
                     ["2학년 학생 선택과목 현황", "3학년 학생 선택과목 현황"].forEach(sName => {
                         const rows = getSheetRowsFlexible(workbook, sName);
                         rows.forEach(r => {
@@ -566,7 +566,7 @@
 
                     saveToLocalStorage();
                     renderAll();
-                    alert("✅ 엑셀 기초자료 업로드 및 파싱이 정상적으로 완료되었습니다!");
+                    alert("✅ 엑셀 기초자료 업로드 및 파싱이 정상 완료되었습니다!");
                 } catch (err) {
                     console.error(err);
                     alert("⚠️ 엑셀 파일 처리 중 오류가 발생했습니다: " + err.message);
@@ -584,7 +584,7 @@
         }
 
         function isCommonSubjectForGrade(grade, rawSubjectStr) {
-            if (grade === 1) return true; // 1학년 무조건 공통과목
+            if (grade === 1) return true;
             if (!rawSubjectStr || rawSubjectStr === "자습") return true;
 
             if (rawSubjectStr.includes('/') || rawSubjectStr.includes('·') || rawSubjectStr.includes(',')) {
@@ -646,6 +646,7 @@
                 });
             }
 
+            appState.rooms.sort((a, b) => a.num - b.num);
             saveToLocalStorage();
             renderTab2Rooms();
         }
@@ -687,7 +688,7 @@
 
             if (!stdContainer || !spContainer) return;
 
-            const stdRooms = appState.rooms.filter(r => !r.isSpecial);
+            const stdRooms = appState.rooms.filter(r => !r.isSpecial).sort((a,b) => a.num - b.num);
             const spRooms = appState.rooms.filter(r => r.isSpecial);
 
             document.getElementById('standard-room-count').innerText = `${stdRooms.length}개`;
@@ -696,17 +697,26 @@
             if (stdRooms.length === 0) {
                 stdContainer.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400">생성된 일반 고사실이 없습니다.</div>`;
             } else {
-                stdContainer.innerHTML = stdRooms.map(room => `
-                    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                        <div class="flex justify-between items-center mb-2">
-                            <input type="text" value="${room.name}" onchange="updateRoomName('${room.id}', this.value)" class="font-bold text-sm bg-transparent border-b border-dashed border-slate-400 focus:border-indigo-600 px-1 py-0.5 w-4/5">
-                            <button onclick="deleteRoom('${room.id}')" class="text-rose-600 hover:text-rose-800 text-xs font-bold">삭제</button>
+                stdContainer.innerHTML = stdRooms.map(room => {
+                    const matchedCount = appState.students.filter(s => {
+                        const g = parseInt(s.id.charAt(0));
+                        const c = parseInt(s.id.slice(1, 3));
+                        return g === room.targetGrade && c === room.targetClass;
+                    }).length;
+
+                    return `
+                        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-center mb-2">
+                                <input type="text" value="${room.name}" onchange="updateRoomName('${room.id}', this.value)" class="font-bold text-sm bg-transparent border-b border-dashed border-slate-400 focus:border-indigo-600 px-1 py-0.5 w-4/5">
+                                <button onclick="deleteRoom('${room.id}')" class="text-rose-600 hover:text-rose-800 text-xs font-bold">삭제</button>
+                            </div>
+                            <div class="text-xs text-slate-500 flex justify-between items-center">
+                                <span>기준 고사실: <b>${room.targetGrade}학년 ${room.targetClass}반</b></span>
+                                <span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-bold">매칭 학생: ${matchedCount}명</span>
+                            </div>
                         </div>
-                        <div class="text-xs text-slate-500">
-                            <span>기준 고사실: <b>${room.targetGrade}학년 ${room.targetClass}반</b> 매칭</span>
-                        </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             }
 
             if (spRooms.length === 0) {
@@ -723,13 +733,17 @@
                                 <span class="font-bold">배정 학생 (${room.specialStudents.length}명)</span>
                                 <button onclick="addSpecialStudent('${room.id}')" class="text-indigo-600 text-xs font-bold">+ 학생 지정</button>
                             </div>
-                            <div class="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                                ${room.specialStudents.map(stId => `
-                                    <span class="bg-amber-100 text-amber-900 text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
-                                        ${stId}
-                                        <button onclick="removeSpecialStudent('${room.id}', '${stId}')" class="text-rose-600 font-bold">×</button>
-                                    </span>
-                                `).join('')}
+                            <div class="flex flex-wrap gap-1 max-h-28 overflow-y-auto pt-1">
+                                ${room.specialStudents.map(stId => {
+                                    const stObj = appState.students.find(s => s.id === stId);
+                                    const stLabel = stObj ? `${stId}(${stObj.name})` : `${stId}`;
+                                    return `
+                                        <span class="bg-amber-100 text-amber-900 text-xs px-1.5 py-0.5 rounded flex items-center gap-1 font-mono">
+                                            ${stLabel}
+                                            <button onclick="removeSpecialStudent('${room.id}', '${stId}')" class="text-rose-600 font-bold ml-0.5">×</button>
+                                        </span>
+                                    `;
+                                }).join('')}
                             </div>
                         </div>
                     </div>
@@ -864,7 +878,7 @@
         }
 
         // ==========================================
-        // 5. 이동 설정 (탭 4 - 라벨 명시 보완)
+        // 5. 이동 설정 (탭 4 - 개별 옵션 및 인원 초과 경고)
         // ==========================================
         function parseRangeString(str) {
             const numbers = new Set();
@@ -895,10 +909,22 @@
             });
 
             if (overlap.length > 0) {
-                alert(`⚠️ 입력 에러: '내보낼 학생' 범위와 '잔류 학생' 범위에 중복된 번호(${overlap.join(', ')})가 있습니다. 올바르게 수정해 주세요.`);
+                alert(`⚠️ 입력 에러: '내보낼 학생' 범위와 '잔류 학생' 범위에 중복된 번호(${overlap.join(', ')})가 있습니다.`);
                 return false;
             }
             return true;
+        }
+
+        function checkCapacityOverloadWarning(fixedGroup, outStr, stayStr) {
+            const outCount = parseRangeString(outStr).size;
+            const stayCount = parseRangeString(stayStr).size;
+            const targetCount = (fixedGroup === 'INCOMING') ? outCount : stayCount;
+
+            const maxFixedCap = Math.max(...appState.specs.map(s => s.cols.reduce((acc, val, idx) => s.fixed[idx] ? acc + val : acc, 0)), 14);
+
+            if (targetCount > maxFixedCap) {
+                alert(`⚠️ 인원 초과 경고: 고정 분단에 배치될 학생 그룹의 설정 인원수(${targetCount}명)가 정원별 고정 분단 최대 정원(${maxFixedCap}석)을 초과합니다!`);
+            }
         }
 
         function applyBulkMoveRules() {
@@ -919,6 +945,8 @@
                 return;
             }
 
+            checkCapacityOverloadWarning(fixedGroup, commonOut, commonStay);
+
             appState.rooms.forEach(room => {
                 if (room.isSpecial) return;
                 if (targetGrade === 'ALL' || room.targetGrade === parseInt(targetGrade)) {
@@ -937,7 +965,7 @@
 
         function renderTab4Rules() {
             const container = document.getElementById('individual-rules-container');
-            const stdRooms = appState.rooms.filter(r => !r.isSpecial);
+            const stdRooms = appState.rooms.filter(r => !r.isSpecial).sort((a,b) => a.num - b.num);
 
             if (stdRooms.length === 0) {
                 container.innerHTML = `<div class="text-center py-6 text-slate-400">2번 탭에서 일반 고사실을 먼저 생성해 주세요.</div>`;
@@ -963,8 +991,16 @@
                             </p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full md:w-3/4 text-xs">
+                            <!-- 개별 공통과목 옵션 (방식 및 목적지 추가) -->
                             <div class="bg-white p-3 rounded border border-indigo-100 space-y-2">
                                 <span class="font-bold text-indigo-900 block border-b pb-1">📘 공통과목 규칙</span>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-0.5">내보낼 학번 지정 방식</label>
+                                    <select onchange="updateIndivSubRule('${room.id}', 'common', 'mode', this.value)" class="border rounded px-2 py-1 w-full bg-white font-semibold text-xs">
+                                        <option value="STUDENT_RANGE" ${rule.common.mode === 'STUDENT_RANGE' ? 'selected' : ''}>학번 범위 지정 (예: 1-14)</option>
+                                        <option value="SEQ_RANGE" ${rule.common.mode === 'SEQ_RANGE' ? 'selected' : ''}>내부 번호 범위 지정 (예: 1-14)</option>
+                                    </select>
+                                </div>
                                 <div>
                                     <label class="block text-[11px] font-bold text-slate-600 mb-0.5">📤 내보낼 학생 범위</label>
                                     <input type="text" value="${rule.common.out}" onchange="updateIndivSubRule('${room.id}', 'common', 'out', this.value)" class="border rounded px-2 py-1 w-full font-mono text-xs" placeholder="예: 1-14">
@@ -973,9 +1009,26 @@
                                     <label class="block text-[11px] font-bold text-slate-600 mb-0.5">🏠 본반 잔류 학생 범위</label>
                                     <input type="text" value="${rule.common.stay}" onchange="updateIndivSubRule('${room.id}', 'common', 'stay', this.value)" class="border rounded px-2 py-1 w-full font-mono text-xs" placeholder="예: 15-35">
                                 </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-0.5">이동 목적지 학년</label>
+                                    <select onchange="updateIndivSubRule('${room.id}', 'common', 'destGrade', this.value)" class="border rounded px-2 py-1 w-full bg-white font-semibold text-xs">
+                                        <option value="1" ${String(rule.common.destGrade) === '1' ? 'selected' : ''}>1학년 고사실로 이동</option>
+                                        <option value="2" ${String(rule.common.destGrade) === '2' ? 'selected' : ''}>2학년 고사실로 이동</option>
+                                        <option value="3" ${String(rule.common.destGrade) === '3' ? 'selected' : ''}>3학년 고사실로 이동</option>
+                                    </select>
+                                </div>
                             </div>
+
+                            <!-- 개별 선택과목 옵션 (방식 및 목적지 추가) -->
                             <div class="bg-white p-3 rounded border border-emerald-100 space-y-2">
                                 <span class="font-bold text-emerald-900 block border-b pb-1">📗 선택과목 규칙</span>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-0.5">내보낼 학번 지정 방식</label>
+                                    <select onchange="updateIndivSubRule('${room.id}', 'select', 'mode', this.value)" class="border rounded px-2 py-1 w-full bg-white font-semibold text-xs">
+                                        <option value="SEQ_RANGE" ${rule.select.mode === 'SEQ_RANGE' ? 'selected' : ''}>내부 번호 범위 지정 (예: 1-14)</option>
+                                        <option value="STUDENT_RANGE" ${rule.select.mode === 'STUDENT_RANGE' ? 'selected' : ''}>학번 범위 지정 (예: 1-14)</option>
+                                    </select>
+                                </div>
                                 <div>
                                     <label class="block text-[11px] font-bold text-slate-600 mb-0.5">📤 내보낼 학생 범위</label>
                                     <input type="text" value="${rule.select.out}" onchange="updateIndivSubRule('${room.id}', 'select', 'out', this.value)" class="border rounded px-2 py-1 w-full font-mono text-xs" placeholder="예: 1-14">
@@ -983,6 +1036,14 @@
                                 <div>
                                     <label class="block text-[11px] font-bold text-slate-600 mb-0.5">🏠 본반 잔류 학생 범위</label>
                                     <input type="text" value="${rule.select.stay}" onchange="updateIndivSubRule('${room.id}', 'select', 'stay', this.value)" class="border rounded px-2 py-1 w-full font-mono text-xs" placeholder="예: 15-35">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-0.5">이동 목적지 학년</label>
+                                    <select onchange="updateIndivSubRule('${room.id}', 'select', 'destGrade', this.value)" class="border rounded px-2 py-1 w-full bg-white font-semibold text-xs">
+                                        <option value="1" ${String(rule.select.destGrade) === '1' ? 'selected' : ''}>1학년 고사실로 이동</option>
+                                        <option value="2" ${String(rule.select.destGrade) === '2' ? 'selected' : ''}>2학년 고사실로 이동</option>
+                                        <option value="3" ${String(rule.select.destGrade) === '3' ? 'selected' : ''}>3학년 고사실로 이동</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -1007,12 +1068,17 @@
             if (key === 'out' && !validateRanges(val, otherVal)) return;
             if (key === 'stay' && !validateRanges(otherVal, val)) return;
 
+            if (key === 'out' || key === 'stay') {
+                const fixedGrp = appState.moveRules[roomId].fixedGroup || 'INCOMING';
+                checkCapacityOverloadWarning(fixedGrp, key === 'out' ? val : otherVal, key === 'stay' ? val : otherVal);
+            }
+
             appState.moveRules[roomId][ruleType][key] = val;
             saveToLocalStorage();
         }
 
         // ==========================================
-        // 6. 좌석 배치 알고리즘 (탭 5)
+        // 6. 좌석 배치 알고리즘 (탭 5 - Step 3 승격 구현)
         // ==========================================
         function setupTab5ScheduleSelects() {
             const daySel = document.getElementById('seat-day-select');
@@ -1060,8 +1126,9 @@
             const row = appState.rawTimetable.find(r => r['날짜/교시'] === fullKey);
             if (!row) { alert("시간표 정보가 없습니다."); return; }
 
-            const stdRooms = appState.rooms.filter(r => !r.isSpecial);
+            const stdRooms = appState.rooms.filter(r => !r.isSpecial).sort((a,b) => a.num - b.num);
             appState.currentSeats = {};
+            appState.internalTable2 = {};
 
             [1, 2, 3].forEach(grade => {
                 const gradeKey = grade + '학년';
@@ -1095,6 +1162,17 @@
                             seatList.push({ studentId: '', studentName: '빈좌석', subject: '', seatSeq: 0 });
                         }
                         appState.currentSeats[room.id] = seatList;
+
+                        // 내부 테이블 2 생성
+                        const fixedCap = spec.cols.reduce((acc, val, cIdx) => spec.fixed[cIdx] ? acc + val : acc, 0);
+                        const rule = appState.moveRules[room.id] || { fixedGroup: 'INCOMING' };
+                        appState.internalTable2[room.id] = {
+                            totalCap: spec.capacity,
+                            fixedCap: fixedCap,
+                            nonFixedCap: spec.capacity - fixedCap,
+                            fixedTargetGroup: rule.fixedGroup === 'INCOMING' ? '들어온 학생' : '잔류 학생',
+                            nonFixedTargetGroup: rule.fixedGroup === 'INCOMING' ? '잔류 학생' : '들어온 학생'
+                        };
                     });
                 } else {
                     const candidateExamStudents = [];
@@ -1141,12 +1219,22 @@
                             }
                         }
                         appState.currentSeats[room.id] = seatList;
+
+                        const fixedCap = spec.cols.reduce((acc, val, cIdx) => spec.fixed[cIdx] ? acc + val : acc, 0);
+                        const rule = appState.moveRules[room.id] || { fixedGroup: 'INCOMING' };
+                        appState.internalTable2[room.id] = {
+                            totalCap: spec.capacity,
+                            fixedCap: fixedCap,
+                            nonFixedCap: spec.capacity - fixedCap,
+                            fixedTargetGroup: rule.fixedGroup === 'INCOMING' ? '들어온 학생' : '잔류 학생',
+                            nonFixedTargetGroup: rule.fixedGroup === 'INCOMING' ? '잔류 학생' : '들어온 학생'
+                        };
                     });
                 }
             });
 
             renderSeatsGrid();
-            alert("Step 1. 기준좌석 배치가 완료되었습니다.");
+            alert("Step 1. 기준좌석 배치가 완료되었으며 내부 테이블2가 생성되었습니다.");
         }
 
         function getSpecForCount(count) {
@@ -1172,14 +1260,18 @@
             renderSeatsGrid();
         }
 
+        // Step 3 최종 이동 및 동적 규격 승격 알고리즘 구현
         function runStep3FinalMove() {
             const fullKey = document.getElementById('seat-period-select').value;
             const row = appState.rawTimetable.find(r => r['날짜/교시'] === fullKey);
             if (!row) return;
 
-            const stdRooms = appState.rooms.filter(r => !r.isSpecial);
-            const finalSeatsMap = {};
+            const stdRooms = appState.rooms.filter(r => !r.isSpecial).sort((a,b) => a.num - b.num);
+            const intermediateMap = {}; // [roomId]: { incoming: [], stay: [] }
 
+            stdRooms.forEach(r => { intermediateMap[r.id] = { incoming: [], stay: [] }; });
+
+            // 1단계: 이동 규칙 적용 후 단방향 학생 분류
             stdRooms.forEach(room => {
                 const grade = room.targetGrade;
                 const subjStr = row[grade + '학년'] || "없음";
@@ -1200,10 +1292,8 @@
                 const stayGroup = [];
 
                 baseSeats.forEach(seat => {
-                    if (!seat.studentId) {
-                        stayGroup.push(seat);
-                        return;
-                    }
+                    if (!seat.studentId) return; // 빈좌석 제외
+
                     const num = currentRule.mode === 'STUDENT_RANGE' 
                         ? parseInt(seat.studentId.slice(3)) 
                         : seat.seatSeq;
@@ -1215,54 +1305,69 @@
                     }
                 });
 
+                intermediateMap[room.id].stay.push(...stayGroup);
+
                 const targetGrade = parseInt(currentRule.destGrade);
                 const targetRoom = stdRooms.find(r => r.targetGrade === targetGrade && r.targetClass === room.targetClass);
 
-                if (!finalSeatsMap[room.id]) {
-                    finalSeatsMap[room.id] = { fixed: [], nonFixed: [] };
-                }
-
                 if (targetRoom) {
-                    if (!finalSeatsMap[targetRoom.id]) {
-                        finalSeatsMap[targetRoom.id] = { fixed: [], nonFixed: [] };
-                    }
-                    if (rule.fixedGroup === 'INCOMING') {
-                        finalSeatsMap[targetRoom.id].fixed.push(...outgoingGroup);
-                    } else {
-                        finalSeatsMap[targetRoom.id].nonFixed.push(...outgoingGroup);
-                    }
-                }
-
-                if (rule.fixedGroup === 'STAY') {
-                    finalSeatsMap[room.id].fixed.push(...stayGroup);
-                } else {
-                    finalSeatsMap[room.id].nonFixed.push(...stayGroup);
+                    intermediateMap[targetRoom.id].incoming.push(...outgoingGroup);
                 }
             });
 
+            // 2단계: 고정/비고정 그룹 분류 및 규격 동적 승격(Promotion)
             stdRooms.forEach(room => {
-                const allocated = finalSeatsMap[room.id] || { fixed: [], nonFixed: [] };
-                const spec = getSpecForCount(allocated.fixed.length + allocated.nonFixed.length);
+                const rule = appState.moveRules[room.id] || { fixedGroup: 'INCOMING' };
+                const lists = intermediateMap[room.id];
 
-                const fixedTotalCap = spec.cols.reduce((acc, val, cIdx) => spec.fixed[cIdx] ? acc + val : acc, 0);
+                let fixedStudents = [];
+                let nonFixedStudents = [];
 
-                const fixedFinal = allocated.fixed.slice(0, fixedTotalCap);
+                if (rule.fixedGroup === 'INCOMING') {
+                    fixedStudents = lists.incoming;
+                    nonFixedStudents = lists.stay;
+                } else {
+                    fixedStudents = lists.stay;
+                    nonFixedStudents = lists.incoming;
+                }
+
+                const baseSpecData = appState.internalTable2[room.id] || { totalCap: 32, fixedCap: 14, nonFixedCap: 18 };
+                const requiredNonFixedCap = nonFixedStudents.length;
+
+                // 승격 규격 탐색: 고정 정원은 유지하면서 비고정 인원을 모두 수용 가능한 최적 규격
+                const sortedSpecs = [...appState.specs].sort((a, b) => a.capacity - b.capacity);
+                let selectedSpec = sortedSpecs.find(s => {
+                    const fCap = s.cols.reduce((acc, val, cIdx) => s.fixed[cIdx] ? acc + val : acc, 0);
+                    const nfCap = s.capacity - fCap;
+                    return fCap === baseSpecData.fixedCap && nfCap >= requiredNonFixedCap;
+                });
+
+                if (!selectedSpec) {
+                    selectedSpec = sortedSpecs.find(s => s.capacity >= (baseSpecData.fixedCap + requiredNonFixedCap));
+                }
+                if (!selectedSpec) selectedSpec = sortedSpecs[sortedSpecs.length - 1];
+
+                const fixedTotalCap = selectedSpec.cols.reduce((acc, val, cIdx) => selectedSpec.fixed[cIdx] ? acc + val : acc, 0);
+                const nonFixedTotalCap = selectedSpec.capacity - fixedTotalCap;
+
+                // 고정분단 및 비고정분단 배열 구성
+                const fixedFinal = fixedStudents.slice(0, fixedTotalCap);
                 while (fixedFinal.length < fixedTotalCap) {
                     fixedFinal.push({ studentId: '', studentName: '빈좌석', subject: '', seatSeq: 0 });
                 }
 
-                const nonFixedFinal = [...allocated.nonFixed];
-                const nonFixedTotalCap = spec.capacity - fixedTotalCap;
+                const nonFixedFinal = nonFixedStudents.slice(0, nonFixedTotalCap);
                 while (nonFixedFinal.length < nonFixedTotalCap) {
                     nonFixedFinal.push({ studentId: '', studentName: '빈좌석', subject: '', seatSeq: 0 });
                 }
 
+                // 3단계: 규격별 분단에 오염 없이 분리 채우기
                 const reorderedSeats = [];
                 let fIdx = 0;
                 let nfIdx = 0;
 
-                spec.cols.forEach((colSize, colIdx) => {
-                    const isFixed = spec.fixed[colIdx];
+                selectedSpec.cols.forEach((colSize, colIdx) => {
+                    const isFixed = selectedSpec.fixed[colIdx];
                     for (let i = 0; i < colSize; i++) {
                         if (isFixed) {
                             reorderedSeats.push(fixedFinal[fIdx++] || { studentId: '', studentName: '빈좌석' });
@@ -1276,7 +1381,7 @@
             });
 
             renderSeatsGrid();
-            alert("Step 3. 최종 이동 배치가 완료되었습니다.");
+            alert("Step 3. 최종 이동 및 동적 규격 승격 배치가 완성되었습니다.");
         }
 
         let dragSource = null;
@@ -1317,7 +1422,7 @@
 
         function renderSeatsGrid() {
             const container = document.getElementById('seating-grid-container');
-            const stdRooms = appState.rooms.filter(r => !r.isSpecial);
+            const stdRooms = appState.rooms.filter(r => !r.isSpecial).sort((a,b) => a.num - b.num);
 
             if (stdRooms.length === 0) {
                 container.innerHTML = `<div class="text-center py-12 text-slate-400">생성된 일반 고사실이 없습니다.</div>`;
@@ -1328,11 +1433,26 @@
                 const seats = appState.currentSeats[room.id] || [];
                 const spec = getSpecForCount(seats.length);
 
+                const t2Info = appState.internalTable2[room.id] || {
+                    totalCap: spec.capacity,
+                    fixedCap: 14,
+                    nonFixedCap: spec.capacity - 14,
+                    fixedTargetGroup: '들어온 학생',
+                    nonFixedTargetGroup: '잔류 학생'
+                };
+
                 let seatIdx = 0;
                 return `
                     <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm print-page">
-                        <div class="flex justify-between items-center mb-4 border-b pb-3">
-                            <h3 class="text-base font-bold text-slate-800">${room.name} 좌석배치도</h3>
+                        <div class="flex justify-between items-center mb-2 border-b pb-3 flex-wrap gap-2">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800">${room.name} 좌석배치도</h3>
+                                <p class="text-xs text-indigo-700 font-medium mt-0.5">
+                                    총 정원(기준): <b>${t2Info.totalCap}명</b> | 
+                                    고정분단: <b>${t2Info.fixedCap}명 [${t2Info.fixedTargetGroup}]</b> | 
+                                    비고정분단: <b>${t2Info.nonFixedCap}명 [${t2Info.nonFixedTargetGroup}]</b>
+                                </p>
+                            </div>
                             <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded">교탁 방향 ⬆️</span>
                         </div>
                         <div class="flex gap-3 justify-center overflow-x-auto pb-2">
@@ -1474,14 +1594,18 @@
         }
 
         // ==========================================
-        // 8. 백업 / 복원 / 초기화
+        // 8. 완전 초기화 및 백업/복원
         // ==========================================
         function saveToLocalStorage() {
-            localStorage.setItem('SEAT_SYS_v20_02', JSON.stringify(appState));
+            try {
+                localStorage.setItem('SEAT_SYS_v20_03', JSON.stringify(appState));
+            } catch (e) {
+                console.warn("로컬 스토리지 용량 초과로 자동저장은 건너뜁니다. (메모리 작업 정상 유지)");
+            }
         }
 
         function loadFromLocalStorage() {
-            const data = localStorage.getItem('SEAT_SYS_v20_02');
+            const data = localStorage.getItem('SEAT_SYS_v20_03');
             if (data) {
                 try {
                     appState = JSON.parse(data);
@@ -1515,8 +1639,8 @@
         }
 
         function resetAllData() {
-            if (confirm("🚨 모든 설정과 입력 데이터가 완전히 삭제됩니다. 초기화하시겠습니까?")) {
-                localStorage.removeItem('SEAT_SYS_v20_02');
+            if (confirm("🚨 구버전을 포함한 브라우저 저장소의 모든 데이터가 완벽히 초기화됩니다. 실행하시겠습니까?")) {
+                localStorage.clear();
                 location.reload();
             }
         }
@@ -1533,22 +1657,45 @@
             renderTab3Specs();
         }
 
+        // 시간표 디스플레이 개선 (날짜별 하위 범주화 & 학년별 교과목 색상)
         function renderTimetableDisplay() {
             const body = document.getElementById('timetable-display-body');
             if (appState.rawTimetable.length === 0) {
-                body.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400">업로드된 시험 시간표가 없습니다.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">업로드된 시험 시간표가 없습니다.</td></tr>`;
                 return;
             }
-            body.innerHTML = appState.rawTimetable.map(r => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="px-4 py-2 font-bold text-slate-800">${r['날짜/교시'] || ''}</td>
-                    <td class="px-4 py-2">${r['1학년'] || '-'}</td>
-                    <td class="px-4 py-2">${r['2학년'] || '-'}</td>
-                    <td class="px-4 py-2">${r['3학년'] || '-'}</td>
-                </tr>
-            `).join('');
+
+            const groupedByDate = {};
+            appState.rawTimetable.forEach(r => {
+                const fullStr = r['날짜/교시'] || '';
+                const parts = fullStr.split(' ');
+                const datePart = parts.slice(0, 3).join(' ') || fullStr;
+                const periodPart = parts.slice(3).join(' ') || '-';
+
+                if (!groupedByDate[datePart]) groupedByDate[datePart] = [];
+                groupedByDate[datePart].push({ ...r, periodText: periodPart });
+            });
+
+            let html = '';
+            Object.keys(groupedByDate).forEach(dateStr => {
+                const rows = groupedByDate[dateStr];
+                rows.forEach((r, idx) => {
+                    html += `
+                        <tr class="border-b hover:bg-slate-50">
+                            ${idx === 0 ? `<td rowspan="${rows.length}" class="px-3 py-2 font-bold text-slate-800 border-r bg-slate-50/80 text-center align-middle text-xs">${dateStr}</td>` : ''}
+                            <td class="px-3 py-2 font-semibold text-slate-700 border-r text-center text-xs">${r.periodText}</td>
+                            <td class="px-3 py-2 border-r bg-sky-50/20"><span class="bg-sky-100 text-sky-800 font-bold px-2 py-0.5 rounded text-[11px]">${r['1학년'] || '-'}</span></td>
+                            <td class="px-3 py-2 border-r bg-emerald-50/20"><span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[11px]">${r['2학년'] || '-'}</span></td>
+                            <td class="px-3 py-2 bg-amber-50/20"><span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[11px]">${r['3학년'] || '-'}</span></td>
+                        </tr>
+                    `;
+                });
+            });
+
+            body.innerHTML = html;
         }
 
+        // 전체 학생 목록 104## 끊김 수정 (slice 제약 제거)
         function renderStudentList() {
             const body = document.getElementById('student-list-body');
             if (appState.students.length === 0) {
@@ -1556,7 +1703,7 @@
                 return;
             }
 
-            body.innerHTML = appState.students.slice(0, 100).map(st => {
+            body.innerHTML = appState.students.map(st => {
                 const g = st.id.charAt(0);
                 const c = parseInt(st.id.slice(1, 3));
                 const n = parseInt(st.id.slice(3));
