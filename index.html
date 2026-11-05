@@ -1080,7 +1080,20 @@
         // ==========================================
         // 6. 좌석 배치 알고리즘 (탭 5 - Step 3 승격 구현)
         // ==========================================
-        function setupTab5ScheduleSelects() {
+        // 날짜 및 교시 분리 공통 헬퍼 함수 (마지막 공백 기준 분리)
+function getDatePart(fullStr) {
+    const str = String(fullStr || '').trim();
+    const idx = str.lastIndexOf(' ');
+    return idx !== -1 ? str.substring(0, idx).trim() : str;
+}
+
+function getPeriodPart(fullStr) {
+    const str = String(fullStr || '').trim();
+    const idx = str.lastIndexOf(' ');
+    return idx !== -1 ? str.substring(idx + 1).trim() : str;
+}
+
+function setupTab5ScheduleSelects() {
     const daySel = document.getElementById('seat-day-select');
     const perSel = document.getElementById('seat-period-select');
 
@@ -1090,13 +1103,7 @@
         return;
     }
 
-    // "12월 14일 (월) 1교시" 형태에서 요일 괄호까지 날짜/요일로 정확히 파싱
-    const extractDateStr = (fullStr) => {
-        const match = fullStr.match(/^(.*?\([\uac00-\ud7a3]\))/);
-        return match ? match[1].trim() : fullStr.split(' ')[0];
-    };
-
-    const days = [...new Set(appState.rawTimetable.map(r => extractDateStr(r['날짜/교시'])))];
+    const days = [...new Set(appState.rawTimetable.map(r => getDatePart(r['날짜/교시'])))];
     daySel.innerHTML = days.map(d => `<option value="${d}">${d}</option>`).join('');
 
     onSeatScheduleChange();
@@ -1106,9 +1113,11 @@ function onSeatScheduleChange() {
     const dayVal = document.getElementById('seat-day-select').value;
     const perSel = document.getElementById('seat-period-select');
 
-    const filteredRows = appState.rawTimetable.filter(r => r['날짜/교시'].startsWith(dayVal));
+    // 동일한 getDatePart 함수 사용으로 100% 완전 일치(Exact Match) 필터링
+    const filteredRows = appState.rawTimetable.filter(r => getDatePart(r['날짜/교시']) === dayVal);
+
     perSel.innerHTML = filteredRows.map(r => {
-        const pText = r['날짜/교시'].replace(dayVal, '').trim();
+        const pText = getPeriodPart(r['날짜/교시']);
         return `<option value="${r['날짜/교시']}">${pText}</option>`;
     }).join('');
 
