@@ -641,6 +641,7 @@ function determineSelfStudyOrDismiss(student, dayPeriodRow, gradeKey) {
     return hasLaterExam ? "자습" : "하교";
 }
         // [v20.13 신설] 학생 개인별 최종 표기 과목 추출 헬퍼 함수
+// [v20.12 최종] 학생 개인별 최종 표기 과목 추출 함수
 function getDisplaySubjectForStudent(student, row, gradeKey) {
     const status = determineSelfStudyOrDismiss(student, row, gradeKey);
     if (status === '하교') return '하교';
@@ -649,11 +650,11 @@ function getDisplaySubjectForStudent(student, row, gradeKey) {
     const rawSubj = row[gradeKey] || '';
     if (!rawSubj || rawSubj === '없음') return '자습';
 
-    // 1. 교과군 통합 선택과목 여부 판별 (/, ·, ․, , 구분자 포함)
+    // 1. 교과군 통합 과목 여부 판별 (/, ·, ․, , 구분자 포함)
     const isGroupSubject = rawSubj.includes('/') || rawSubj.includes('·') || rawSubj.includes('․') || rawSubj.includes(',');
 
+    // 2. 교과군 통합 과목: internalTable의 공통 라벨링과 무관하게 학생 선택과목 현황(choices)에서 실제 선택 과목 추출
     if (isGroupSubject) {
-        // 교과군 과목인 경우: 공통과목 표기방식을 적용하지 않고, 학생의 'n학년 선택과목 현황' 수강 목록에서 개별 과목 추출
         const userChoices = student.choices || [];
         const splitSubjs = rawSubj.split(/[/·․,]/).map(s => normalizeSubjectName(s.trim()));
 
@@ -662,13 +663,22 @@ function getDisplaySubjectForStudent(student, row, gradeKey) {
             const isMatched = splitSubjs.some(sp => cleanChoice.includes(sp) || sp.includes(cleanChoice));
             
             if (isMatched) {
-                // 선택과목명 뒤 괄호(예: 윤리와 사상(솔) -> 윤리와 사상)를 제거한 순수 선택 과목명 반환
-                return choice.replace(/\(.*?\)/g, '').trim();
+                return choice.replace(/\(.*?\)/g, '').trim(); // 괄호 제거 후 개별 선택 과목명 반환
             }
         }
     }
 
-    // 2. 단일 선택과목 및 순수 공통과목인 경우 시간표 공식 명칭 반환
+    // 3. 단일 선택과목 태그 정돈 (예: 윤리와 사상(솔) -> 윤리와 사상)
+    const userChoices = student.choices || [];
+    const cleanRaw = normalizeSubjectName(rawSubj);
+    for (let choice of userChoices) {
+        const cleanChoice = normalizeSubjectName(choice);
+        if (cleanChoice.startsWith(cleanRaw) || cleanRaw.startsWith(cleanChoice)) {
+            return rawSubj;
+        }
+    }
+
+    // 4. 순수 단일 공통과목은 시간표 과목명 그대로 반환
     return rawSubj;
 }
 
@@ -1558,18 +1568,17 @@ function onPeriodChange() {
             <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm print-page">
                 <div class="flex justify-between items-center mb-2 border-b pb-3 flex-wrap gap-2">
                     <div>
-                                <h3 class="text-base font-bold text-slate-800">${room.name} 좌석배치도</h3>
-                                <p class="text-xs text-indigo-700 font-medium mt-0.5">
-                                    총 정원(기준): <b>${t2Info.totalCap}명</b> | 
-                                    총 정원(이동후): <b>${seats.length}명</b>
-                                </p>
-                                <!-- [v20.13 추가] 학년별/고사실별 실제 응시 과목 및 자습 병기 표기 -->
-                                ${(() => {
-                                    const activeSubjs = [...new Set(seats.map(s => s.subject).filter(s => s && s !== '빈좌석'))];
-                                    const subjText = activeSubjs.length > 0 ? activeSubjs.join(', ') : '배치 없음';
-                                    return `<p class="text-xs text-slate-600 font-semibold mt-1">📌 응시 과목: <span class="text-indigo-900">${subjText}</span></p>`;
-                                })()}
-                            </div>
+    <h3 class="text-base font-bold text-slate-800">${room.name} 좌석배치도</h3>
+    <p class="text-xs text-indigo-700 font-medium mt-0.5">
+        총 정원(기준): <b>${t2Info.totalCap}명</b> | 
+        총 정원(이동후): <b>${seats.length}명</b>
+    </p>
+    ${(() => {
+        const activeSubjs = [...new Set(seats.map(s => s.subject).filter(s => s && s !== '빈좌석'))];
+        const subjText = activeSubjs.length > 0 ? activeSubjs.join(', ') : '배치 없음';
+        return `<p class="text-xs text-slate-600 font-semibold mt-1">📌 응시 과목: <span class="text-indigo-900">${subjText}</span></p>`;
+    })()}
+</div>
                     <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded">교탁 방향 ⬆️</span>
                 </div>
                 <div class="flex gap-3 justify-center overflow-x-auto pb-2">
