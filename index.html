@@ -2327,6 +2327,7 @@ function generateRoomInfoTable() {
 }
 
 // 2. 하단 감독교사 표 자동 생성 (유저 직접 수정 기능 포함)
+// 2. 하단 감독교사 표 자동 생성 (v21.2 맨 아래 합계 행 추가 및 실시간 연동)
 function generateProctorTable() {
     const thead = document.getElementById('proctor-thead');
     const tbody = document.getElementById('proctor-tbody');
@@ -2362,13 +2363,15 @@ function generateProctorTable() {
     headHtml += `</tr>`;
     thead.innerHTML = headHtml;
 
-    // 바디 생성 (contenteditable="true" 적용으로 직접 수정 가능)
+    // 바디 생성 및 열별 합계 누적 배열 초기화
     let bodyHtml = '';
+    const colTotals = new Array(columns.length).fill(0);
+
     appState.rawTimetable.forEach(row => {
         const schKey = row['날짜/교시'];
         bodyHtml += `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-bold border-r bg-slate-50 text-slate-800 text-left select-none">${schKey}</td>`;
 
-        columns.forEach(col => {
+        columns.forEach((col, colIdx) => {
             let val = 0;
 
             if (col.type === 'ROOM') {
@@ -2386,12 +2389,15 @@ function generateProctorTable() {
                 val = isZoneOperating ? 1 : 0;
             }
 
+            colTotals[colIdx] += val;
+
             let colorStyle = "text-slate-400";
             if (val === 2) colorStyle = "bg-rose-100 text-rose-900 font-extrabold";
             else if (val === 1) colorStyle = "bg-indigo-50 text-indigo-900 font-bold";
 
             bodyHtml += `
                 <td contenteditable="true" 
+                    oninput="updateProctorTotals()"
                     class="px-2 py-2 border-r text-center font-bold transition focus:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-text ${colorStyle}">
                     ${val}
                 </td>
@@ -2401,7 +2407,48 @@ function generateProctorTable() {
         bodyHtml += `</tr>`;
     });
 
+    // [v21.2 추가] 맨 아래 고정 합계 행 추가
+    bodyHtml += `<tr class="bg-purple-100 font-extrabold text-purple-950 border-t-2 border-purple-300 sticky bottom-0 z-10 shadow-sm">`;
+    bodyHtml += `<td class="px-3 py-2 border-r bg-purple-200 text-purple-950 text-left select-none">합계</td>`;
+    columns.forEach((col, colIdx) => {
+        const isHall = col.type === 'HALLWAY';
+        bodyHtml += `<td class="px-2 py-2 border-r text-center ${isHall ? 'bg-purple-200/80 text-purple-950' : 'text-purple-900'}">${colTotals[colIdx]}</td>`;
+    });
+    bodyHtml += `</tr>`;
+
     tbody.innerHTML = bodyHtml;
+}
+
+// [v21.2 신설] 유저가 셀 수치를 직접 입력·수정할 때 하단 합계 행 실시간 자동 계산
+function updateProctorTotals() {
+    const tbody = document.getElementById('proctor-tbody');
+    if (!tbody) return;
+
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length < 2) return;
+
+    const dataRows = Array.from(rows).slice(0, rows.length - 1); // 합계 행 제외
+    const totalRow = rows[rows.length - 1];
+
+    const firstRowCells = dataRows[0].querySelectorAll('td');
+    const colCount = firstRowCells.length;
+
+    // 1열(일자/교시)을 제외한 고사실 및 복도 열 합계 재계산
+    for (let colIdx = 1; colIdx < colCount; colIdx++) {
+        let sum = 0;
+        dataRows.forEach(r => {
+            const cell = r.querySelectorAll('td')[colIdx];
+            if (cell) {
+                const num = parseInt(cell.innerText.trim(), 10);
+                if (!isNaN(num)) sum += num;
+            }
+        });
+
+        const totalCell = totalRow.querySelectorAll('td')[colIdx];
+        if (totalCell) {
+            totalCell.innerText = sum;
+        }
+    }
 }
     </script>
 </body>
