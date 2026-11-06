@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v20.12</title>
+    <title>정기시험 좌석배치 시스템 v20.13</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,7 +25,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.12</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.13</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">스토리지 완전 초기화 · 비고정 정원 동적 승격 · 개별 이동 옵션 완비 패치</p>
         </div>
@@ -640,41 +640,36 @@ function determineSelfStudyOrDismiss(student, dayPeriodRow, gradeKey) {
 
     return hasLaterExam ? "자습" : "하교";
 }
-        // [v20.12 신설] 학생 개인별 최종 표기 과목 추출 헬퍼 함수
+        // [v20.13 신설] 학생 개인별 최종 표기 과목 추출 헬퍼 함수
 function getDisplaySubjectForStudent(student, row, gradeKey) {
     const status = determineSelfStudyOrDismiss(student, row, gradeKey);
     if (status === '하교') return '하교';
     if (status === '자습') return '자습';
 
     const rawSubj = row[gradeKey] || '';
-    const grade = parseInt(gradeKey.charAt(0));
+    if (!rawSubj || rawSubj === '없음') return '자습';
 
-    // 1학년 공통 및 2/3학년 단일 공통과목
-    if (isCommonSubjectForGrade(grade, rawSubj) && !rawSubj.includes('/') && !rawSubj.includes('·') && !rawSubj.includes(',')) {
-        return rawSubj;
-    }
+    // 1. 교과군 통합 선택과목 여부 판별 (/, ·, ․, , 구분자 포함)
+    const isGroupSubject = rawSubj.includes('/') || rawSubj.includes('·') || rawSubj.includes('․') || rawSubj.includes(',');
 
-    // 선택과목 및 교과군(분할 과목) 처리
-    const splitSubjs = rawSubj.split(/[/·,]/).map(s => normalizeSubjectName(s.trim()));
-    const userChoices = student.choices || [];
+    if (isGroupSubject) {
+        // 교과군 과목인 경우: 공통과목 표기방식을 적용하지 않고, 학생의 'n학년 선택과목 현황' 수강 목록에서 개별 과목 추출
+        const userChoices = student.choices || [];
+        const splitSubjs = rawSubj.split(/[/·․,]/).map(s => normalizeSubjectName(s.trim()));
 
-    for (let choice of userChoices) {
-        const cleanChoice = normalizeSubjectName(choice);
-        const cleanRawSubj = normalizeSubjectName(rawSubj);
-
-        // 1) 윤리와 사상(솔) 형태 -> 공식 과목명 "윤리와 사상"으로 매칭
-        if (cleanChoice.startsWith(cleanRawSubj) || cleanRawSubj.startsWith(cleanChoice)) {
-            return rawSubj;
-        }
-
-        // 2) 교과군 분할과목(일본어회화·중국어회화 등) 중 학생 개별 선택 과목 추출
-        const matchedSplit = splitSubjs.find(sp => cleanChoice.includes(sp) || sp.includes(cleanChoice));
-        if (matchedSplit) {
-            return choice.replace(/\(.*?\)/g, '').trim(); // 괄호 제거 후 실제 선택 과목명 반환
+        for (let choice of userChoices) {
+            const cleanChoice = normalizeSubjectName(choice);
+            const isMatched = splitSubjs.some(sp => cleanChoice.includes(sp) || sp.includes(cleanChoice));
+            
+            if (isMatched) {
+                // 선택과목명 뒤 괄호(예: 윤리와 사상(솔) -> 윤리와 사상)를 제거한 순수 선택 과목명 반환
+                return choice.replace(/\(.*?\)/g, '').trim();
+            }
         }
     }
 
-    return rawSubj; // 매칭 예외 시 기본 시간표 과목명 유지
+    // 2. 단일 선택과목 및 순수 공통과목인 경우 시간표 공식 명칭 반환
+    return rawSubj;
 }
 
         // ==========================================
@@ -1319,7 +1314,7 @@ function onPeriodChange() {
                     });
                 }
             });
-            // [v20.12 추가] 특별고사실 Step 1 좌석 배치 (35명 규격 고정, 학번 순 배치)
+            // [v20.13 추가] 특별고사실 Step 1 좌석 배치 (35명 규격 고정, 학번 순 배치)
             const spRooms = appState.rooms.filter(r => r.isSpecial);
             spRooms.forEach(room => {
                 const spec = getSpecForCount(35);
@@ -1335,7 +1330,7 @@ function onPeriodChange() {
                     const status = determineSelfStudyOrDismiss(st, row, gradeKey);
 
                     if (status !== '하교') {
-                        // [v20.12 통합] 신규 헬퍼 함수 적용
+                        // [v20.13 통합] 신규 헬퍼 함수 적용
                 const subjName = getDisplaySubjectForStudent(st, row, gradeKey);
 
                         seatList.push({
@@ -1568,7 +1563,7 @@ function onPeriodChange() {
                                     총 정원(기준): <b>${t2Info.totalCap}명</b> | 
                                     총 정원(이동후): <b>${seats.length}명</b>
                                 </p>
-                                <!-- [v20.12 추가] 학년별/고사실별 실제 응시 과목 및 자습 병기 표기 -->
+                                <!-- [v20.13 추가] 학년별/고사실별 실제 응시 과목 및 자습 병기 표기 -->
                                 ${(() => {
                                     const activeSubjs = [...new Set(seats.map(s => s.subject).filter(s => s && s !== '빈좌석'))];
                                     const subjText = activeSubjs.length > 0 ? activeSubjs.join(', ') : '배치 없음';
@@ -1624,7 +1619,7 @@ function onPeriodChange() {
         `;
     }).join('');
 
-    // 2. [v20.12 추가] 특별고사실 인터페이스 분리 렌더링
+    // 2. [v20.13 추가] 특별고사실 인터페이스 분리 렌더링
     if (spRooms.length > 0) {
         html += `
             <div class="mt-10 border-t-2 border-dashed border-amber-300 pt-6">
@@ -1710,7 +1705,7 @@ function onPeriodChange() {
         });
     });
 
-    // 2. [v20.12 추가] 특별고사실 배정 학생 수험표 반영
+    // 2. [v20.13 추가] 특별고사실 배정 학생 수험표 반영
     let specialCount = 0;
     const spRooms = appState.rooms.filter(r => r.isSpecial);
     spRooms.forEach(room => {
@@ -1730,7 +1725,7 @@ function onPeriodChange() {
                     seatInfo: '-'
                 };
             } else {
-                // [v20.12 통합] 일반/특별 고사실 통합 표기 규칙 적용
+                // [v20.13 통합] 일반/특별 고사실 통합 표기 규칙 적용
                 const subjName = getDisplaySubjectForStudent(st, row, gradeKey);
                 appState.ticketDB[st.id][scheduleKey] = {
                     subject: subjName,
