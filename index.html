@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v20.131</title>
+    <title>정기시험 좌석배치 시스템 v20.132</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,7 +25,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.131</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.132</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">스토리지 완전 초기화 · 비고정 정원 동적 승격 · 개별 이동 옵션 완비 패치</p>
         </div>
@@ -640,8 +640,8 @@ function determineSelfStudyOrDismiss(student, dayPeriodRow, gradeKey) {
 
     return hasLaterExam ? "자습" : "하교";
 }
-        // [v20.131 신설] 학생 개인별 최종 표기 과목 추출 헬퍼 함수
-// [v20.131 최종] 학생 개인별 최종 표기 과목 추출 함수
+        // [v20.132 신설] 학생 개인별 최종 표기 과목 추출 헬퍼 함수
+// [v20.132 최종] 학생 개인별 최종 표기 과목 추출 함수
 function getDisplaySubjectForStudent(student, row, gradeKey) {
     const status = determineSelfStudyOrDismiss(student, row, gradeKey);
     if (status === '하교') return '하교';
@@ -1175,15 +1175,25 @@ function setupTab5ScheduleSelects() {
 }
 
 // 날짜/요일 드롭다운 변경 시 실행 (교시 목록 재구성)
-// 날짜/요일 드롭다운 변경 시 실행 (교시 목록 재구성)
 function onSeatScheduleChange() {
-    // ...
+    const dayVal = document.getElementById('seat-day-select').value;
+    const perSel = document.getElementById('seat-period-select');
+
+    const filteredRows = appState.rawTimetable.filter(r => getDatePart(r['날짜/교시']) === dayVal);
+
+    perSel.innerHTML = filteredRows.map(r => {
+        const pText = getPeriodPart(r['날짜/교시']);
+        return `<option value="${r['날짜/교시']}">${pText}</option>`;
+    }).join('');
+
+    updateCurrentSubjectDisplay();
 }
 
 // 교시 드롭다운 변경 시 실행 (선택 과목 디스플레이 업데이트)
 function onPeriodChange() {
     updateCurrentSubjectDisplay();
 }
+
 
         function updateCurrentSubjectDisplay() {
             const fullKey = document.getElementById('seat-period-select').value;
@@ -1310,7 +1320,7 @@ function onPeriodChange() {
                     });
                 }
             });
-            // [v20.131 추가] 특별고사실 Step 1 좌석 배치 (35명 규격 고정, 학번 순 배치)
+            // [v20.132 추가] 특별고사실 Step 1 좌석 배치 (35명 규격 고정, 학번 순 배치)
             const spRooms = appState.rooms.filter(r => r.isSpecial);
             spRooms.forEach(room => {
                 const spec = getSpecForCount(35);
@@ -1326,7 +1336,7 @@ function onPeriodChange() {
                     const status = determineSelfStudyOrDismiss(st, row, gradeKey);
 
                     if (status !== '하교') {
-                        // [v20.131 통합] 신규 헬퍼 함수 적용
+                        // [v20.132 통합] 신규 헬퍼 함수 적용
                 const subjName = getDisplaySubjectForStudent(st, row, gradeKey);
 
                         seatList.push({
@@ -1614,7 +1624,7 @@ function onPeriodChange() {
         `;
     }).join('');
 
-    // 2. [v20.131 추가] 특별고사실 인터페이스 분리 렌더링
+    // 2. [v20.132 추가] 특별고사실 인터페이스 분리 렌더링
     if (spRooms.length > 0) {
         html += `
             <div class="mt-10 border-t-2 border-dashed border-amber-300 pt-6">
@@ -1700,7 +1710,7 @@ function onPeriodChange() {
         });
     });
 
-    // 2. [v20.131 추가] 특별고사실 배정 학생 수험표 반영
+    // 2. [v20.132 추가] 특별고사실 배정 학생 수험표 반영
     let specialCount = 0;
     const spRooms = appState.rooms.filter(r => r.isSpecial);
     spRooms.forEach(room => {
@@ -1720,7 +1730,7 @@ function onPeriodChange() {
                     seatInfo: '-'
                 };
             } else {
-                // [v20.131 통합] 일반/특별 고사실 통합 표기 규칙 적용
+                // [v20.132 통합] 일반/특별 고사실 통합 표기 규칙 적용
                 const subjName = getDisplaySubjectForStudent(st, row, gradeKey);
                 appState.ticketDB[st.id][scheduleKey] = {
                     subject: subjName,
