@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v20.10</title>
+    <title>정기시험 좌석배치 시스템 v20.11</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,7 +25,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.10</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.11</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">스토리지 완전 초기화 · 비고정 정원 동적 승격 · 개별 이동 옵션 완비 패치</p>
         </div>
@@ -605,10 +605,11 @@ function isStudentTakingExamInPeriod(student, row, gradeKey) {
     if (!subjStr || subjStr === "없음" || subjStr === "자습") return false;
 
     const grade = parseInt(gradeKey.charAt(0));
-    if (grade === 1) return true; // 1학년은 시험 교시면 무조건 공통 응시
+    
+    // 1학년 전원 및 2/3학년 공통과목(분할과목 포함)은 무조건 응시로 처리
+    if (isCommonSubjectForGrade(grade, subjStr)) return true;
 
-    if (subjStr.includes('/') || subjStr.includes('·') || subjStr.includes(',')) return true;
-
+    // 선택과목의 경우에만 학생 수강 목록(st.choices) 매칭
     const cleanSubj = normalizeSubjectName(subjStr);
     return (student.choices || []).some(c => normalizeSubjectName(c) === cleanSubj);
 }
@@ -1282,7 +1283,7 @@ function onPeriodChange() {
                     });
                 }
             });
-            // [v20.10 추가] 특별고사실 Step 1 좌석 배치 (35명 규격 고정, 학번 순 배치)
+            // [v20.11 추가] 특별고사실 Step 1 좌석 배치 (35명 규격 고정, 학번 순 배치)
             const spRooms = appState.rooms.filter(r => r.isSpecial);
             spRooms.forEach(room => {
                 const spec = getSpecForCount(35);
@@ -1300,12 +1301,18 @@ function onPeriodChange() {
                     if (status !== '하교') {
                         let subjName = row[gradeKey] || '자습';
                         if (status === '응시') {
-                            const cleanSubj = normalizeSubjectName(row[gradeKey]);
-                            const matchedChoice = (st.choices || []).find(c => normalizeSubjectName(c) === cleanSubj);
-                            subjName = matchedChoice || row[gradeKey];
-                        } else {
-                            subjName = '자습';
-                        }
+                    const rawSubj = row[gradeKey] || '';
+                    const grade = parseInt(st.id.charAt(0));
+                    if (isCommonSubjectForGrade(grade, rawSubj)) {
+                        subjName = rawSubj;
+                    } else {
+                        const cleanSubj = normalizeSubjectName(rawSubj);
+                        const matchedChoice = (st.choices || []).find(c => normalizeSubjectName(c) === cleanSubj);
+                        subjName = matchedChoice || rawSubj;
+                    }
+                } else {
+                    subjName = '자습';
+                }
 
                         seatList.push({
                             studentId: st.id,
@@ -1587,7 +1594,7 @@ function onPeriodChange() {
         `;
     }).join('');
 
-    // 2. [v20.10 추가] 특별고사실 인터페이스 분리 렌더링
+    // 2. [v20.11 추가] 특별고사실 인터페이스 분리 렌더링
     if (spRooms.length > 0) {
         html += `
             <div class="mt-10 border-t-2 border-dashed border-amber-300 pt-6">
@@ -1673,7 +1680,7 @@ function onPeriodChange() {
         });
     });
 
-    // 2. [v20.10 추가] 특별고사실 배정 학생 수험표 반영
+    // 2. [v20.11 추가] 특별고사실 배정 학생 수험표 반영
     let specialCount = 0;
     const spRooms = appState.rooms.filter(r => r.isSpecial);
     spRooms.forEach(room => {
@@ -1696,9 +1703,16 @@ function onPeriodChange() {
                 let subjName = '자습';
                 if (status === '응시') {
                     const rawSubj = row[gradeKey] || '';
-                    const cleanSubj = normalizeSubjectName(rawSubj);
-                    const matchedChoice = (st.choices || []).find(c => normalizeSubjectName(c) === cleanSubj);
-                    subjName = matchedChoice || rawSubj;
+                    const grade = parseInt(st.id.charAt(0));
+                    
+                    // 공통과목이면 시간표 과목명 그대로 사용, 선택과목이면 학생 선택 과목명 매칭
+                    if (isCommonSubjectForGrade(grade, rawSubj)) {
+                        subjName = rawSubj;
+                    } else {
+                        const cleanSubj = normalizeSubjectName(rawSubj);
+                        const matchedChoice = (st.choices || []).find(c => normalizeSubjectName(c) === cleanSubj);
+                        subjName = matchedChoice || rawSubj;
+                    }
                 }
                 appState.ticketDB[st.id][scheduleKey] = {
                     subject: subjName,
