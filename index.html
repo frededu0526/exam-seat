@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v20.132</title>
+    <title>정기시험 좌석배치 시스템 v20.14</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,7 +25,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.132</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v20.14</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">스토리지 완전 초기화 · 비고정 정원 동적 승격 · 개별 이동 옵션 완비 패치</p>
         </div>
@@ -51,6 +51,7 @@
         <button onclick="switchTab('tab4')" class="tab-btn py-3 px-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab4">4. 이동 설정</button>
         <button onclick="switchTab('tab5')" class="tab-btn py-3 px-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab5">5. 좌석 배치</button>
         <button onclick="switchTab('tab6')" class="tab-btn py-3 px-3 border-b-2 border-transparent hover:text-indigo-600 text-purple-700 font-bold" id="btn-tab6">6. 🎟️ 학생별 수험표 출력</button>
+        <button onclick="switchTab('tab7')" class="tab-btn py-3 px-3 border-b-2 border-transparent hover:text-indigo-600 font-bold text-indigo-700" id="btn-tab7">7. 📊 통계 및 감독 표</button>
     </nav>
 
     <!-- 메인 콘텐츠 영역 -->
@@ -410,6 +411,144 @@
             <div id="ticket-cards-container" class="ticket-grid grid grid-cols-1 md:grid-cols-2 gap-4">
             </div>
         </section>
+        <!-- [7번 탭] 통계 및 감독교사 표 -->
+<section id="tab7" class="tab-content hidden space-y-8">
+    
+    <!-- 1. 고사실 층별 배치 인터페이스 (Drag & Drop 버블) -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h2 class="text-base font-bold text-slate-800">🏢 고사실 층/구역 배치 (드래그 앤 드롭)</h2>
+                <p class="text-xs text-slate-500 mt-0.5">고사실 버블을 끌어서 각 층/구역으로 이동시키면 통계 표 및 감독교사 표의 열 순서가 자동 정렬됩니다.</p>
+            </div>
+            <button onclick="autoDistributeRoomsToZones()" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-3 py-1.5 rounded text-xs font-bold border border-indigo-200">
+                ⚡ 학년별 기본 층 자동 배치
+            </button>
+        </div>
+
+        <!-- 대기실 (미지정 고사실 버블 모음) -->
+        <div class="mb-4 p-3 bg-slate-100 border border-slate-300 rounded-lg">
+            <span class="text-xs font-bold text-slate-600 block mb-2">📌 배치 대기중 고사실</span>
+            <div id="zone-UNASSIGNED" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, 'UNASSIGNED')" class="flex flex-wrap gap-2 min-h-[40px] p-2 bg-white rounded border border-dashed border-slate-300">
+            </div>
+        </div>
+
+        <!-- 층별 구역 드롭 존 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <!-- 2층 -->
+            <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
+                <span class="font-bold text-indigo-900 block border-b pb-1">🏫 2층 구역</span>
+                <div class="space-y-2">
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-600">2층 (남)</span>
+                        <div id="zone-2S" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '2S')" class="min-h-[48px] p-2 bg-white rounded border border-slate-200 flex flex-wrap gap-1.5"></div>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-600">2층 (북)</span>
+                        <div id="zone-2N" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '2N')" class="min-h-[48px] p-2 bg-white rounded border border-slate-200 flex flex-wrap gap-1.5"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- 3층 -->
+            <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
+                <span class="font-bold text-emerald-900 block border-b pb-1">🏫 3층 구역</span>
+                <div class="space-y-2">
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-600">3층 (남)</span>
+                        <div id="zone-3S" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '3S')" class="min-h-[48px] p-2 bg-white rounded border border-slate-200 flex flex-wrap gap-1.5"></div>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-600">3층 (북)</span>
+                        <div id="zone-3N" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '3N')" class="min-h-[48px] p-2 bg-white rounded border border-slate-200 flex flex-wrap gap-1.5"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- 4층 -->
+            <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
+                <span class="font-bold text-amber-900 block border-b pb-1">🏫 4층 구역</span>
+                <div class="space-y-2">
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-600">4층 (남)</span>
+                        <div id="zone-4S" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '4S')" class="min-h-[48px] p-2 bg-white rounded border border-slate-200 flex flex-wrap gap-1.5"></div>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-600">4층 (북)</span>
+                        <div id="zone-4N" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '4N')" class="min-h-[48px] p-2 bg-white rounded border border-slate-200 flex flex-wrap gap-1.5"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- 5층 및 별도공간 -->
+            <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
+                <span class="font-bold text-purple-900 block border-b pb-1">🏫 5층 & 별도 공간</span>
+                <div class="space-y-2">
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-600">5층 (남)</span>
+                        <div id="zone-5S" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '5S')" class="min-h-[40px] p-2 bg-white rounded border border-slate-200 flex flex-wrap gap-1.5"></div>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-600">5층 (북)</span>
+                        <div id="zone-5N" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '5N')" class="min-h-[40px] p-2 bg-white rounded border border-slate-200 flex flex-wrap gap-1.5"></div>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-semibold text-amber-800">⭐ 별도 공간</span>
+                        <div id="zone-SPEC" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, 'SPEC')" class="min-h-[40px] p-2 bg-amber-50/60 rounded border border-amber-300 flex flex-wrap gap-1.5"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 상단 고사실 정보 표 -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h2 class="text-base font-bold text-slate-800">📊 1. 고사실 정보 표 (시행 시험 수 / 자습 학년 수)</h2>
+                <p class="text-xs text-slate-500 mt-0.5">고사실 층별 순서로 자동 정렬되며, 셀에는 <b>[응시 시험 과목 수 / 자습 학년 수]</b>가 자동 산출됩니다.</p>
+            </div>
+            <button onclick="generateRoomInfoTable()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded text-xs font-bold shadow-sm">
+                🔄 상단 표 자동 채우기
+            </button>
+        </div>
+        <div class="overflow-x-auto border rounded-lg max-h-96">
+            <table class="w-full text-xs text-center border-collapse">
+                <thead id="room-info-thead" class="bg-slate-100 text-slate-700 uppercase font-bold sticky top-0 border-b">
+                    <tr><th class="px-4 py-2.5 border-r">일자 / 교시</th><th class="px-4 py-2.5 text-slate-400 font-normal">표 자동 채우기 버튼을 눌러주세요.</th></tr>
+                </thead>
+                <tbody id="room-info-tbody" class="divide-y divide-slate-200">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. 하단 감독교사 테이블 (수정 가능) -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h2 class="text-base font-bold text-slate-800">👮 2. 감독교사 가중치 표 (층별 복도 포함 · 수정 가능)</h2>
+                <p class="text-xs text-slate-500 mt-0.5">시험 2개 이상(<b>2</b>), 1개/자습/운영복도(<b>1</b>), 미운영(<b>0</b>)이 자동 계산되며 <b>셀을 클릭하여 직접 수정할 수 있습니다.</b></p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="generateProctorTable()" class="bg-purple-700 hover:bg-purple-600 text-white px-4 py-2 rounded text-xs font-bold shadow-sm">
+                    ⚡ 감독교사 표 자동 채우기
+                </button>
+                <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded text-xs font-bold shadow-sm">
+                    🖨️ 표 인쇄
+                </button>
+            </div>
+        </div>
+        <div class="overflow-x-auto border rounded-lg max-h-96">
+            <table class="w-full text-xs text-center border-collapse">
+                <thead id="proctor-thead" class="bg-purple-50 text-purple-950 uppercase font-bold sticky top-0 border-b border-purple-200">
+                    <tr><th class="px-4 py-2.5 border-r">일자 / 교시</th><th class="px-4 py-2.5 text-slate-400 font-normal">표 자동 채우기 버튼을 눌러주세요.</th></tr>
+                </thead>
+                <tbody id="proctor-tbody" class="divide-y divide-slate-200">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>
+        
 
     </main>
 
@@ -640,8 +779,8 @@ function determineSelfStudyOrDismiss(student, dayPeriodRow, gradeKey) {
 
     return hasLaterExam ? "자습" : "하교";
 }
-        // [v20.132 신설] 학생 개인별 최종 표기 과목 추출 헬퍼 함수
-// [v20.132 최종] 학생 개인별 최종 표기 과목 추출 함수
+        // [v20.14 신설] 학생 개인별 최종 표기 과목 추출 헬퍼 함수
+// [v20.14 최종] 학생 개인별 최종 표기 과목 추출 함수
 function getDisplaySubjectForStudent(student, row, gradeKey) {
     const status = determineSelfStudyOrDismiss(student, row, gradeKey);
     if (status === '하교') return '하교';
@@ -1320,7 +1459,7 @@ function onPeriodChange() {
                     });
                 }
             });
-            // [v20.132 추가] 특별고사실 Step 1 좌석 배치 (35명 규격 고정, 학번 순 배치)
+            // [v20.14 추가] 특별고사실 Step 1 좌석 배치 (35명 규격 고정, 학번 순 배치)
             const spRooms = appState.rooms.filter(r => r.isSpecial);
             spRooms.forEach(room => {
                 const spec = getSpecForCount(35);
@@ -1336,7 +1475,7 @@ function onPeriodChange() {
                     const status = determineSelfStudyOrDismiss(st, row, gradeKey);
 
                     if (status !== '하교') {
-                        // [v20.132 통합] 신규 헬퍼 함수 적용
+                        // [v20.14 통합] 신규 헬퍼 함수 적용
                 const subjName = getDisplaySubjectForStudent(st, row, gradeKey);
 
                         seatList.push({
@@ -1624,7 +1763,7 @@ function onPeriodChange() {
         `;
     }).join('');
 
-    // 2. [v20.132 추가] 특별고사실 인터페이스 분리 렌더링
+    // 2. [v20.14 추가] 특별고사실 인터페이스 분리 렌더링
     if (spRooms.length > 0) {
         html += `
             <div class="mt-10 border-t-2 border-dashed border-amber-300 pt-6">
@@ -1710,7 +1849,7 @@ function onPeriodChange() {
         });
     });
 
-    // 2. [v20.132 추가] 특별고사실 배정 학생 수험표 반영
+    // 2. [v20.14 추가] 특별고사실 배정 학생 수험표 반영
     let specialCount = 0;
     const spRooms = appState.rooms.filter(r => r.isSpecial);
     spRooms.forEach(room => {
@@ -1730,7 +1869,7 @@ function onPeriodChange() {
                     seatInfo: '-'
                 };
             } else {
-                // [v20.132 통합] 일반/특별 고사실 통합 표기 규칙 적용
+                // [v20.14 통합] 일반/특별 고사실 통합 표기 규칙 적용
                 const subjName = getDisplaySubjectForStudent(st, row, gradeKey);
                 appState.ticketDB[st.id][scheduleKey] = {
                     subject: subjName,
@@ -1973,6 +2112,267 @@ function onPeriodChange() {
             saveToLocalStorage();
             renderAll();
         }
+        // ==========================================
+// 9. 7번 통계 탭 및 감독교사 표 로직 (v20.14)
+// ==========================================
+const ZONE_KEYS = ['2S', '2N', '3S', '3N', '4S', '4N', '5S', '5N', 'SPEC'];
+const ZONE_LABELS = {
+    '2S': '2층복도(남)', '2N': '2층복도(북)',
+    '3S': '3층복도(남)', '3N': '3층복도(북)',
+    '4S': '4층복도(남)', '4N': '4층복도(북)',
+    '5S': '5층복도(남)', '5N': '5층복도(북)',
+    'SPEC': '별도실'
+};
+
+// 탭 전환 시 7번 탭 렌더링 추가
+const origSwitchTab = window.switchTab;
+window.switchTab = function(tabId) {
+    origSwitchTab(tabId);
+    if (tabId === 'tab7') {
+        renderRoomBubbles();
+    }
+};
+
+// 고사실 버블 UI 렌더링
+function renderRoomBubbles() {
+    if (!appState.roomZones) appState.roomZones = {};
+
+    [...ZONE_KEYS, 'UNASSIGNED'].forEach(zKey => {
+        const el = document.getElementById('zone-' + zKey);
+        if (el) el.innerHTML = '';
+    });
+
+    appState.rooms.forEach(room => {
+        const zKey = appState.roomZones[room.id] || 'UNASSIGNED';
+        const targetEl = document.getElementById('zone-' + zKey) || document.getElementById('zone-UNASSIGNED');
+
+        const bubble = document.createElement('div');
+        bubble.draggable = true;
+        bubble.className = `px-2.5 py-1 rounded-full text-xs font-bold cursor-move shadow-xs flex items-center gap-1 select-none ${
+            room.isSpecial ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-indigo-100 text-indigo-900 border border-indigo-300'
+        }`;
+        bubble.innerHTML = `${room.isSpecial ? '⭐ ' : ''}${room.name}`;
+        bubble.ondragstart = (e) => e.dataTransfer.setData('text/plain', room.id);
+
+        targetEl.appendChild(bubble);
+    });
+}
+
+function handleZoneDragOver(e) {
+    e.preventDefault();
+}
+
+function handleZoneDrop(e, zoneKey) {
+    e.preventDefault();
+    const roomId = e.dataTransfer.getData('text/plain');
+    if (!roomId) return;
+
+    if (!appState.roomZones) appState.roomZones = {};
+    appState.roomZones[roomId] = zoneKey;
+
+    saveToLocalStorage();
+    renderRoomBubbles();
+}
+
+// 학년별 기본 층 자동 배치 버튼
+function autoDistributeRoomsToZones() {
+    if (!appState.roomZones) appState.roomZones = {};
+
+    appState.rooms.forEach(room => {
+        if (room.isSpecial) {
+            appState.roomZones[room.id] = 'SPEC';
+        } else {
+            const g = room.targetGrade;
+            const c = room.targetClass;
+            const isNorth = c > 6; // 1~6반 남측, 7반~ 북측
+            if (g === 1) appState.roomZones[room.id] = isNorth ? '2N' : '2S';
+            else if (g === 2) appState.roomZones[room.id] = isNorth ? '3N' : '3S';
+            else if (g === 3) appState.roomZones[room.id] = isNorth ? '4N' : '4S';
+            else appState.roomZones[room.id] = '5S';
+        }
+    });
+
+    saveToLocalStorage();
+    renderRoomBubbles();
+    alert("⚡ 학년 및 반 번호 기준으로 고사실이 층별 구역에 자동 배치되었습니다.");
+}
+
+// 층별 및 고사실 번호 순 정렬된 고사실 목록 추출
+function getSortedRoomsByZone() {
+    if (!appState.roomZones) appState.roomZones = {};
+
+    const sortedRooms = [];
+    ZONE_KEYS.forEach(zKey => {
+        const roomsInZone = appState.rooms.filter(r => (appState.roomZones[r.id] || 'UNASSIGNED') === zKey);
+        roomsInZone.sort((a, b) => (a.isSpecial ? 999 : a.num) - (b.isSpecial ? 999 : b.num));
+        sortedRooms.push(...roomsInZone);
+    });
+
+    // 미배치 고사실은 맨 뒤 추가
+    const unassigned = appState.rooms.filter(r => !appState.roomZones[r.id] || appState.roomZones[r.id] === 'UNASSIGNED');
+    unassigned.sort((a, b) => (a.isSpecial ? 999 : a.num) - (b.isSpecial ? 999 : b.num));
+    sortedRooms.push(...unassigned);
+
+    return sortedRooms;
+}
+
+// 교시별 고사실의 [시행 시험 수 / 자습 학년 수] 계산 함수
+function calcRoomExamAndSelfStudy(room, row) {
+    if (!row) return { examCount: 0, selfStudyCount: 0 };
+
+    const activeExams = new Set();
+    const selfStudyGrades = new Set();
+
+    let targetStudents = [];
+    if (room.isSpecial) {
+        targetStudents = appState.students.filter(s => (room.specialStudents || []).includes(s.id));
+    } else {
+        targetStudents = appState.students.filter(s => {
+            const g = parseInt(s.id.charAt(0));
+            const c = parseInt(s.id.slice(1, 3));
+            return g === room.targetGrade && c === room.targetClass && !appState.rooms.some(r => r.isSpecial && (r.specialStudents || []).includes(s.id));
+        });
+    }
+
+    targetStudents.forEach(st => {
+        const gradeKey = st.id.charAt(0) + '학년';
+        const status = determineSelfStudyOrDismiss(st, row, gradeKey);
+
+        if (status === '응시') {
+            const subj = getDisplaySubjectForStudent(st, row, gradeKey);
+            if (subj && subj !== '자습' && subj !== '하교') {
+                activeExams.add(subj);
+            }
+        } else if (status === '자습') {
+            selfStudyGrades.add(st.id.charAt(0));
+        }
+    });
+
+    return {
+        examCount: activeExams.size,
+        selfStudyCount: selfStudyGrades.size
+    };
+}
+
+// 1. 상단 고사실 정보 표 자동 생성
+function generateRoomInfoTable() {
+    const thead = document.getElementById('room-info-thead');
+    const tbody = document.getElementById('room-info-tbody');
+
+    if (!appState.rawTimetable || appState.rawTimetable.length === 0) {
+        alert("기초자료 시험 시간표가 업로드되지 않았습니다.");
+        return;
+    }
+
+    const sortedRooms = getSortedRoomsByZone();
+
+    // 헤더 구성
+    let headHtml = `<tr><th class="px-3 py-2 border-r bg-slate-200 min-w-[140px]">일자 / 교시</th>`;
+    sortedRooms.forEach(r => {
+        headHtml += `<th class="px-2 py-2 border-r min-w-[90px] ${r.isSpecial ? 'bg-amber-100 text-amber-900' : ''}">${r.name}</th>`;
+    });
+    headHtml += `</tr>`;
+    thead.innerHTML = headHtml;
+
+    // 바디 구성
+    let bodyHtml = '';
+    appState.rawTimetable.forEach(row => {
+        const schKey = row['날짜/교시'];
+        bodyHtml += `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-bold border-r bg-slate-50 text-slate-800 text-left">${schKey}</td>`;
+
+        sortedRooms.forEach(room => {
+            const { examCount, selfStudyCount } = calcRoomExamAndSelfStudy(room, row);
+            let badgeClass = "text-slate-400";
+            if (examCount >= 2) badgeClass = "bg-rose-100 text-rose-800 font-bold px-1.5 py-0.5 rounded";
+            else if (examCount === 1) badgeClass = "bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.5 rounded";
+            else if (selfStudyCount > 0) badgeClass = "bg-amber-100 text-amber-800 font-semibold px-1.5 py-0.5 rounded";
+
+            bodyHtml += `<td class="px-2 py-2 border-r"><span class="${badgeClass}">${examCount} / ${selfStudyCount}</span></td>`;
+        });
+
+        bodyHtml += `</tr>`;
+    });
+
+    tbody.innerHTML = bodyHtml;
+}
+
+// 2. 하단 감독교사 표 자동 생성 (유저 직접 수정 기능 포함)
+function generateProctorTable() {
+    const thead = document.getElementById('proctor-thead');
+    const tbody = document.getElementById('proctor-tbody');
+
+    if (!appState.rawTimetable || appState.rawTimetable.length === 0) {
+        alert("기초자료 시험 시간표가 업로드되지 않았습니다.");
+        return;
+    }
+
+    if (!appState.roomZones) appState.roomZones = {};
+
+    // 열 순서 정렬 (각 층/구역별 고사실 묶음 바로 뒤에 해당 층 복도 열 배치)
+    const columns = []; // { type: 'ROOM'|'HALLWAY', id, label, zoneKey }
+
+    ZONE_KEYS.forEach(zKey => {
+        const roomsInZone = appState.rooms.filter(r => (appState.roomZones[r.id] || 'UNASSIGNED') === zKey);
+        roomsInZone.sort((a, b) => (a.isSpecial ? 999 : a.num) - (b.isSpecial ? 999 : b.num));
+
+        roomsInZone.forEach(r => columns.push({ type: 'ROOM', room: r, label: r.name, zoneKey: zKey }));
+
+        // 구역에 고사실이 존재하거나 별도실인 경우 복도/별도실 열 추가
+        if (roomsInZone.length > 0 || zKey === 'SPEC') {
+            columns.push({ type: 'HALLWAY', zoneKey: zKey, label: ZONE_LABELS[zKey] });
+        }
+    });
+
+    // 헤더 생성
+    let headHtml = `<tr><th class="px-3 py-2 border-r bg-purple-100 text-purple-950 min-w-[140px]">일자 / 교시</th>`;
+    columns.forEach(col => {
+        const isHall = col.type === 'HALLWAY';
+        headHtml += `<th class="px-2 py-2 border-r min-w-[85px] ${isHall ? 'bg-purple-200/70 text-purple-900 font-extrabold' : ''}">${col.label}</th>`;
+    });
+    headHtml += `</tr>`;
+    thead.innerHTML = headHtml;
+
+    // 바디 생성 (contenteditable="true" 적용으로 직접 수정 가능)
+    let bodyHtml = '';
+    appState.rawTimetable.forEach(row => {
+        const schKey = row['날짜/교시'];
+        bodyHtml += `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-bold border-r bg-slate-50 text-slate-800 text-left select-none">${schKey}</td>`;
+
+        columns.forEach(col => {
+            let val = 0;
+
+            if (col.type === 'ROOM') {
+                const { examCount, selfStudyCount } = calcRoomExamAndSelfStudy(col.room, row);
+                if (examCount >= 2) val = 2;
+                else if (examCount === 1) val = 1;
+                else if (selfStudyCount >= 1) val = 1;
+                else val = 0;
+            } else { // 복도 / 별도실
+                const roomsInZone = appState.rooms.filter(r => (appState.roomZones[r.id] || 'UNASSIGNED') === col.zoneKey);
+                const isZoneOperating = roomsInZone.some(r => {
+                    const { examCount, selfStudyCount } = calcRoomExamAndSelfStudy(r, row);
+                    return examCount > 0 || selfStudyCount > 0;
+                });
+                val = isZoneOperating ? 1 : 0;
+            }
+
+            let colorStyle = "text-slate-400";
+            if (val === 2) colorStyle = "bg-rose-100 text-rose-900 font-extrabold";
+            else if (val === 1) colorStyle = "bg-indigo-50 text-indigo-900 font-bold";
+
+            bodyHtml += `
+                <td contenteditable="true" 
+                    class="px-2 py-2 border-r text-center font-bold transition focus:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-text ${colorStyle}">
+                    ${val}
+                </td>
+            `;
+        });
+
+        bodyHtml += `</tr>`;
+    });
+
+    tbody.innerHTML = bodyHtml;
+}
     </script>
 </body>
 </html>
