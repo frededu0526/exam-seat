@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v21.2</title>
+    <title>정기시험 좌석배치 시스템 v21.3</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -25,7 +25,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v21.2</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v21.3</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">스토리지 완전 초기화 · 비고정 정원 동적 승격 · 개별 이동 옵션 완비 패치</p>
         </div>
@@ -577,7 +577,7 @@
     moveRules: {},
     internalTable2: {},
     currentSeats: {},
-    savedSeatingMap: {}, // 👈 [v21.2 추가] 교시별 좌석배치 저장소
+    savedSeatingMap: {}, // 👈 [v21.3 추가] 교시별 좌석배치 저장소
     ticketDB: {},
     showSeqNumber: true
 };
@@ -780,8 +780,8 @@ function determineSelfStudyOrDismiss(student, dayPeriodRow, gradeKey) {
 
     return hasLaterExam ? "자습" : "하교";
 }
-        // [v21.2 신설] 학생 개인별 최종 표기 과목 추출 헬퍼 함수
-// [v21.2 최종] 학생 개인별 최종 표기 과목 추출 함수
+        // [v21.3 신설] 학생 개인별 최종 표기 과목 추출 헬퍼 함수
+// [v21.3 최종] 학생 개인별 최종 표기 과목 추출 함수
 function getDisplaySubjectForStudent(student, row, gradeKey) {
     const status = determineSelfStudyOrDismiss(student, row, gradeKey);
     if (status === '하교') return '하교';
@@ -1330,7 +1330,7 @@ function onSeatScheduleChange() {
 }
 
 // 교시 드롭다운 변경 시 실행 (선택 과목 디스플레이 업데이트)
-// [v21.2 신설] 현재 교시의 좌석 배치 상태 저장
+// [v21.3 신설] 현재 교시의 좌석 배치 상태 저장
 function saveCurrentSeatingForSchedule() {
     const fullKey = document.getElementById('seat-period-select')?.value;
     if (!fullKey) return;
@@ -1339,7 +1339,7 @@ function saveCurrentSeatingForSchedule() {
     saveToLocalStorage();
 }
 
-// [v21.2 신설] 선택된 교시의 저장된 좌석 배치 불러오기
+// [v21.3 신설] 선택된 교시의 저장된 좌석 배치 불러오기
 function loadSeatingForSchedule() {
     const fullKey = document.getElementById('seat-period-select')?.value;
     if (!fullKey) return false;
@@ -1351,7 +1351,7 @@ function loadSeatingForSchedule() {
     return false;
 }
 
-// [v21.2 수정] 교시 변경 시 저장된 좌석 불러오기
+// [v21.3 수정] 교시 변경 시 저장된 좌석 불러오기
 function onPeriodChange() {
     updateCurrentSubjectDisplay();
     const loaded = loadSeatingForSchedule();
@@ -1487,7 +1487,7 @@ function onPeriodChange() {
                     });
                 }
             });
-            // [v21.2 추가] 특별고사실 Step 1 좌석 배치 (35명 규격 고정, 학번 순 배치)
+            // [v21.3 추가] 특별고사실 Step 1 좌석 배치 (35명 규격 고정, 학번 순 배치)
             const spRooms = appState.rooms.filter(r => r.isSpecial);
             spRooms.forEach(room => {
                 const spec = getSpecForCount(35);
@@ -1503,7 +1503,7 @@ function onPeriodChange() {
                     const status = determineSelfStudyOrDismiss(st, row, gradeKey);
 
                     if (status !== '하교') {
-                        // [v21.2 통합] 신규 헬퍼 함수 적용
+                        // [v21.3 통합] 신규 헬퍼 함수 적용
                 const subjName = getDisplaySubjectForStudent(st, row, gradeKey);
 
                         seatList.push({
@@ -1794,7 +1794,7 @@ function onPeriodChange() {
         `;
     }).join('');
 
-    // 2. [v21.2 추가] 특별고사실 인터페이스 분리 렌더링
+    // 2. [v21.3 추가] 특별고사실 인터페이스 분리 렌더링
     if (spRooms.length > 0) {
         html += `
             <div class="mt-10 border-t-2 border-dashed border-amber-300 pt-6">
@@ -1880,7 +1880,7 @@ function onPeriodChange() {
         });
     });
 
-    // 2. [v21.2 추가] 특별고사실 배정 학생 수험표 반영
+    // 2. [v21.3 추가] 특별고사실 배정 학생 수험표 반영
     let specialCount = 0;
     const spRooms = appState.rooms.filter(r => r.isSpecial);
     spRooms.forEach(room => {
@@ -1900,7 +1900,7 @@ function onPeriodChange() {
                     seatInfo: '-'
                 };
             } else {
-                // [v21.2 통합] 일반/특별 고사실 통합 표기 규칙 적용
+                // [v21.3 통합] 일반/특별 고사실 통합 표기 규칙 적용
                 const subjName = getDisplaySubjectForStudent(st, row, gradeKey);
                 appState.ticketDB[st.id][scheduleKey] = {
                     subject: subjName,
@@ -1934,6 +1934,36 @@ function onPeriodChange() {
         // ==========================================
         // 7. 수험표 출력 (탭 6)
         // ==========================================
+        // [v21.3 신설] 5번 탭의 실제 좌석 배치도(currentSeats) 기준 수험표 좌석 위치 100% 동기화
+function syncTicketsFromSeating() {
+    if (!appState.ticketDB) appState.ticketDB = {};
+
+    appState.rooms.forEach(room => {
+        const seats = appState.currentSeats[room.id] || [];
+        if (seats.length === 0) return;
+
+        // 고사실 분단 수 및 분단당 행 수 계산
+        const spec = getRoomSpec ? getRoomSpec(room) : { cols: [4,7,5,7,4], fixed: [false,true,false,true,false] };
+        const seatColCount = spec.cols.filter((_, idx) => !spec.fixed[idx]).length || 3;
+        const maxRowsPerCol = Math.ceil(room.capacity / seatColCount) || 7;
+
+        seats.forEach((seat, seatIdx) => {
+            if (!seat.studentId || seat.studentName === '빈좌석') return;
+
+            const bundan = Math.floor(seatIdx / maxRowsPerCol) + 1; // 1분단, 2분단...
+            const rowNum = (seatIdx % maxRowsPerCol) + 1;           // 1번째, 2번째...
+            const seatText = `${room.name} ${bundan}분단 ${rowNum}번째`;
+
+            if (!appState.ticketDB[seat.studentId]) {
+                appState.ticketDB[seat.studentId] = {};
+            }
+            appState.ticketDB[seat.studentId].roomName = room.name;
+            appState.ticketDB[seat.studentId].seatText = seatText;
+            appState.ticketDB[seat.studentId].bundan = bundan;
+            appState.ticketDB[seat.studentId].rowNum = rowNum;
+        });
+    });
+}
         function renderTickets() {
             const container = document.getElementById('ticket-cards-container');
             const gFilter = document.getElementById('ticket-grade-filter').value;
@@ -2144,7 +2174,7 @@ function onPeriodChange() {
             renderAll();
         }
         // ==========================================
-// 9. 7번 통계 탭 및 감독교사 표 로직 (v21.2)
+// 9. 7번 통계 탭 및 감독교사 표 로직 (v21.3)
 // ==========================================
 const ZONE_KEYS = ['2S', '2N', '3S', '3N', '4S', '4N', '5S', '5N', 'SPEC'];
 const ZONE_LABELS = {
@@ -2206,26 +2236,43 @@ function handleZoneDrop(e, zoneKey) {
 }
 
 // 학년별 기본 층 자동 배치 버튼
+// [v21.3 수정] 학년/반 기준 층별 구역 자동 배치 (이미지 규격 100% 반영)
 function autoDistributeRoomsToZones() {
     if (!appState.roomZones) appState.roomZones = {};
 
     appState.rooms.forEach(room => {
         if (room.isSpecial) {
             appState.roomZones[room.id] = 'SPEC';
-        } else {
-            const g = room.targetGrade;
-            const c = room.targetClass;
-            const isNorth = c > 6; // 1~6반 남측, 7반~ 북측
-            if (g === 1) appState.roomZones[room.id] = isNorth ? '2N' : '2S';
-            else if (g === 2) appState.roomZones[room.id] = isNorth ? '3N' : '3S';
-            else if (g === 3) appState.roomZones[room.id] = isNorth ? '4N' : '4S';
+            return;
+        }
+
+        const g = room.targetGrade;
+        const c = room.targetClass;
+
+        if (g === 1) {
+            // 1학년: 남측 복도 배치 (1~4반 2층 / 5~8반 3층 / 9~12반 4층)
+            if (c >= 1 && c <= 4) appState.roomZones[room.id] = '2S';
+            else if (c >= 5 && c <= 8) appState.roomZones[room.id] = '3S';
+            else if (c >= 9 && c <= 12) appState.roomZones[room.id] = '4S';
             else appState.roomZones[room.id] = '5S';
+        } else if (g === 2) {
+            // 2학년: 북측 복도 배치 (1~4반 2층 / 5~8반 3층 / 9~12반 4층)
+            if (c >= 1 && c <= 4) appState.roomZones[room.id] = '2N';
+            else if (c >= 5 && c <= 8) appState.roomZones[room.id] = '3N';
+            else if (c >= 9 && c <= 12) appState.roomZones[room.id] = '4N';
+            else appState.roomZones[room.id] = '5N';
+        } else if (g === 3) {
+            // 3학년: 5층 배치
+            if (c <= 6) appState.roomZones[room.id] = '5S';
+            else appState.roomZones[room.id] = '5N';
+        } else {
+            appState.roomZones[room.id] = 'UNASSIGNED';
         }
     });
 
     saveToLocalStorage();
     renderRoomBubbles();
-    alert("⚡ 학년 및 반 번호 기준으로 고사실이 층별 구역에 자동 배치되었습니다.");
+    alert("⚡ 지정된 학년/반 규격대로 층별 구역에 고사실이 배치되었습니다.");
 }
 
 // 층별 및 고사실 번호 순 정렬된 고사실 목록 추출
@@ -2248,7 +2295,7 @@ function getSortedRoomsByZone() {
 }
 
 // 교시별 고사실의 [시행 시험 수 / 자습 학년 수] 계산 함수
-// [v21.2 수정] 5번 탭의 로컬 저장된 좌석 배치(savedSeatingMap) 기준 통계 산출
+// [v21.3 수정] 5번 탭의 로컬 저장된 좌석 배치(savedSeatingMap) 기준 통계 산출
 function calcRoomExamAndSelfStudy(room, row) {
     if (!row) return { examCount: 0, selfStudyCount: 0 };
     const schKey = row['날짜/교시'];
@@ -2327,7 +2374,8 @@ function generateRoomInfoTable() {
 }
 
 // 2. 하단 감독교사 표 자동 생성 (유저 직접 수정 기능 포함)
-// 2. 하단 감독교사 표 자동 생성 (v21.2 맨 아래 합계 행 추가 및 실시간 연동)
+// 2. 하단 감독교사 표 자동 생성 (v21.3 맨 아래 합계 행 추가 및 실시간 연동)
+// [v21.3 수정] 하단 감독교사 표 (맨 오른쪽 교시별 합계 열 배치 및 실시간 갱신)
 function generateProctorTable() {
     const thead = document.getElementById('proctor-thead');
     const tbody = document.getElementById('proctor-tbody');
@@ -2339,39 +2387,37 @@ function generateProctorTable() {
 
     if (!appState.roomZones) appState.roomZones = {};
 
-    // 열 순서 정렬 (각 층/구역별 고사실 묶음 바로 뒤에 해당 층 복도 열 배치)
-    const columns = []; // { type: 'ROOM'|'HALLWAY', id, label, zoneKey }
-
+    const columns = [];
     ZONE_KEYS.forEach(zKey => {
         const roomsInZone = appState.rooms.filter(r => (appState.roomZones[r.id] || 'UNASSIGNED') === zKey);
         roomsInZone.sort((a, b) => (a.isSpecial ? 999 : a.num) - (b.isSpecial ? 999 : b.num));
 
         roomsInZone.forEach(r => columns.push({ type: 'ROOM', room: r, label: r.name, zoneKey: zKey }));
 
-        // 구역에 고사실이 존재하거나 별도실인 경우 복도/별도실 열 추가
         if (roomsInZone.length > 0 || zKey === 'SPEC') {
             columns.push({ type: 'HALLWAY', zoneKey: zKey, label: ZONE_LABELS[zKey] });
         }
     });
 
-    // 헤더 생성
+    // 헤더 생성 (맨 오른쪽에 합계 열 추가)
     let headHtml = `<tr><th class="px-3 py-2 border-r bg-purple-100 text-purple-950 min-w-[140px]">일자 / 교시</th>`;
     columns.forEach(col => {
         const isHall = col.type === 'HALLWAY';
         headHtml += `<th class="px-2 py-2 border-r min-w-[85px] ${isHall ? 'bg-purple-200/70 text-purple-900 font-extrabold' : ''}">${col.label}</th>`;
     });
-    headHtml += `</tr>`;
+    headHtml += `<th class="px-3 py-2 border-l-2 border-purple-300 bg-purple-200 text-purple-950 font-extrabold min-w-[70px]">합계</th></tr>`;
     thead.innerHTML = headHtml;
 
-    // 바디 생성 및 열별 합계 누적 배열 초기화
+    // 바디 생성 (교시별 행 우측 끝에 합계 계산)
     let bodyHtml = '';
-    const colTotals = new Array(columns.length).fill(0);
 
     appState.rawTimetable.forEach(row => {
         const schKey = row['날짜/교시'];
+        let rowSum = 0;
+
         bodyHtml += `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-bold border-r bg-slate-50 text-slate-800 text-left select-none">${schKey}</td>`;
 
-        columns.forEach((col, colIdx) => {
+        columns.forEach(col => {
             let val = 0;
 
             if (col.type === 'ROOM') {
@@ -2389,7 +2435,7 @@ function generateProctorTable() {
                 val = isZoneOperating ? 1 : 0;
             }
 
-            colTotals[colIdx] += val;
+            rowSum += val;
 
             let colorStyle = "text-slate-400";
             if (val === 2) colorStyle = "bg-rose-100 text-rose-900 font-extrabold";
@@ -2404,51 +2450,36 @@ function generateProctorTable() {
             `;
         });
 
+        // 맨 오른쪽 교시(행) 합계 셀 추가
+        bodyHtml += `<td class="px-3 py-2 border-l-2 border-purple-300 bg-purple-100 font-extrabold text-purple-950 text-center select-none">${rowSum}</td>`;
         bodyHtml += `</tr>`;
     });
-
-    // [v21.2 추가] 맨 아래 고정 합계 행 추가
-    bodyHtml += `<tr class="bg-purple-100 font-extrabold text-purple-950 border-t-2 border-purple-300 sticky bottom-0 z-10 shadow-sm">`;
-    bodyHtml += `<td class="px-3 py-2 border-r bg-purple-200 text-purple-950 text-left select-none">합계</td>`;
-    columns.forEach((col, colIdx) => {
-        const isHall = col.type === 'HALLWAY';
-        bodyHtml += `<td class="px-2 py-2 border-r text-center ${isHall ? 'bg-purple-200/80 text-purple-950' : 'text-purple-900'}">${colTotals[colIdx]}</td>`;
-    });
-    bodyHtml += `</tr>`;
 
     tbody.innerHTML = bodyHtml;
 }
 
-// [v21.2 신설] 유저가 셀 수치를 직접 입력·수정할 때 하단 합계 행 실시간 자동 계산
+// [v21.3 수정] 유저가 셀 수치를 직접 수정할 때 오른쪽 끝 행 합계 실시간 갱신
 function updateProctorTotals() {
     const tbody = document.getElementById('proctor-tbody');
     if (!tbody) return;
 
     const rows = tbody.querySelectorAll('tr');
-    if (rows.length < 2) return;
+    rows.forEach(r => {
+        const cells = r.querySelectorAll('td');
+        if (cells.length < 2) return;
 
-    const dataRows = Array.from(rows).slice(0, rows.length - 1); // 합계 행 제외
-    const totalRow = rows[rows.length - 1];
-
-    const firstRowCells = dataRows[0].querySelectorAll('td');
-    const colCount = firstRowCells.length;
-
-    // 1열(일자/교시)을 제외한 고사실 및 복도 열 합계 재계산
-    for (let colIdx = 1; colIdx < colCount; colIdx++) {
         let sum = 0;
-        dataRows.forEach(r => {
-            const cell = r.querySelectorAll('td')[colIdx];
-            if (cell) {
-                const num = parseInt(cell.innerText.trim(), 10);
-                if (!isNaN(num)) sum += num;
-            }
-        });
+        // 1번째 셀(일자/교시)과 마지막 셀(합계)을 제외한 중앙 셀 가중치 합산
+        for (let i = 1; i < cells.length - 1; i++) {
+            const num = parseInt(cells[i].innerText.trim(), 10);
+            if (!isNaN(num)) sum += num;
+        }
 
-        const totalCell = totalRow.querySelectorAll('td')[colIdx];
+        const totalCell = cells[cells.length - 1];
         if (totalCell) {
             totalCell.innerText = sum;
         }
-    }
+    });
 }
     </script>
 </body>
