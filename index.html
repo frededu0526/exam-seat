@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v22.5</title>
+    <title>정기시험 좌석배치 시스템 v22.4</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -72,7 +72,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v22.5</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v22.4</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">스토리지 완전 초기화 · 비고정 정원 동적 승격 · 개별 이동 옵션 완비 패치</p>
         </div>
@@ -91,7 +91,7 @@
     </header>
 
     <!-- 메인 탭 메뉴 -->
-    <!-- 메인 탭 메뉴 (v22.5: 4번 탭 삭제 및 통합) -->
+    <!-- 메인 탭 메뉴 (v22.4: 4번 탭 삭제 및 통합) -->
     <nav class="bg-white border-b border-slate-200 px-6 no-print flex gap-2 overflow-x-auto text-sm font-semibold text-slate-600">
         <button onclick="switchTab('tab1')" class="tab-btn py-3 px-3 border-b-2 border-indigo-600 text-indigo-600" id="btn-tab1">1. 기초자료 업로드</button>
         <button onclick="switchTab('tab2')" class="tab-btn py-3 px-3 border-b-2 border-transparent hover:text-indigo-600" id="btn-tab2">2. 고사실 관리</button>
@@ -579,7 +579,7 @@
         // ==========================================
         // 1. 애플리케이션 상태 (State Management)
         // ==========================================
-        // [v22.5 수정] 교시별 데이터 저장 및 학년별 기본 배치 모드 항목 추가
+        // [v22.4 수정] 교시별 데이터 저장 및 학년별 기본 배치 모드 항목 추가
 let appState = {
     rawTimetable: [],
     rawOpenedSubjects: [],
@@ -597,8 +597,8 @@ let appState = {
         { capacity: 34, cols: [6, 7, 7, 7, 7], fixed: [false, true, false, true, false] },
         { capacity: 35, cols: [7, 7, 7, 7, 7], fixed: [false, true, false, true, false] }
     ],
-    basePlacementModes: { 1: 'CLASS', 2: 'CLASS', 3: 'CLASS' }, // [v22.5 수정] 학년별 기본 배치 모드 (전 학년 CLASS 기본)
-    periodMoveRules: {}, // [v22.5 추가] 교시별 이동 규칙 저장소 ({ [schKey]: { 1: rule, 2: rule, 3: rule } })
+    basePlacementModes: { 1: 'CLASS', 2: 'CLASS', 3: 'CLASS' }, // [v22.4 수정] 학년별 기본 배치 모드 (전 학년 CLASS 기본)
+    periodMoveRules: {}, // [v22.4 추가] 교시별 이동 규칙 저장소 ({ [schKey]: { 1: rule, 2: rule, 3: rule } })
     internalTable2: {},
     currentSeats: {},
     savedSeatingMap: {},
@@ -804,8 +804,8 @@ function determineSelfStudyOrDismiss(student, dayPeriodRow, gradeKey) {
 
     return hasLaterExam ? "자습" : "하교";
 }
-        // [v22.5 신설] 학생 개인별 최종 표기 과목 추출 헬퍼 함수
-// [v22.5 최종] 학생 개인별 최종 표기 과목 추출 함수
+        // [v22.4 신설] 학생 개인별 최종 표기 과목 추출 헬퍼 함수
+// [v22.4 최종] 학생 개인별 최종 표기 과목 추출 함수
 function getDisplaySubjectForStudent(student, row, gradeKey) {
     const status = determineSelfStudyOrDismiss(student, row, gradeKey);
     if (status === '하교') return '하교';
@@ -1339,7 +1339,7 @@ function setupTab5ScheduleSelects() {
 }
 
 // 날짜/요일 드롭다운 변경 시 실행 (교시 목록 재구성)
-// [v22.5 수정] 날짜/요일 변경 시 첫 번째 교시의 저장된 좌석 배치 즉시 불러오기
+// [v22.4 수정] 날짜/요일 변경 시 첫 번째 교시의 저장된 좌석 배치 즉시 불러오기
 function onSeatScheduleChange() {
     const dayVal = document.getElementById('seat-day-select').value;
     const perSel = document.getElementById('seat-period-select');
@@ -1356,7 +1356,7 @@ function onSeatScheduleChange() {
 }
 
 // 교시 드롭다운 변경 시 실행 (선택 과목 디스플레이 업데이트)
-// [v22.5 신설] 현재 교시의 좌석 배치 상태 저장
+// [v22.4 신설] 현재 교시의 좌석 배치 상태 저장
 function saveCurrentSeatingForSchedule() {
     const fullKey = document.getElementById('seat-period-select')?.value;
     if (!fullKey) return;
@@ -1365,7 +1365,7 @@ function saveCurrentSeatingForSchedule() {
     saveToLocalStorage();
 }
 
-// [v22.5 신설] 선택된 교시의 저장된 좌석 배치 불러오기
+// [v22.4 신설] 선택된 교시의 저장된 좌석 배치 불러오기
 function loadSeatingForSchedule() {
     const fullKey = document.getElementById('seat-period-select')?.value;
     if (!fullKey) return false;
@@ -1377,8 +1377,8 @@ function loadSeatingForSchedule() {
     return false;
 }
 
-// [v22.5 수정] 교시 변경 시 저장된 좌석 불러오기
-// [v22.5 수정] 교시 변경 시 시간표 표시, 교시별 이동규칙 UI 로딩 및 저장된 좌석 불러오기
+// [v22.4 수정] 교시 변경 시 저장된 좌석 불러오기
+// [v22.4 수정] 교시 변경 시 시간표 표시, 교시별 이동규칙 UI 로딩 및 저장된 좌석 불러오기
 function onPeriodChange() {
     updateCurrentSubjectDisplay();
     renderPeriodMoveRulesUI(); // 교시별 이동 규칙 UI 구성
@@ -1389,7 +1389,7 @@ function onPeriodChange() {
     }
 }
 
-// [v22.5 신설] 교시 전용 이동 규칙 입력 폼 Render
+// [v22.4 신설] 교시 전용 이동 규칙 입력 폼 Render
 function renderPeriodMoveRulesUI() {
     const schKey = document.getElementById('seat-period-select')?.value;
     const container = document.getElementById('period-move-rules-container');
@@ -1468,9 +1468,9 @@ function updatePeriodRule(schKey, grade, key, val) {
             }
         }
 
-        // [v22.5 수정] UI에서 선택한 학년별 배치 방식(CLASS vs GRADESEQ)을 기준으로 Step 1 실행
-// [v22.5 수정] 자기 반 자기 자리 선택 시 응시생 배치 후 자습생을 반드시 후방으로 이동하도록 수정
-// [v22.5 수정] CLASS_NUM(자습생도 번호순 자기반 자리) 배치 모드 추가
+        // [v22.4 수정] UI에서 선택한 학년별 배치 방식(CLASS vs GRADESEQ)을 기준으로 Step 1 실행
+// [v22.4 수정] 자기 반 자기 자리 선택 시 응시생 배치 후 자습생을 반드시 후방으로 이동하도록 수정
+// [v22.4 수정] CLASS_NUM(자습생도 번호순 자기반 자리) 배치 모드 추가
 function runStep1BasePlacement() {
     const fullKey = document.getElementById('seat-period-select').value;
     const row = appState.rawTimetable.find(r => r['날짜/교시'] === fullKey);
@@ -1538,7 +1538,7 @@ function runStep1BasePlacement() {
                 };
             });
         } else if (mode === 'CLASS_NUM') {
-            // [방식 2 - v22.5 신설] 자기 반 자기 자리 (자습생도 번호순: 학번 순서 그대로 일렬 배치)
+            // [방식 2 - v22.4 신설] 자기 반 자기 자리 (자습생도 번호순: 학번 순서 그대로 일렬 배치)
             gradeRooms.forEach(room => {
                 const classSts = gradeStudents.filter(s => parseInt(s.id.slice(1, 3)) === room.targetClass);
                 const spec = getSpecForCount(classSts.length);
@@ -1689,7 +1689,7 @@ function runStep1BasePlacement() {
         }
 
         // Step 3 최종 이동 및 동적 규격 승격 알고리즘 구현
-        // [v22.5 수정] 현재 교시에 설정된 학년별 단일 이동 규칙을 읽어 Step 3 이동 실행
+        // [v22.4 수정] 현재 교시에 설정된 학년별 단일 이동 규칙을 읽어 Step 3 이동 실행
 function runStep3FinalMove() {
     const fullKey = document.getElementById('seat-period-select').value;
     const row = appState.rawTimetable.find(r => r['날짜/교시'] === fullKey);
@@ -1810,8 +1810,8 @@ function runStep3FinalMove() {
     alert("Step 3. 현재 교시 규칙을 반영한 최종 이동 배치가 완료되었습니다.");
 }
 
-        // [v22.5 신설] Step 4. 고사실 내부 최종 정렬 기능 (기존 로직 유지, 선택적 수동 실행)
-// [v22.5 최종 수정] Step 4. 고사실 내부 분단 구역별(고정/비고정 독립) 최종 정렬
+        // [v22.4 신설] Step 4. 고사실 내부 최종 정렬 기능 (기존 로직 유지, 선택적 수동 실행)
+// [v22.4 최종 수정] Step 4. 고사실 내부 분단 구역별(고정/비고정 독립) 최종 정렬
 function runStep4FinalSort() {
     const fullKey = document.getElementById('seat-period-select')?.value;
     if (!fullKey) { alert("선택된 교시 정보가 없습니다."); return; }
@@ -1896,228 +1896,50 @@ function runStep4FinalSort() {
 
         let dragSource = null;
 
-        // ==========================================
-// [v22.5] 수동 조절 기능 (구역별 밀어내기 & 우클릭 맞교환)
-// ==========================================
-let dragSource = null;
-let currentSwapSource = null; // 맞교환 원본 좌석 정보 저장
-
-function handleDragStart(e, roomId, seatIdx) {
-    dragSource = { roomId, seatIdx };
-    e.dataTransfer.setData('text/plain', '');
-    e.currentTarget.classList.add('dragging');
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-    e.currentTarget.classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-    e.currentTarget.classList.remove('drag-over');
-}
-
-// 헬퍼: 분단 규격 기반 고정/비고정 인덱스 분리
-function getSeatGroupIndices(spec) {
-    const fixedIndices = [];
-    const nonFixedIndices = [];
-    let seatPointer = 0;
-    spec.cols.forEach((colSize, colIdx) => {
-        const isFixed = spec.fixed[colIdx];
-        for (let i = 0; i < colSize; i++) {
-            if (isFixed) fixedIndices.push(seatPointer);
-            else nonFixedIndices.push(seatPointer);
-            seatPointer++;
+        function handleDragStart(e, roomId, seatIdx) {
+            dragSource = { roomId, seatIdx };
+            e.dataTransfer.setData('text/plain', '');
+            e.currentTarget.classList.add('dragging');
         }
-    });
-    return { fixedIndices, nonFixedIndices };
-}
 
-// [v22.5 수정] 1-가. 동일 분단 구역 내부에서만 밀어내기 제한
-function handleDrop(e, targetRoomId, targetSeatIdx) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('drag-over');
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
 
-    if (!dragSource || dragSource.roomId !== targetRoomId) return;
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
 
-    const seats = appState.currentSeats[targetRoomId];
-    if (!seats) return;
+        function handleDrop(e, targetRoomId, targetSeatIdx) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
 
-    const fromIdx = dragSource.seatIdx;
-    const toIdx = targetSeatIdx;
-    if (fromIdx === toIdx) return;
+            if (!dragSource || dragSource.roomId !== targetRoomId) return;
 
-    const spec = getSpecForCount(seats.length);
-    const { fixedIndices, nonFixedIndices } = getSeatGroupIndices(spec);
+            const seats = appState.currentSeats[targetRoomId];
+            const fromIdx = dragSource.seatIdx;
+            const toIdx = targetSeatIdx;
 
-    const isFromFixed = fixedIndices.includes(fromIdx);
-    const isToFixed = fixedIndices.includes(toIdx);
+            if (fromIdx === toIdx) return;
 
-    if (isFromFixed !== isToFixed) {
-        alert("⚠️ [밀어내기 제한] 고정분단과 비고정분단 구역 간에는 밀어내기를 할 수 없습니다.\n(동일한 구역[고정 ↔ 고정 / 비고정 ↔ 비고정] 내부에서만 밀어내기가 가능합니다.)");
+            const movedItem = seats.splice(fromIdx, 1)[0];
+            seats.splice(toIdx, 0, movedItem);
+
+            saveToLocalStorage();
+            renderSeatsGrid();
+            saveCurrentSeatingForSchedule();
+        }
+
+        function renderSeatsGrid() {
+    const container = document.getElementById('seating-grid-container');
+    const stdRooms = appState.rooms.filter(r => !r.isSpecial).sort((a,b) => a.num - b.num);
+    const spRooms = appState.rooms.filter(r => r.isSpecial);
+
+    if (stdRooms.length === 0 && spRooms.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-400">생성된 고사실이 없습니다.</div>`;
         return;
     }
-
-    const groupIndices = isFromFixed ? fixedIndices : nonFixedIndices;
-    const groupSeats = groupIndices.map(idx => seats[idx]);
-
-    const subFrom = groupIndices.indexOf(fromIdx);
-    const subTo = groupIndices.indexOf(toIdx);
-
-    if (subFrom !== -1 && subTo !== -1) {
-        const [moved] = groupSeats.splice(subFrom, 1);
-        groupSeats.splice(subTo, 0, moved);
-
-        groupIndices.forEach((origIdx, i) => {
-            seats[origIdx] = groupSeats[i];
-        });
-
-        let seq = 1;
-        seats.forEach(s => { s.seatSeq = seq++; });
-
-        saveToLocalStorage();
-        renderSeatsGrid();
-        saveCurrentSeatingForSchedule();
-    }
-}
-
-// [v22.5 신설] 1-나. 좌석 우클릭 맞교환 모달 열기
-function openSwapModal(e, roomId, seatIdx) {
-    if (e) e.preventDefault();
-    const seats = appState.currentSeats[roomId] || [];
-    const sourceSeat = seats[seatIdx];
-    if (!sourceSeat) return;
-
-    const sourceRoom = appState.rooms.find(r => r.id === roomId);
-    const sourceRoomName = sourceRoom ? sourceRoom.name : roomId;
-
-    currentSwapSource = {
-        roomId: roomId,
-        seatIdx: seatIdx,
-        studentId: sourceSeat.studentId || '',
-        studentName: sourceSeat.studentName || '빈좌석',
-        subject: sourceSeat.subject || '',
-        roomName: sourceRoomName
-    };
-
-    const infoEl = document.getElementById('swap-source-info');
-    if (infoEl) {
-        infoEl.innerHTML = `현재 선택: <b class="text-indigo-900">[${sourceRoomName}] ${currentSwapSource.studentId ? currentSwapSource.studentId + ' ' : ''}${currentSwapSource.studentName}</b> ${currentSwapSource.subject ? '(' + currentSwapSource.subject + ')' : ''}`;
-    }
-
-    const roomSelect = document.getElementById('swap-target-room-select');
-    if (roomSelect) {
-        const stdRooms = appState.rooms.filter(r => !r.isSpecial).sort((a,b) => a.num - b.num);
-        roomSelect.innerHTML = stdRooms.map(r => `
-            <option value="${r.id}" ${r.id === roomId ? 'selected' : ''}>
-                ${r.name} (${(appState.currentSeats[r.id] || []).length}석)
-            </option>
-        `).join('');
-    }
-
-    onSwapRoomSelectChange();
-
-    const modal = document.getElementById('seat-swap-modal');
-    if (modal) modal.classList.remove('hidden');
-}
-
-function closeSwapModal(e) {
-    if (e && e.target !== e.currentTarget && !e.target.classList.contains('modal-close-btn')) return;
-    const modal = document.getElementById('seat-swap-modal');
-    if (modal) modal.classList.add('hidden');
-    currentSwapSource = null;
-}
-
-function onSwapRoomSelectChange() {
-    if (!currentSwapSource) return;
-    const targetRoomId = document.getElementById('swap-target-room-select')?.value;
-    const listContainer = document.getElementById('swap-student-list-container');
-    if (!targetRoomId || !listContainer) return;
-
-    const targetSeats = appState.currentSeats[targetRoomId] || [];
-    const spec = getSpecForCount(targetSeats.length);
-
-    if (targetSeats.length === 0) {
-        listContainer.innerHTML = `<div class="text-center py-4 text-slate-400 text-xs">선택한 고사실에 배치된 학생이 없습니다.</div>`;
-        return;
-    }
-
-    let seatPointer = 0;
-    let listHtml = '';
-
-    spec.cols.forEach((colSize, colIdx) => {
-        const isFixed = spec.fixed[colIdx];
-        for (let i = 0; i < colSize; i++) {
-            const idx = seatPointer++;
-            const seat = targetSeats[idx] || { studentId: '', studentName: '빈좌석', subject: '' };
-            const isSelf = (targetRoomId === currentSwapSource.roomId && idx === currentSwapSource.seatIdx);
-
-            listHtml += `
-                <div class="flex justify-between items-center p-2 rounded border text-xs ${isSelf ? 'bg-indigo-50 border-indigo-300 opacity-60' : 'bg-white border-slate-200 hover:bg-indigo-50/50'}">
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-[11px] px-1.5 py-0.5 rounded ${isFixed ? 'bg-indigo-100 text-indigo-900' : 'bg-slate-100 text-slate-700'}">
-                            ${colIdx + 1}분단 ${isFixed ? '(고정)' : ''}
-                        </span>
-                        <span class="font-mono font-bold text-slate-800">${seat.studentId || '-'}</span>
-                        <span class="font-bold text-slate-900">${seat.studentName}</span>
-                        <span class="text-[11px] text-indigo-700 font-semibold">${seat.subject || ''}</span>
-                    </div>
-                    ${isSelf ? `
-                        <span class="text-[11px] text-indigo-600 font-bold px-2 py-0.5">현재 선택됨</span>
-                    ` : `
-                        <button onclick="executeSeatSwap('${targetRoomId}', ${idx})" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-3 py-1 rounded shadow-xs transition">
-                            🔄 맞교환
-                        </button>
-                    `}
-                </div>
-            `;
-        }
-    });
-
-    listContainer.innerHTML = listHtml;
-}
-
-// 1:1 맞교환 실행
-function executeSeatSwap(targetRoomId, targetSeatIdx) {
-    if (!currentSwapSource) return;
-
-    const sourceRoomId = currentSwapSource.roomId;
-    const sourceSeatIdx = currentSwapSource.seatIdx;
-
-    const sourceSeats = appState.currentSeats[sourceRoomId];
-    const targetSeats = appState.currentSeats[targetRoomId];
-
-    if (!sourceSeats || !targetSeats) return;
-
-    const sourceItem = sourceSeats[sourceSeatIdx];
-    const targetItem = targetSeats[targetSeatIdx];
-
-    if (!sourceItem || !targetItem) return;
-
-    const sourceName = `${sourceItem.studentId ? sourceItem.studentId + ' ' : ''}${sourceItem.studentName}`;
-    const targetName = `${targetItem.studentId ? targetItem.studentId + ' ' : ''}${targetItem.studentName}`;
-    const sourceRoomObj = appState.rooms.find(r => r.id === sourceRoomId);
-    const targetRoomObj = appState.rooms.find(r => r.id === targetRoomId);
-
-    // 맞교환 수행
-    const temp = { ...sourceItem };
-    sourceSeats[sourceSeatIdx] = { ...targetItem };
-    targetSeats[targetSeatIdx] = temp;
-
-    // 연번 재부여
-    let seq1 = 1;
-    sourceSeats.forEach(s => { s.seatSeq = seq1++; });
-    let seq2 = 1;
-    targetSeats.forEach(s => { s.seatSeq = seq2++; });
-
-    saveToLocalStorage();
-    renderSeatsGrid();
-    saveCurrentSeatingForSchedule();
-
-    closeSwapModal();
-
-    alert(`✅ [맞교환 완료]\n📍 [${sourceRoomObj ? sourceRoomObj.name : sourceRoomId}] ${sourceName}\n↕\n📍 [${targetRoomObj ? targetRoomObj.name : targetRoomId}] ${targetName}`);
-}
 
     // 1. 일반 고사실 HTML 생성
     let html = stdRooms.map(room => {
@@ -2168,7 +1990,6 @@ function executeSeatSwap(targetRoomId, targetSeatIdx) {
                                              ondragover="handleDragOver(event)"
                                              ondragleave="handleDragLeave(event)"
                                              ondrop="handleDrop(event, '${room.id}', ${currentSeatIdx})"
-                                             oncontextmenu="openSwapModal(event, '${room.id}', ${currentSeatIdx})"
                                              class="w-24 h-16 border rounded p-1.5 ${cardBgStyle} text-center flex flex-col justify-between shadow-xs cursor-move hover:border-indigo-500 transition">
                                             <div class="flex justify-between items-center text-[10px]">
                                                 <span class="font-bold text-slate-600">${seat.studentId || '-'}</span>
@@ -2191,7 +2012,7 @@ function executeSeatSwap(targetRoomId, targetSeatIdx) {
         `;
     }).join('');
 
-    // 2. [v22.5 추가] 특별고사실 인터페이스 분리 렌더링
+    // 2. [v22.4 추가] 특별고사실 인터페이스 분리 렌더링
     if (spRooms.length > 0) {
         html += `
             <div class="mt-10 border-t-2 border-dashed border-amber-300 pt-6">
@@ -2548,7 +2369,7 @@ function executeSeatSwap(targetRoomId, targetSeatIdx) {
             renderAll();
         }
         // ==========================================
-// 9. 7번 통계 탭 및 감독교사 표 로직 (v22.5)
+// 9. 7번 통계 탭 및 감독교사 표 로직 (v22.4)
 // ==========================================
 const ZONE_KEYS = ['2S', '2N', '3S', '3N', '4S', '4N', '5S', '5N', 'SPEC'];
 const ZONE_LABELS = {
@@ -2610,7 +2431,7 @@ function handleZoneDrop(e, zoneKey) {
 }
 
 // 학년별 기본 층 자동 배치 버튼
-// [v22.5 수정] 학년/반 기준 층별 구역 자동 배치 (이미지 규격 100% 반영)
+// [v22.4 수정] 학년/반 기준 층별 구역 자동 배치 (이미지 규격 100% 반영)
 function autoDistributeRoomsToZones() {
     if (!appState.roomZones) appState.roomZones = {};
 
@@ -2669,7 +2490,7 @@ function getSortedRoomsByZone() {
 }
 
 // 교시별 고사실의 [시행 시험 수 / 자습 학년 수] 계산 함수
-// [v22.5 수정] 5번 탭의 로컬 저장된 좌석 배치(savedSeatingMap) 기준 통계 산출
+// [v22.4 수정] 5번 탭의 로컬 저장된 좌석 배치(savedSeatingMap) 기준 통계 산출
 function calcRoomExamAndSelfStudy(room, row) {
     if (!row) return { examCount: 0, selfStudyCount: 0 };
     const schKey = row['날짜/교시'];
@@ -2748,9 +2569,9 @@ function generateRoomInfoTable() {
 }
 
 // 2. 하단 감독교사 표 자동 생성 (유저 직접 수정 기능 포함)
-// 2. 하단 감독교사 표 자동 생성 (v22.5 맨 아래 합계 행 추가 및 실시간 연동)
-// [v22.5 수정] 하단 감독교사 표 (맨 오른쪽 교시별 합계 열 배치 및 실시간 갱신)
-// [v22.5 수정] 감독교사 표 자동 생성 (수동 수정 내역 복원 및 백업 연동)
+// 2. 하단 감독교사 표 자동 생성 (v22.4 맨 아래 합계 행 추가 및 실시간 연동)
+// [v22.4 수정] 하단 감독교사 표 (맨 오른쪽 교시별 합계 열 배치 및 실시간 갱신)
+// [v22.4 수정] 감독교사 표 자동 생성 (수동 수정 내역 복원 및 백업 연동)
 function generateProctorTable() {
     const thead = document.getElementById('proctor-thead');
     const tbody = document.getElementById('proctor-tbody');
@@ -2840,7 +2661,7 @@ function generateProctorTable() {
     tbody.innerHTML = bodyHtml;
 }
 
-// [v22.5 수정] 유저 수정값 백업 자동 기록 및 실시간 행 합계 갱신
+// [v22.4 수정] 유저 수정값 백업 자동 기록 및 실시간 행 합계 갱신
 function updateProctorTotals() {
     const tbody = document.getElementById('proctor-tbody');
     if (!tbody) return;
@@ -2875,7 +2696,7 @@ function updateProctorTotals() {
 
     saveToLocalStorage();
 }
-// [v22.5 신설] 7번 탭 감독교사 표 엑셀 파일 다운로드
+// [v22.4 신설] 7번 탭 감독교사 표 엑셀 파일 다운로드
 function exportProctorTableToExcel() {
     const tbody = document.getElementById('proctor-tbody');
     if (!tbody || tbody.rows.length === 0 || tbody.rows[0].cells.length <= 1) {
@@ -2888,37 +2709,5 @@ function exportProctorTableToExcel() {
     XLSX.writeFile(wb, `감독교사_가중치_표_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
     </script>
-<!-- [v22.5 신설] 좌석 우클릭 수동 맞교환 커스텀 모달 -->
-<div id="seat-swap-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center hidden" onclick="closeSwapModal(event)">
-    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg p-5 space-y-4" onclick="event.stopPropagation()">
-        <div class="flex justify-between items-center border-b pb-3">
-            <div>
-                <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
-                    <span>🔄 좌석 1:1 맞교환 (Swap)</span>
-                </h3>
-                <p id="swap-source-info" class="text-xs text-indigo-700 font-semibold mt-0.5"></p>
-            </div>
-            <button onclick="closeSwapModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg px-2">×</button>
-        </div>
-
-        <!-- 1단계: 이동 대상 고사실 선택 -->
-        <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1.5">1️⃣ 맞교환 대상 고사실 선택</label>
-            <select id="swap-target-room-select" class="w-full border rounded-lg px-3 py-2 text-xs font-semibold bg-slate-50 focus:bg-white focus:border-indigo-600" onchange="onSwapRoomSelectChange()">
-            </select>
-        </div>
-
-        <!-- 2단계: 대상 고사실 내 학생 선택 -->
-        <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1.5">2️⃣ 교환할 대상 학생 (또는 빈좌석) 선택</label>
-            <div id="swap-student-list-container" class="max-h-60 overflow-y-auto border rounded-lg p-2 space-y-1 bg-slate-50">
-            </div>
-        </div>
-
-        <div class="flex justify-end gap-2 pt-2 border-t">
-            <button onclick="closeSwapModal()" class="px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg transition">취소</button>
-        </div>
-    </div>
-</div>    
 </body>
 </html>
