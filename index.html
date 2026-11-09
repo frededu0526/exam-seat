@@ -1862,8 +1862,8 @@ function runStep3FinalMove() {
                     <div>
     <h3 class="text-base font-bold text-slate-800">${room.name} 좌석배치도</h3>
     <p class="text-xs text-indigo-700 font-medium mt-0.5">
-        총 정원(기준): <b>${t2Info.totalCap}명</b> | 
-        총 정원(이동후): <b>${seats.length}명</b>
+        총 정원(기준): <b>${t2Info.totalCap}석</b> | 
+        총 정원(이동후): <b>${seats.length}석</b>
     </p>
     ${(() => {
         const activeSubjs = [...new Set(seats.map(s => s.subject).filter(s => s && s !== '빈좌석'))];
