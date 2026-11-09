@@ -10,35 +10,42 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         @media print {
-            /* 인쇄 시 상단 헤더, 탭 메뉴, 설정 컨트롤 구역 완전 숨김 */
-            .no-print, header, nav, nav * { 
+            /* 1. 헤더, 탭 메뉴, 숨겨진 탭, 4번 탭 상단 설정 박스(Step 1~4 구역 전체) 강제 숨김 */
+            header, 
+            nav, 
+            .no-print, 
+            body .no-print,
+            .hidden,
+            #tab5 > div:first-child { 
                 display: none !important; 
             }
             
-            /* 여백 및 문서 전체 레이아웃 최적화 */
-            body { 
-                background: white !important; 
-                padding: 0 !important; 
-                margin: 0 !important; 
+            /* 2. 배치도 출력 영역만 화면에 표시 */
+            #tab5, 
+            #seating-grid-container {
+                display: block !important;
             }
-            main { 
+            
+            /* 3. 인쇄 여백 및 문서 레이아웃 초기화 */
+            body, main { 
+                background: white !important; 
                 padding: 0 !important; 
                 margin: 0 !important; 
                 max-width: 100% !important; 
                 width: 100% !important; 
             }
             
-            /* 고사실별 좌석배치도 인쇄 페이지 설정 */
+            /* 4. 고사실별 좌석배치도 인쇄 페이지 나누기 설정 */
             .print-page { 
-                page-break-after: always; 
-                page-break-inside: avoid; 
+                page-break-after: always !important; 
+                page-break-inside: avoid !important; 
                 margin: 0 0 15px 0 !important; 
                 padding: 15px !important; 
                 border: 1px solid #cbd5e1 !important; 
                 box-shadow: none !important; 
             }
             
-            /* 수험표 인쇄 스타일 유지 */
+            /* 5. 수험표 인쇄 스타일 유지 */
             .ticket-grid { 
                 display: grid !important; 
                 grid-template-columns: repeat(2, 1fr) !important; 
@@ -47,7 +54,7 @@
                 height: 98vh !important; 
             }
             .ticket-card { 
-                page-break-inside: avoid; 
+                page-break-inside: avoid !important; 
                 border: 1.5px solid #334155 !important; 
             }
 
