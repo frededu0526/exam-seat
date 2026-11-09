@@ -1858,21 +1858,33 @@ function onPeriodChange() {
     let count = 0;
     const assignedStIds = new Set();
 
-    // 1. 일반 고사실 좌석 배치 학생 수험표 반영
+    // 1. 일반 고사실 좌석 배치 학생 수험표 반영 (5분단 동적 규격 반영)
     const stdRooms = appState.rooms.filter(r => !r.isSpecial);
     stdRooms.forEach(room => {
         const seats = appState.currentSeats[room.id] || [];
+        const spec = getSpecForCount(seats.length); // 5번 탭의 동적 분단 규격 추출
+
         seats.forEach((seat, idx) => {
-            if (seat.studentId) {
+            if (seat.studentId && seat.studentName !== '빈좌석') {
                 if (!appState.ticketDB[seat.studentId]) appState.ticketDB[seat.studentId] = {};
                 
-                const col = Math.floor(idx / 7) + 1;
-                const rowNum = (idx % 7) + 1;
+                // 각 분단별 정원에 따라 정확한 분단(bundan)과 번째(rowNum) 계산
+                let tempIdx = idx;
+                let bundan = 1;
+                let rowNum = 1;
+                for (let c = 0; c < spec.cols.length; c++) {
+                    if (tempIdx < spec.cols[c]) {
+                        bundan = c + 1;
+                        rowNum = tempIdx + 1;
+                        break;
+                    }
+                    tempIdx -= spec.cols[c];
+                }
 
                 appState.ticketDB[seat.studentId][scheduleKey] = {
                     subject: seat.subject || '자습',
                     roomName: room.name,
-                    seatInfo: `${col}열 ${rowNum}행`
+                    seatInfo: `${bundan}분단 ${rowNum}번째`
                 };
                 assignedStIds.add(seat.studentId);
                 count++;
@@ -1880,7 +1892,7 @@ function onPeriodChange() {
         });
     });
 
-    // 2. [v21.3 추가] 특별고사실 배정 학생 수험표 반영
+    // 2. 특별고사실 배정 학생 수험표 반영
     let specialCount = 0;
     const spRooms = appState.rooms.filter(r => r.isSpecial);
     spRooms.forEach(room => {
@@ -1900,7 +1912,6 @@ function onPeriodChange() {
                     seatInfo: '-'
                 };
             } else {
-                // [v21.3 통합] 일반/특별 고사실 통합 표기 규칙 적용
                 const subjName = getDisplaySubjectForStudent(st, row, gradeKey);
                 appState.ticketDB[st.id][scheduleKey] = {
                     subject: subjName,
@@ -1929,40 +1940,6 @@ function onPeriodChange() {
 
     saveToLocalStorage();
     alert(`📌 수험표 DB 반영 완료:\n일반고사실: ${count}명 | 특별고사실: ${specialCount}명 | 하교: ${dismissCount}명`);
-}
-
-        // ==========================================
-        // 7. 수험표 출력 (탭 6)
-        // ==========================================
-        // [v21.3 신설] 5번 탭의 실제 좌석 배치도(currentSeats) 기준 수험표 좌석 위치 100% 동기화
-function syncTicketsFromSeating() {
-    if (!appState.ticketDB) appState.ticketDB = {};
-
-    appState.rooms.forEach(room => {
-        const seats = appState.currentSeats[room.id] || [];
-        if (seats.length === 0) return;
-
-        // 고사실 분단 수 및 분단당 행 수 계산
-        const spec = getRoomSpec ? getRoomSpec(room) : { cols: [4,7,5,7,4], fixed: [false,true,false,true,false] };
-        const seatColCount = spec.cols.filter((_, idx) => !spec.fixed[idx]).length || 3;
-        const maxRowsPerCol = Math.ceil(room.capacity / seatColCount) || 7;
-
-        seats.forEach((seat, seatIdx) => {
-            if (!seat.studentId || seat.studentName === '빈좌석') return;
-
-            const bundan = Math.floor(seatIdx / maxRowsPerCol) + 1; // 1분단, 2분단...
-            const rowNum = (seatIdx % maxRowsPerCol) + 1;           // 1번째, 2번째...
-            const seatText = `${room.name} ${bundan}분단 ${rowNum}번째`;
-
-            if (!appState.ticketDB[seat.studentId]) {
-                appState.ticketDB[seat.studentId] = {};
-            }
-            appState.ticketDB[seat.studentId].roomName = room.name;
-            appState.ticketDB[seat.studentId].seatText = seatText;
-            appState.ticketDB[seat.studentId].bundan = bundan;
-            appState.ticketDB[seat.studentId].rowNum = rowNum;
-        });
-    });
 }
         function renderTickets() {
             const container = document.getElementById('ticket-cards-container');
