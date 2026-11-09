@@ -1768,6 +1768,7 @@ function runStep3FinalMove() {
 }
 
         // [v22.3 신설] Step 4. 고사실 내부 최종 정렬 기능 (기존 로직 유지, 선택적 수동 실행)
+// [v22.3 최종 수정] Step 4. 고사실 내부 분단 구역별(고정/비고정 독립) 최종 정렬
 function runStep4FinalSort() {
     const fullKey = document.getElementById('seat-period-select')?.value;
     if (!fullKey) { alert("선택된 교시 정보가 없습니다."); return; }
@@ -1781,45 +1782,73 @@ function runStep4FinalSort() {
         const seats = appState.currentSeats[room.id] || [];
         if (seats.length === 0) return;
 
-        // 1. 실존 학생과 빈좌석 분리
-        const realStudents = seats.filter(s => s.studentId && s.studentName !== '빈좌석');
-        
-        // 2. 응시생과 자습생 분류
-        const examSts = [];
-        const selfStudySts = [];
+        const spec = getSpecForCount(seats.length);
 
-        realStudents.forEach(st => {
-            if (st.subject === '자습') {
-                selfStudySts.push(st);
-            } else {
-                examSts.push(st);
+        // 1. 현재 고사실 좌석을 고정 분단 그룹과 비고정 분단 그룹으로 분리 추출
+        const fixedSeats = [];
+        const nonFixedSeats = [];
+
+        let seatPointer = 0;
+        spec.cols.forEach((colSize, colIdx) => {
+            const isFixed = spec.fixed[colIdx];
+            for (let i = 0; i < colSize; i++) {
+                const seatItem = seats[seatPointer++] || { studentId: '', studentName: '빈좌석', subject: '', seatSeq: 0 };
+                if (isFixed) {
+                    fixedSeats.push(seatItem);
+                } else {
+                    nonFixedSeats.push(seatItem);
+                }
             }
         });
 
-        // 3. 각각 학번 오름차순 정렬
-        examSts.sort((a, b) => a.studentId.localeCompare(b.studentId));
-        selfStudySts.sort((a, b) => a.studentId.localeCompare(b.studentId));
+        // 서브 정렬 함수: 추출된 그룹 내에서 [응시생 학번순 ➔ 자습생 학번순 ➔ 빈좌석] 정렬
+        const sortGroup = (groupList) => {
+            const realStudents = groupList.filter(s => s.studentId && s.studentName !== '빈좌석');
+            const examSts = realStudents.filter(s => s.subject !== '자습');
+            const selfStudySts = realStudents.filter(s => s.subject === '자습');
 
-        // 4. 응시생(학번순) -> 자습생(학번순) -> 빈좌석 순으로 고사실 좌석 채우기
-        const sortedList = [...examSts, ...selfStudySts];
-        
-        while (sortedList.length < seats.length) {
-            sortedList.push({ studentId: '', studentName: '빈좌석', subject: '', seatSeq: 0 });
-        }
+            examSts.sort((a, b) => a.studentId.localeCompare(b.studentId));
+            selfStudySts.sort((a, b) => a.studentId.localeCompare(b.studentId));
 
-        // 5. 내부 연속 연번(seatSeq)이 켜져 있는 경우 일련번호 재부여
+            const sorted = [...examSts, ...selfStudySts];
+            while (sorted.length < groupList.length) {
+                sorted.push({ studentId: '', studentName: '빈좌석', subject: '', seatSeq: 0 });
+            }
+            return sorted;
+        };
+
+        const sortedFixed = sortGroup(fixedSeats);
+        const sortedNonFixed = sortGroup(nonFixedSeats);
+
+        // 2. 정렬된 고정/비고정 그룹을 원래 분단 배치 구조에 맞게 재조합
+        const reorderedSeats = [];
+        let fIdx = 0;
+        let nfIdx = 0;
+
+        spec.cols.forEach((colSize, colIdx) => {
+            const isFixed = spec.fixed[colIdx];
+            for (let i = 0; i < colSize; i++) {
+                if (isFixed) {
+                    reorderedSeats.push(sortedFixed[fIdx++] || { studentId: '', studentName: '빈좌석', subject: '', seatSeq: 0 });
+                } else {
+                    reorderedSeats.push(sortedNonFixed[nfIdx++] || { studentId: '', studentName: '빈좌석', subject: '', seatSeq: 0 });
+                }
+            }
+        });
+
+        // 3. 고사실 전체 좌석 연번(seatSeq) 1부터 재부여
         let seq = 1;
-        sortedList.forEach(s => {
+        reorderedSeats.forEach(s => {
             s.seatSeq = seq++;
         });
 
-        appState.currentSeats[room.id] = sortedList;
+        appState.currentSeats[room.id] = reorderedSeats;
         countSorted++;
     });
 
     renderSeatsGrid();
     saveCurrentSeatingForSchedule();
-    alert(`Step 4. 전체 ${countSorted}개 고사실 내부가 [응시생 학번순 ➔ 자습생 학번순 ➔ 빈좌석]으로 재정렬되었습니다.`);
+    alert(`Step 4. 전체 ${countSorted}개 고사실의 [고정분단 / 비고정분단] 영역별 독립 정렬이 완료되었습니다.`);
 }
 
         let dragSource = null;
