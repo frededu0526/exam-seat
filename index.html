@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v23.2</title>
+    <title>정기시험 좌석배치 시스템 v23.21</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -78,7 +78,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v23.2</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v23.21</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">일괄 배치 & 학년별 독립 순차 배치 모드 완비 패치</p>
         </div>
@@ -427,7 +427,7 @@
                         📌 <b>순차적으로 앉히기 안내:</b> 각 학년 독립 패널에서 1·2차 정렬 조건으로 학생을 정렬한 뒤, 지정한 고사실과 분단부터 대기 인원을 순차적으로 밀어넣어 앉힙니다. 이미 배치된 학생은 대기 목록에서 제외되며 다시 버튼을 누르면 잔여 인원으로 배치가 이어집니다.
                     </div>
 
-                    <!-- 학년별 독립 제어 패널 (1학년, 2학년, 3학년) -->
+                    <!-- 학년별 독립 제어 패널 (1학년, 2학년, 3학년 가로 3열 배치) -->
                     <div class="grid grid-cols-3 gap-3 min-w-[900px]">
                         <!-- 1학년 순차 패널 -->
                         <div class="bg-white border-2 border-sky-300 rounded-xl p-4 shadow-sm space-y-3">
@@ -487,6 +487,7 @@
                                     </button>
                                 </div>
                             </div>
+                        </div><!-- /1학년 카드 닫기 -->
 
                         <!-- 2학년 순차 패널 -->
                         <div class="bg-white border-2 border-emerald-300 rounded-xl p-4 shadow-sm space-y-3">
@@ -546,6 +547,7 @@
                                     </button>
                                 </div>
                             </div>
+                        </div><!-- /2학년 카드 닫기 -->
 
                         <!-- 3학년 순차 패널 -->
                         <div class="bg-white border-2 border-amber-300 rounded-xl p-4 shadow-sm space-y-3">
@@ -605,20 +607,22 @@
                                     </button>
                                 </div>
                             </div>
+                        </div><!-- /3학년 카드 닫기 -->
+                    </div><!-- /가로 3열 Grid 감싸기 닫기 -->
 
-                <!-- 공통 유틸리티 버튼 (수험표 반영 / 인쇄) -->
-                <div class="flex justify-between items-center pt-2 border-t border-slate-200">
-                    <span class="text-xs text-slate-500 font-semibold">※ 수험표 반영 버튼을 눌러야 5번 탭의 수험표에 좌석배치가 자동 연결됩니다.</span>
-                    <div class="flex gap-2">
-                        <button onclick="applyToTicketDB()" class="bg-purple-700 hover:bg-purple-600 text-white px-3.5 py-1.5 rounded text-xs font-bold shadow-sm">
-                            📌 수험표에 배치 반영하기
-                        </button>
-                        <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-1.5 rounded text-xs font-bold shadow-sm">
-                            🖨️ 좌석배치도 인쇄
-                        </button>
+                    <!-- 공통 유틸리티 버튼 (수험표 반영 / 인쇄) -->
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-200">
+                        <span class="text-xs text-slate-500 font-semibold">※ 수험표 반영 버튼을 눌러야 5번 탭의 수험표에 좌석배치가 자동 연결됩니다.</span>
+                        <div class="flex gap-2">
+                            <button onclick="applyToTicketDB()" class="bg-purple-700 hover:bg-purple-600 text-white px-3.5 py-1.5 rounded text-xs font-bold shadow-sm">
+                                📌 수험표에 배치 반영하기
+                            </button>
+                            <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-1.5 rounded text-xs font-bold shadow-sm">
+                                🖨️ 좌석배치도 인쇄
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
             <!-- 인쇄 시 대상이 되는 좌석 배치도 전용 영역 -->
             <div id="seating-grid-container" class="space-y-8">
