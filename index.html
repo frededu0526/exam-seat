@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v23.21</title>
+    <title>정기시험 좌석배치 시스템 v23.22</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -78,7 +78,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v23.21</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v23.22</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">일괄 배치 & 학년별 독립 순차 배치 모드 완비 패치</p>
         </div>
@@ -1374,12 +1374,48 @@
             return false;
         }
 
+        // [v23.22 신설] 배치 전 각 고사실의 학급 정원(학생 수)에 맞춘 기본 빈좌석 초기화 함수
+        function initDefaultRoomSeats() {
+            if (!appState.currentSeats) appState.currentSeats = {};
+            
+            // 일반 고사실 초기화
+            const stdRooms = appState.rooms.filter(r => !r.isSpecial);
+            stdRooms.forEach(room => {
+                const classSts = appState.students.filter(s => 
+                    parseInt(s.id.charAt(0)) === room.targetGrade && 
+                    parseInt(s.id.slice(1, 3)) === room.targetClass
+                );
+                const targetCount = classSts.length > 0 ? classSts.length : 34;
+                const spec = getSpecForCount(targetCount);
+
+                appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => ({
+                    studentId: '',
+                    studentName: '빈좌석',
+                    subject: '',
+                    seatSeq: idx + 1
+                }));
+            });
+
+            // 특별 고사실 초기화
+            const spRooms = appState.rooms.filter(r => r.isSpecial);
+            spRooms.forEach(room => {
+                const spec = getSpecForCount(35);
+                appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => ({
+                    studentId: '',
+                    studentName: '빈좌석',
+                    subject: '',
+                    seatSeq: idx + 1
+                }));
+            });
+        }
+
         function onPeriodChange() {
             updateCurrentSubjectDisplay();
             renderPeriodMoveRulesUI();
             const loaded = loadSeatingForSchedule();
             if (!loaded) {
-                appState.currentSeats = {};
+                // [v23.22 수정] 저장된 배치 데이터가 없더라도 각 고사실 정원에 맞는 빈좌석을 사전 배치
+                initDefaultRoomSeats();
                 renderSeatsGrid();
             }
 
@@ -1920,7 +1956,9 @@ function runSeqPlacement(grade) {
 
         function getSpecForCount(count) {
             const sorted = [...appState.specs].sort((a, b) => a.capacity - b.capacity);
-            const found = sorted.find(s => s.capacity >= count);
+            // [v23.22 수정] count가 0이거나 없을 때 최소 규격(26명)으로 쏠리는 현상 방지 (기본 34명 기준 참조)
+            const targetCount = (count && count > 0) ? count : 34;
+            const found = sorted.find(s => s.capacity >= targetCount);
             return found || sorted[sorted.length - 1] || { capacity: 34, cols: [6, 7, 7, 7, 7], fixed: [false, true, false, true, false] };
         }
 
