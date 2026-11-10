@@ -428,7 +428,7 @@
                     </div>
 
                     <!-- 학년별 독립 제어 패널 (1학년, 2학년, 3학년) -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="grid grid-cols-3 gap-3 min-w-[900px]">
                         <!-- 1학년 순차 패널 -->
                         <div class="bg-white border-2 border-sky-300 rounded-xl p-4 shadow-sm space-y-3">
                             <div class="flex justify-between items-center border-b border-sky-200 pb-2">
@@ -459,34 +459,34 @@
                             </div>
 
                             <!-- 1학년 고사실/분단 입력 및 배치 버튼 구역 -->
-<div class="bg-sky-50 p-3 rounded-lg border border-sky-200 space-y-2.5">
-    <div>
-        <label class="block text-[11px] font-bold text-slate-700 mb-1">대상 고사실 지정 (범위/단일)</label>
-        <div class="flex items-center gap-1 font-bold text-xs">
-            <span>제</span>
-            <input type="text" id="seq-target-rooms-g1" placeholder="1-12, 15" onchange="validateSeqBundans(1)" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-mono font-bold focus:border-indigo-600 focus:outline-none">
-            <span class="shrink-0">고사실</span>
-        </div>
-    </div>
-    <div>
-        <label class="block text-[11px] font-bold text-slate-700 mb-1">배치 대상 분단 선택</label>
-        <div class="flex gap-2 flex-wrap text-xs font-semibold">
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g1 rounded text-indigo-600" value="1" onchange="onBundanCheckChange(1, 1, this)"> 1분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g1 rounded text-indigo-600" value="2" onchange="onBundanCheckChange(1, 2, this)"> 2분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g1 rounded text-indigo-600" value="3" onchange="onBundanCheckChange(1, 3, this)"> 3분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g1 rounded text-indigo-600" value="4" onchange="onBundanCheckChange(1, 4, this)"> 4분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g1 rounded text-indigo-600" value="5" onchange="onBundanCheckChange(1, 5, this)"> 5분단</label>
-        </div>
-    </div>
-    <div class="flex gap-2 pt-1">
-        <button onclick="runSeqPlacement(1)" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-bold shadow-sm">
-            🚀 1학년 좌석 배치
-        </button>
-        <button onclick="resetSeqPlacement(1)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded text-xs font-bold">
-            🔄 초기화
-        </button>
-    </div>
-</div>
+                            <div class="bg-sky-50 p-3 rounded-lg border border-sky-200 space-y-2.5">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">대상 고사실 지정 (범위/단일)</label>
+                                    <div class="flex items-center gap-1 font-bold text-xs">
+                                        <span>제</span>
+                                        <input type="text" id="seq-target-rooms-g1" placeholder="1-12, 15" onchange="validateSeqBundans(1)" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-mono font-bold focus:border-indigo-600 focus:outline-none">
+                                        <span class="shrink-0">고사실</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">배치 대상 분단 선택</label>
+                                    <div class="flex gap-2 flex-wrap text-xs font-semibold">
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g1 rounded text-indigo-600" value="1" onchange="onBundanCheckChange(1, 1, this)"> 1분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g1 rounded text-indigo-600" value="2" onchange="onBundanCheckChange(1, 2, this)"> 2분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g1 rounded text-indigo-600" value="3" onchange="onBundanCheckChange(1, 3, this)"> 3분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g1 rounded text-indigo-600" value="4" onchange="onBundanCheckChange(1, 4, this)"> 4분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g1 rounded text-indigo-600" value="5" onchange="onBundanCheckChange(1, 5, this)"> 5분단</label>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 pt-1">
+                                    <button onclick="runSeqPlacement(1)" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-bold shadow-sm">
+                                        🚀 1학년 좌석 배치
+                                    </button>
+                                    <button onclick="resetSeqPlacement(1)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded text-xs font-bold">
+                                        🔄 초기화
+                                    </button>
+                                </div>
+                            </div>
 
                         <!-- 2학년 순차 패널 -->
                         <div class="bg-white border-2 border-emerald-300 rounded-xl p-4 shadow-sm space-y-3">
@@ -518,34 +518,34 @@
                             </div>
 
                             <!-- 2학년 고사실/분단 입력 및 배치 버튼 구역 -->
-<div class="bg-emerald-50 p-3 rounded-lg border border-emerald-200 space-y-2.5">
-    <div>
-        <label class="block text-[11px] font-bold text-slate-700 mb-1">대상 고사실 지정 (범위/단일)</label>
-        <div class="flex items-center gap-1 font-bold text-xs">
-            <span>제</span>
-            <input type="text" id="seq-target-rooms-g2" placeholder="1-12, 15" onchange="validateSeqBundans(2)" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-mono font-bold focus:border-indigo-600 focus:outline-none">
-            <span class="shrink-0">고사실</span>
-        </div>
-    </div>
-    <div>
-        <label class="block text-[11px] font-bold text-slate-700 mb-1">배치 대상 분단 선택</label>
-        <div class="flex gap-2 flex-wrap text-xs font-semibold">
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g2 rounded text-emerald-600" value="1" onchange="onBundanCheckChange(2, 1, this)"> 1분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g2 rounded text-emerald-600" value="2" onchange="onBundanCheckChange(2, 2, this)"> 2분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g2 rounded text-emerald-600" value="3" onchange="onBundanCheckChange(2, 3, this)"> 3분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g2 rounded text-emerald-600" value="4" onchange="onBundanCheckChange(2, 4, this)"> 4분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g2 rounded text-emerald-600" value="5" onchange="onBundanCheckChange(2, 5, this)"> 5분단</label>
-        </div>
-    </div>
-    <div class="flex gap-2 pt-1">
-        <button onclick="runSeqPlacement(2)" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-bold shadow-sm">
-            🚀 2학년 좌석 배치
-        </button>
-        <button onclick="resetSeqPlacement(2)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded text-xs font-bold">
-            🔄 초기화
-        </button>
-    </div>
-</div>
+                            <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-200 space-y-2.5">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">대상 고사실 지정 (범위/단일)</label>
+                                    <div class="flex items-center gap-1 font-bold text-xs">
+                                        <span>제</span>
+                                        <input type="text" id="seq-target-rooms-g2" placeholder="1-12, 15" onchange="validateSeqBundans(2)" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-mono font-bold focus:border-indigo-600 focus:outline-none">
+                                        <span class="shrink-0">고사실</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">배치 대상 분단 선택</label>
+                                    <div class="flex gap-2 flex-wrap text-xs font-semibold">
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g2 rounded text-emerald-600" value="1" onchange="onBundanCheckChange(2, 1, this)"> 1분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g2 rounded text-emerald-600" value="2" onchange="onBundanCheckChange(2, 2, this)"> 2분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g2 rounded text-emerald-600" value="3" onchange="onBundanCheckChange(2, 3, this)"> 3분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g2 rounded text-emerald-600" value="4" onchange="onBundanCheckChange(2, 4, this)"> 4분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g2 rounded text-emerald-600" value="5" onchange="onBundanCheckChange(2, 5, this)"> 5분단</label>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 pt-1">
+                                    <button onclick="runSeqPlacement(2)" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-bold shadow-sm">
+                                        🚀 2학년 좌석 배치
+                                    </button>
+                                    <button onclick="resetSeqPlacement(2)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded text-xs font-bold">
+                                        🔄 초기화
+                                    </button>
+                                </div>
+                            </div>
 
                         <!-- 3학년 순차 패널 -->
                         <div class="bg-white border-2 border-amber-300 rounded-xl p-4 shadow-sm space-y-3">
@@ -577,34 +577,34 @@
                             </div>
 
                             <!-- 3학년 고사실/분단 입력 및 배치 버튼 구역 -->
-<div class="bg-amber-50 p-3 rounded-lg border border-amber-200 space-y-2.5">
-    <div>
-        <label class="block text-[11px] font-bold text-slate-700 mb-1">대상 고사실 지정 (범위/단일)</label>
-        <div class="flex items-center gap-1 font-bold text-xs">
-            <span>제</span>
-            <input type="text" id="seq-target-rooms-g3" placeholder="1-12, 15" onchange="validateSeqBundans(3)" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-mono font-bold focus:border-indigo-600 focus:outline-none">
-            <span class="shrink-0">고사실</span>
-        </div>
-    </div>
-    <div>
-        <label class="block text-[11px] font-bold text-slate-700 mb-1">배치 대상 분단 선택</label>
-        <div class="flex gap-2 flex-wrap text-xs font-semibold">
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g3 rounded text-amber-600" value="1" onchange="onBundanCheckChange(3, 1, this)"> 1분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g3 rounded text-amber-600" value="2" onchange="onBundanCheckChange(3, 2, this)"> 2분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g3 rounded text-amber-600" value="3" onchange="onBundanCheckChange(3, 3, this)"> 3분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g3 rounded text-amber-600" value="4" onchange="onBundanCheckChange(3, 4, this)"> 4분단</label>
-            <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g3 rounded text-amber-600" value="5" onchange="onBundanCheckChange(3, 5, this)"> 5분단</label>
-        </div>
-    </div>
-    <div class="flex gap-2 pt-1">
-        <button onclick="runSeqPlacement(3)" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-bold shadow-sm">
-            🚀 3학년 좌석 배치
-        </button>
-        <button onclick="resetSeqPlacement(3)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded text-xs font-bold">
-            🔄 초기화
-        </button>
-    </div>
-</div>
+                            <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 space-y-2.5">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">대상 고사실 지정 (범위/단일)</label>
+                                    <div class="flex items-center gap-1 font-bold text-xs">
+                                        <span>제</span>
+                                        <input type="text" id="seq-target-rooms-g3" placeholder="1-12, 15" onchange="validateSeqBundans(3)" class="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white font-mono font-bold focus:border-indigo-600 focus:outline-none">
+                                        <span class="shrink-0">고사실</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">배치 대상 분단 선택</label>
+                                    <div class="flex gap-2 flex-wrap text-xs font-semibold">
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g3 rounded text-amber-600" value="1" onchange="onBundanCheckChange(3, 1, this)"> 1분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g3 rounded text-amber-600" value="2" onchange="onBundanCheckChange(3, 2, this)"> 2분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g3 rounded text-amber-600" value="3" onchange="onBundanCheckChange(3, 3, this)"> 3분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g3 rounded text-amber-600" value="4" onchange="onBundanCheckChange(3, 4, this)"> 4분단</label>
+                                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="seq-bundan-chk-g3 rounded text-amber-600" value="5" onchange="onBundanCheckChange(3, 5, this)"> 5분단</label>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 pt-1">
+                                    <button onclick="runSeqPlacement(3)" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-bold shadow-sm">
+                                        🚀 3학년 좌석 배치
+                                    </button>
+                                    <button onclick="resetSeqPlacement(3)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded text-xs font-bold">
+                                        🔄 초기화
+                                    </button>
+                                </div>
+                            </div>
 
                 <!-- 공통 유틸리티 버튼 (수험표 반영 / 인쇄) -->
                 <div class="flex justify-between items-center pt-2 border-t border-slate-200">
@@ -1534,78 +1534,162 @@
             alert(`✅ ${grade}학년 학생 명단이 [${opt === 'ID_FIRST' ? '학번 우선' : '응시여부 우선'}] 기준으로 정렬되었습니다.`);
         }
 
-        // [v23.0 신설] 지정한 고사실과 분단부터 잔여 대기 인원 순차 배치 실행
-        function runSeqPlacement(grade) {
-            const queue = appState.seqQueues[grade] || [];
-            if (queue.length === 0) {
-                alert("배치할 대기 학생이 없습니다.");
+        // [v23.2 신설] 규격별 분단 인덱스 범위 계산 헬퍼 함수
+function getBundanSeatRange(spec, bNum) {
+    let start = 0;
+    for (let i = 0; i < bNum - 1; i++) {
+        start += (spec.cols[i] || 0);
+    }
+    const count = spec.cols[bNum - 1] || 0;
+    return { start, end: start + count };
+}
+
+// [v23.2 신설] 분단 체크박스 선택 시 기존 학생 배치 여부 즉시 검증
+function onBundanCheckChange(grade, bNum, chkEl) {
+    if (!chkEl.checked) return; // 체크 해제는 즉시 허용
+
+    const inputStr = document.getElementById(`seq-target-rooms-g${grade}`)?.value.trim();
+    if (!inputStr) {
+        alert("고사실 번호를 먼저 입력해주세요. (예: 1-12, 15)");
+        chkEl.checked = false;
+        return;
+    }
+
+    const roomNums = parseRangeString(inputStr);
+    if (roomNums.size === 0) {
+        alert("올바른 고사실 번호를 입력해주세요.");
+        chkEl.checked = false;
+        return;
+    }
+
+    // 지정된 모든 고사실의 해당 분단에 기존 학생 배치가 있는지 확인
+    for (let num of roomNums) {
+        const room = appState.rooms.find(r => !r.isSpecial && (r.num === num || r.targetClass === num));
+        if (!room) continue;
+
+        const seats = appState.currentSeats[room.id];
+        if (!seats || seats.length === 0) continue;
+
+        const spec = getSpecForCount(seats.length);
+        const range = getBundanSeatRange(spec, bNum);
+
+        for (let i = range.start; i < range.end; i++) {
+            if (seats[i] && seats[i].studentId && seats[i].studentName !== '빈좌석') {
+                alert(`${num} 고사실의 ${bNum} 분단에 이미 학생이 배치되어 있습니다.`);
+                chkEl.checked = false; // 경고 메시지 출력 후 체크 자동 해제
                 return;
             }
+        }
+    }
+}
 
-            const startRoomId = document.getElementById(`seq-start-room-g${grade}`).value;
-            const startBundan = parseInt(document.getElementById(`seq-start-bundan-g${grade}`).value, 10);
+// [v23.2 신설] 고사실 단답형 입력 수정 시 체크된 분단 자동 재검증
+function validateSeqBundans(grade) {
+    const checkboxes = document.querySelectorAll(`.seq-bundan-chk-g${grade}:checked`);
+    checkboxes.forEach(chk => {
+        onBundanCheckChange(grade, parseInt(chk.value), chk);
+    });
+}
 
-            if (!startRoomId) {
-                alert("시작할 고사실을 선택하세요.");
-                return;
+// [v23.2 개편] 단답형 고사실 번호 및 체크박스 분단 기준 순차 배치 실행 로직
+function runSeqPlacement(grade) {
+    const queue = appState.seqQueues[grade] || [];
+    if (queue.length === 0) {
+        alert("배치할 대기 학생이 없습니다.");
+        return;
+    }
+
+    const inputStr = document.getElementById(`seq-target-rooms-g${grade}`)?.value.trim();
+    if (!inputStr) {
+        alert("배치할 고사실 번호를 입력하세요. (예: 1-12, 15, 16)");
+        return;
+    }
+
+    const roomNums = Array.from(parseRangeString(inputStr)).sort((a, b) => a - b);
+    if (roomNums.length === 0) {
+        alert("올바른 고사실 번호를 입력하세요.");
+        return;
+    }
+
+    // 선택된 분단 목록 (오름차순)
+    const checkedBundans = Array.from(document.querySelectorAll(`.seq-bundan-chk-g${grade}:checked`))
+                                .map(el => parseInt(el.value))
+                                .sort((a, b) => a - b);
+
+    if (checkedBundans.length === 0) {
+        alert("배치할 분단을 1개 이상 선택하세요.");
+        return;
+    }
+
+    // 사전 배치 중복 검사
+    for (let num of roomNums) {
+        const room = appState.rooms.find(r => !r.isSpecial && (r.num === num || r.targetClass === num));
+        if (!room) continue;
+
+        const seats = appState.currentSeats[room.id];
+        if (!seats || seats.length === 0) continue;
+
+        const spec = getSpecForCount(seats.length);
+        for (let bNum of checkedBundans) {
+            const range = getBundanSeatRange(spec, bNum);
+            for (let i = range.start; i < range.end; i++) {
+                if (seats[i] && seats[i].studentId && seats[i].studentName !== '빈좌석') {
+                    alert(`${num} 고사실의 ${bNum} 분단에 이미 학생이 배치되어 있습니다.`);
+                    return;
+                }
             }
+        }
+    }
 
-            const gradeRooms = appState.rooms.filter(r => !r.isSpecial && r.targetGrade === grade).sort((a,b) => a.num - b.num);
-            const startRoomIdx = gradeRooms.findIndex(r => r.id === startRoomId);
+    let placedCount = 0;
 
-            if (startRoomIdx === -1) return;
+    // 지정 고사실 및 체크 분단 순차 밀어넣기 실행
+    for (let num of roomNums) {
+        if (queue.length === 0) break;
 
-            let placedCount = 0;
+        const room = appState.rooms.find(r => !r.isSpecial && (r.num === num || r.targetClass === num));
+        if (!room) continue;
 
-            // 순차 배치 실행 Loop
-            for (let rIdx = startRoomIdx; rIdx < gradeRooms.length; rIdx++) {
+        let seats = appState.currentSeats[room.id];
+        const classSts = appState.students.filter(s => parseInt(s.id.charAt(0)) === grade && parseInt(s.id.slice(1, 3)) === room.targetClass);
+        const spec = getSpecForCount((seats && seats.length) || classSts.length || 32);
+
+        if (!seats || seats.length === 0) {
+            seats = Array.from({ length: spec.capacity }, () => ({ studentId: '', studentName: '빈좌석', subject: '', seatSeq: 0 }));
+            appState.currentSeats[room.id] = seats;
+        }
+
+        // 체크된 분단별 순차 빈자리 배치
+        for (let bNum of checkedBundans) {
+            if (queue.length === 0) break;
+
+            const range = getBundanSeatRange(spec, bNum);
+            for (let sIdx = range.start; sIdx < range.end; sIdx++) {
                 if (queue.length === 0) break;
 
-                const room = gradeRooms[rIdx];
-                let seats = appState.currentSeats[room.id];
-
-                // 좌석이 초기화되어 있지 않으면 기본 생성
-                const classSts = appState.students.filter(s => parseInt(s.id.charAt(0)) === grade && parseInt(s.id.slice(1, 3)) === room.targetClass);
-                const spec = getSpecForCount(classSts.length || 32);
-
-                if (!seats || seats.length === 0) {
-                    seats = Array.from({ length: spec.capacity }, () => ({ studentId: '', studentName: '빈좌석', subject: '', seatSeq: 0 }));
-                    appState.currentSeats[room.id] = seats;
+                if (seats[sIdx].studentName === '빈좌석' || !seats[sIdx].studentId) {
+                    const st = queue.shift();
+                    seats[sIdx] = {
+                        studentId: st.studentId,
+                        studentName: st.studentName,
+                        subject: st.subject,
+                        seatSeq: 0
+                    };
+                    placedCount++;
                 }
-
-                // 시작 분단 인덱스 계산
-                let startSeatIdx = 0;
-                if (rIdx === startRoomIdx && startBundan > 1) {
-                    for (let c = 0; c < startBundan - 1; c++) {
-                        startSeatIdx += spec.cols[c];
-                    }
-                }
-
-                // 고사실 내 빈좌석에 순차 할당
-                for (let sIdx = startSeatIdx; sIdx < seats.length; sIdx++) {
-                    if (queue.length === 0) break;
-                    if (seats[sIdx].studentName === '빈좌석' || !seats[sIdx].studentId) {
-                        const st = queue.shift(); // 큐에서 1명 꺼냄
-                        seats[sIdx] = {
-                            studentId: st.studentId,
-                            studentName: st.studentName,
-                            subject: st.subject,
-                            seatSeq: 0
-                        };
-                        placedCount++;
-                    }
-                }
-
-                // 연번 재부여
-                let seq = 1;
-                seats.forEach(s => { s.seatSeq = seq++; });
             }
-
-            renderSeatsGrid();
-            renderSeqQueueUI(grade);
-            saveCurrentSeatingForSchedule();
-            alert(`🚀 ${grade}학년 총 ${placedCount}명의 학생이 지정 고사실/분단부터 순차적으로 좌석 배치되었습니다.`);
         }
+
+        // 고사실 좌석 연번 재부여
+        let seq = 1;
+        seats.forEach(s => { s.seatSeq = seq++; });
+    }
+
+    renderSeatsGrid();
+    renderSeqQueueUI(grade);
+    saveCurrentSeatingForSchedule();
+    alert(`🚀 ${grade}학년 총 ${placedCount}명의 학생이 지정된 고사실/분단에 순차적으로 좌석 배치되었습니다.`);
+}
 
         // [v23.0 신설] 학년 좌석 배치 초기화
         function resetSeqPlacement(grade) {
