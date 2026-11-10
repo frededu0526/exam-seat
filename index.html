@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v23.23</title>
+    <title>정기시험 좌석배치 시스템 v23.24</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -78,7 +78,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v23.23</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v23.24</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">일괄 배치 & 학년별 독립 순차 배치 모드 완비 패치</p>
         </div>
@@ -902,60 +902,64 @@
             return XLSX.utils.sheet_to_json(workbook.Sheets[foundName], { defval: "" });
         }
 
-        function handleExcelUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        // [v23.24 수정] 엑셀 파싱 시 수강 명단 인원 기준으로 빈좌석 즉시 재규격화
+function handleExcelUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        try {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
 
-                    appState.rawOpenedSubjects = getSheetRowsFlexible(workbook, "개설과목현황");
-                    appState.rawTimetable = getSheetRowsFlexible(workbook, "시험 시간표");
+            appState.rawOpenedSubjects = getSheetRowsFlexible(workbook, "개설과목현황");
+            appState.rawTimetable = getSheetRowsFlexible(workbook, "시험 시간표");
 
-                    const parseStudents = [];
+            const parseStudents = [];
 
-                    const g1Rows = getSheetRowsFlexible(workbook, "1학년 명렬표");
-                    g1Rows.forEach(r => {
-                        const stId = String(r['학번'] || r['학생학번'] || '').trim();
-                        const stName = String(r['이름'] || r['성명'] || '').trim();
-                        if (stId && stName) {
-                            parseStudents.push({ id: stId, name: stName, choices: [] });
-                        }
-                    });
+            const g1Rows = getSheetRowsFlexible(workbook, "1학년 명렬표");
+            g1Rows.forEach(r => {
+                const stId = String(r['학번'] || r['학생학번'] || '').trim();
+                const stName = String(r['이름'] || r['성명'] || '').trim();
+                if (stId && stName) {
+                    parseStudents.push({ id: stId, name: stName, choices: [] });
+                }
+            });
 
-                    ["2학년 학생 선택과목 현황", "3학년 학생 선택과목 현황"].forEach(sName => {
-                        const rows = getSheetRowsFlexible(workbook, sName);
-                        rows.forEach(r => {
-                            const stId = String(r['학번'] || r['학생학번'] || '').trim();
-                            const stName = String(r['이름'] || r['성명'] || '').trim();
-                            if (stId && stName && stName !== '없음') {
-                                const choices = [];
-                                ['A', 'B', 'C', 'D', 'E'].forEach(col => {
-                                    if (r[col] && String(r[col]).trim() !== '없음') {
-                                        choices.push(String(r[col]).trim());
-                                    }
-                                });
-                                parseStudents.push({ id: stId, name: stName, choices: choices });
+            ["2학년 학생 선택과목 현황", "3학년 학생 선택과목 현황"].forEach(sName => {
+                const rows = getSheetRowsFlexible(workbook, sName);
+                rows.forEach(r => {
+                    const stId = String(r['학번'] || r['학생학번'] || '').trim();
+                    const stName = String(r['이름'] || r['성명'] || '').trim();
+                    if (stId && stName && stName !== '없음') {
+                        const choices = [];
+                        ['A', 'B', 'C', 'D', 'E'].forEach(col => {
+                            if (r[col] && String(r[col]).trim() !== '없음') {
+                                choices.push(String(r[col]).trim());
                             }
                         });
-                    });
+                        parseStudents.push({ id: stId, name: stName, choices: choices });
+                    }
+                });
+            });
 
-                    parseStudents.sort((a, b) => a.id.localeCompare(b.id));
-                    appState.students = parseStudents;
+            parseStudents.sort((a, b) => a.id.localeCompare(b.id));
+            appState.students = parseStudents;
 
-                    saveToLocalStorage();
-                    renderAll();
-                    alert("✅ 엑셀 기초자료 업로드 및 파싱이 정상 완료되었습니다!");
-                } catch (err) {
-                    console.error(err);
-                    alert("⚠️ 엑셀 파일 처리 중 오류가 발생했습니다: " + err.message);
-                }
-            };
-            reader.readAsArrayBuffer(file);
+            // 정원 기준 빈좌석 재초기화
+            initDefaultRoomSeats(true);
+
+            saveToLocalStorage();
+            renderAll();
+            alert("✅ 엑셀 기초자료 업로드 및 학급 정원별 빈좌석 배치가 완료되었습니다!");
+        } catch (err) {
+            console.error(err);
+            alert("⚠️ 엑셀 파일 처리 중 오류가 발생했습니다: " + err.message);
         }
+    };
+    reader.readAsArrayBuffer(file);
+}
 
         function normalizeSubjectName(name) {
             if (!name) return "";
@@ -1053,36 +1057,38 @@
         // ==========================================
         // 3. 고사실 관리 (탭 2)
         // ==========================================
-        function generateStandardRooms() {
-            const grade = parseInt(document.getElementById('gen-target-grade').value);
-            const count = parseInt(document.getElementById('gen-class-count').value);
+        // [v23.24 수정] 고사실 생성 시 초기 빈좌석 자동 세팅
+function generateStandardRooms() {
+    const grade = parseInt(document.getElementById('gen-target-grade').value);
+    const count = parseInt(document.getElementById('gen-class-count').value);
 
-            const standardRooms = appState.rooms.filter(r => !r.isSpecial);
-            let maxNum = 0;
-            standardRooms.forEach(r => {
-                if (r.num > maxNum) maxNum = r.num;
-            });
+    const standardRooms = appState.rooms.filter(r => !r.isSpecial);
+    let maxNum = 0;
+    standardRooms.forEach(r => {
+        if (r.num > maxNum) maxNum = r.num;
+    });
 
-            for (let i = 1; i <= count; i++) {
-                const globalNum = maxNum + i;
-                const roomId = `room-${globalNum}`;
-                const roomName = `제${globalNum}고사실 (${grade}-${i}반)`;
+    for (let i = 1; i <= count; i++) {
+        const globalNum = maxNum + i;
+        const roomId = `room-${globalNum}`;
+        const roomName = `제${globalNum}고사실 (${grade}-${i}반)`;
 
-                appState.rooms.push({
-                    id: roomId,
-                    num: globalNum,
-                    name: roomName,
-                    targetGrade: grade,
-                    targetClass: i,
-                    isSpecial: false,
-                    specialStudents: []
-                });
-            }
+        appState.rooms.push({
+            id: roomId,
+            num: globalNum,
+            name: roomName,
+            targetGrade: grade,
+            targetClass: i,
+            isSpecial: false,
+            specialStudents: []
+        });
+    }
 
-            appState.rooms.sort((a, b) => a.num - b.num);
-            saveToLocalStorage();
-            renderTab2Rooms();
-        }
+    appState.rooms.sort((a, b) => a.num - b.num);
+    initDefaultRoomSeats(true);
+    saveToLocalStorage();
+    renderTab2Rooms();
+}
 
         function addSpecialRoom() {
             const sName = prompt("추가할 특별실 이름을 입력하세요:", "특별고사실 A");
@@ -1375,39 +1381,56 @@
         }
 
         // [v23.22 신설] 배치 전 각 고사실의 학급 정원(학생 수)에 맞춘 기본 빈좌석 초기화 함수
-        function initDefaultRoomSeats() {
-            if (!appState.currentSeats) appState.currentSeats = {};
-            
-            // 일반 고사실 초기화
-            const stdRooms = appState.rooms.filter(r => !r.isSpecial);
-            stdRooms.forEach(room => {
-                const classSts = appState.students.filter(s => 
-                    parseInt(s.id.charAt(0)) === room.targetGrade && 
-                    parseInt(s.id.slice(1, 3)) === room.targetClass
-                );
-                const targetCount = classSts.length > 0 ? classSts.length : 34;
-                const spec = getSpecForCount(targetCount);
+        // [v23.24 개편] 배치 전 각 고사실의 학급 정원(학생 수)에 맞춘 기본 빈좌석 초기화 함수
+function initDefaultRoomSeats(forceReinit = false) {
+    if (!appState.currentSeats) appState.currentSeats = {};
+    if (!appState.internalTable2) appState.internalTable2 = {};
 
-                appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => ({
+    const stdRooms = appState.rooms.filter(r => !r.isSpecial);
+    stdRooms.forEach(room => {
+        const classSts = appState.students.filter(s => 
+            parseInt(s.id.charAt(0)) === room.targetGrade && 
+            parseInt(s.id.slice(1, 3)) === room.targetClass
+        );
+        const targetCount = classSts.length > 0 ? classSts.length : 34;
+        const spec = getSpecForCount(targetCount);
+
+        if (forceReinit || !appState.currentSeats[room.id] || appState.currentSeats[room.id].length !== spec.capacity) {
+            const existingSeats = appState.currentSeats[room.id] || [];
+            appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => {
+                if (!forceReinit && existingSeats[idx] && existingSeats[idx].studentName !== '빈좌석') {
+                    return existingSeats[idx];
+                }
+                return {
                     studentId: '',
                     studentName: '빈좌석',
                     subject: '',
                     seatSeq: idx + 1
-                }));
-            });
-
-            // 특별 고사실 초기화
-            const spRooms = appState.rooms.filter(r => r.isSpecial);
-            spRooms.forEach(room => {
-                const spec = getSpecForCount(35);
-                appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => ({
-                    studentId: '',
-                    studentName: '빈좌석',
-                    subject: '',
-                    seatSeq: idx + 1
-                }));
+                };
             });
         }
+
+        const fixedCap = spec.cols.reduce((acc, val, cIdx) => spec.fixed[cIdx] ? acc + val : acc, 0);
+        appState.internalTable2[room.id] = {
+            totalCap: spec.capacity,
+            fixedCap: fixedCap,
+            nonFixedCap: spec.capacity - fixedCap
+        };
+    });
+
+    const spRooms = appState.rooms.filter(r => r.isSpecial);
+    spRooms.forEach(room => {
+        const spec = getSpecForCount(35);
+        if (forceReinit || !appState.currentSeats[room.id] || appState.currentSeats[room.id].length !== spec.capacity) {
+            appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => ({
+                studentId: '',
+                studentName: '빈좌석',
+                subject: '',
+                seatSeq: idx + 1
+            }));
+        }
+    });
+}
 
         function onPeriodChange() {
             updateCurrentSubjectDisplay();
@@ -1586,6 +1609,7 @@ function getBundanSeatRange(spec, bNum) {
 
 // [v23.2 신설] 분단 체크박스 선택 시 기존 학생 배치 여부 즉시 검증
 // [v23.22 수정] 분단 체크박스 선택 시 고사실 본래 학급 정원 규격 기준 검증
+// [v23.24 수정] 타 학년 고사실과 번호 중복 조회 방지 (r.targetGrade === grade 추가)
 function onBundanCheckChange(grade, bNum, chkEl) {
     if (!chkEl.checked) return;
 
@@ -1604,31 +1628,33 @@ function onBundanCheckChange(grade, bNum, chkEl) {
     }
 
     for (let num of roomNums) {
-        const room = appState.rooms.find(r => !r.isSpecial && (r.num === num || r.targetClass === num));
+        const room = appState.rooms.find(r => !r.isSpecial && r.targetGrade === grade && (r.num === num || r.targetClass === num));
         if (!room) continue;
 
-        const seats = appState.currentSeats[room.id];
-        if (!seats || seats.length === 0) continue;
-
-        // 고사실 본래 학급 정원 기반 규격 산출
+        let seats = appState.currentSeats[room.id];
         const roomStudents = appState.students.filter(s => 
             parseInt(s.id.charAt(0)) === room.targetGrade && 
             parseInt(s.id.slice(1, 3)) === room.targetClass
         );
         const targetCount = roomStudents.length > 0 ? roomStudents.length : 34;
         const spec = getSpecForCount(targetCount);
+
+        if (!seats || seats.length !== spec.capacity) {
+            initDefaultRoomSeats(false);
+            seats = appState.currentSeats[room.id];
+        }
+
         const range = getBundanSeatRange(spec, bNum);
 
         for (let i = range.start; i < range.end; i++) {
-            if (seats[i] && seats[i].studentId && seats[i].studentName !== '빈좌석') {
-                alert(`${num} 고사실의 ${bNum} 분단에 이미 학생이 배치되어 있습니다.`);
+            if (seats[i] && seats[i].studentId && seats[i].studentId.trim() !== '' && seats[i].studentName !== '빈좌석') {
+                alert(`제${room.num}고사실(${room.targetGrade}-${room.targetClass}반)의 ${bNum}분단에 이미 학생이 배치되어 있습니다.`);
                 chkEl.checked = false;
                 return;
             }
         }
     }
 }
-
 // [v23.2 신설] 고사실 단답형 입력 수정 시 체크된 분단 자동 재검증
 function validateSeqBundans(grade) {
     const checkboxes = document.querySelectorAll(`.seq-bundan-chk-g${grade}:checked`);
@@ -1637,7 +1663,7 @@ function validateSeqBundans(grade) {
     });
 }
 
-// [v23.22 수정] 고사실 본래 학급 정원 규격에 맞게 좌석을 자동 맞춤/확장 후 순차 배치
+// [v23.24 수정] 학년 독립 검색 및 학급 정원 규격 완벽 연동 순차 배치
 function runSeqPlacement(grade) {
     const queue = appState.seqQueues[grade] || [];
     if (queue.length === 0) {
@@ -1666,14 +1692,12 @@ function runSeqPlacement(grade) {
         return;
     }
 
-    // 사전 배치 중복 검사 (고사실 본래 정원 규격 기준)
+    // 사전 중복 검사 (targetGrade 필터링 추가)
     for (let num of roomNums) {
-        const room = appState.rooms.find(r => !r.isSpecial && (r.num === num || r.targetClass === num));
+        const room = appState.rooms.find(r => !r.isSpecial && r.targetGrade === grade && (r.num === num || r.targetClass === num));
         if (!room) continue;
 
-        const seats = appState.currentSeats[room.id];
-        if (!seats || seats.length === 0) continue;
-
+        let seats = appState.currentSeats[room.id];
         const roomStudents = appState.students.filter(s => 
             parseInt(s.id.charAt(0)) === room.targetGrade && 
             parseInt(s.id.slice(1, 3)) === room.targetClass
@@ -1681,11 +1705,16 @@ function runSeqPlacement(grade) {
         const targetCount = roomStudents.length > 0 ? roomStudents.length : 34;
         const spec = getSpecForCount(targetCount);
 
+        if (!seats || seats.length !== spec.capacity) {
+            initDefaultRoomSeats(false);
+            seats = appState.currentSeats[room.id];
+        }
+
         for (let bNum of checkedBundans) {
             const range = getBundanSeatRange(spec, bNum);
             for (let i = range.start; i < range.end; i++) {
-                if (seats[i] && seats[i].studentId && seats[i].studentName !== '빈좌석') {
-                    alert(`${num} 고사실의 ${bNum} 분단에 이미 학생이 배치되어 있습니다.`);
+                if (seats[i] && seats[i].studentId && seats[i].studentId.trim() !== '' && seats[i].studentName !== '빈좌석') {
+                    alert(`제${room.num}고사실(${room.targetGrade}-${room.targetClass}반)의 ${bNum}분단에 이미 학생이 배치되어 있습니다.`);
                     return;
                 }
             }
@@ -1697,12 +1726,10 @@ function runSeqPlacement(grade) {
     for (let num of roomNums) {
         if (queue.length === 0) break;
 
-        const room = appState.rooms.find(r => !r.isSpecial && (r.num === num || r.targetClass === num));
+        const room = appState.rooms.find(r => !r.isSpecial && r.targetGrade === grade && (r.num === num || r.targetClass === num));
         if (!room) continue;
 
         let seats = appState.currentSeats[room.id];
-
-        // 1. 고사실 본래 학급 정원에 맞는 규격(spec) 산출
         const roomStudents = appState.students.filter(s => 
             parseInt(s.id.charAt(0)) === room.targetGrade && 
             parseInt(s.id.slice(1, 3)) === room.targetClass
@@ -1710,7 +1737,6 @@ function runSeqPlacement(grade) {
         const targetCount = roomStudents.length > 0 ? roomStudents.length : 34;
         const spec = getSpecForCount(targetCount);
 
-        // 2. 좌석 배열이 없거나 고사실 정원 규격 크기(capacity)와 다르면 규격에 맞춰 확장/조정
         if (!seats || seats.length !== spec.capacity) {
             seats = Array.from({ length: spec.capacity }, (_, idx) => 
                 (seats && seats[idx]) ? seats[idx] : { studentId: '', studentName: '빈좌석', subject: '', seatSeq: idx + 1 }
@@ -1718,7 +1744,6 @@ function runSeqPlacement(grade) {
             appState.currentSeats[room.id] = seats;
         }
 
-        // 3. 정원 규격의 분단별 좌석 수에 맞춰 순차 배치
         for (let bNum of checkedBundans) {
             if (queue.length === 0) break;
 
@@ -1739,7 +1764,6 @@ function runSeqPlacement(grade) {
             }
         }
 
-        // 좌석 번호 재부여
         let seq = 1;
         seats.forEach(s => { s.seatSeq = seq++; });
     }
@@ -2860,21 +2884,24 @@ function runSeqPlacement(grade) {
             }
         }
 
-        function renderAll() {
-            document.getElementById('status-students').innerText = `파싱 완료 (${appState.students.length}명 수록)`;
-            document.getElementById('status-timetable').innerText = `파싱 완료 (${appState.rawTimetable.length}개 교시)`;
-            document.getElementById('status-subjects').innerText = `파싱 완료 (${appState.rawOpenedSubjects.length}개 과목)`;
-            document.getElementById('student-count-badge').innerText = appState.students.length;
+        // [v23.24 수정] 전체 화면 렌더링 시 사전 빈좌석 규격 동기화
+function renderAll() {
+    document.getElementById('status-students').innerText = `파싱 완료 (${appState.students.length}명 수록)`;
+    document.getElementById('status-timetable').innerText = `파싱 완료 (${appState.rawTimetable.length}개 교시)`;
+    document.getElementById('status-subjects').innerText = `파싱 완료 (${appState.rawOpenedSubjects.length}개 과목)`;
+    document.getElementById('student-count-badge').innerText = appState.students.length;
 
-            renderTimetableDisplay();
-            renderStudentList();
-            renderTab2Rooms();
-            renderTab3Specs();
+    renderTimetableDisplay();
+    renderStudentList();
+    renderTab2Rooms();
+    renderTab3Specs();
 
-            if (appState.placementMode) {
-                togglePlacementMode(appState.placementMode);
-            }
-        }
+    initDefaultRoomSeats(false);
+
+    if (appState.placementMode) {
+        togglePlacementMode(appState.placementMode);
+    }
+}
 
         function renderTimetableDisplay() {
             const body = document.getElementById('timetable-display-body');
