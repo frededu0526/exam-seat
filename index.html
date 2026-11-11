@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v23.36</title>
+    <title>정기시험 좌석배치 시스템 v23.37</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -73,7 +73,7 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v23.36</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v23.37</span>
             </h1>
             <p class="text-xs text-indigo-200 mt-0.5">순차 배치 시 초기 고사실 정원 규격 자동 복원 패치 완료</p>
         </div>
@@ -311,55 +311,77 @@
                     <!-- Step 1 구역 -->
                     <div class="bg-indigo-50/60 p-4 rounded-lg border border-indigo-200 space-y-3">
                         <div class="flex justify-between items-center flex-wrap gap-2">
-                            <h3 class="font-bold text-indigo-950 text-xs flex items-center gap-1.5">
-                                <span class="bg-indigo-600 text-white px-2 py-0.5 rounded text-[11px]">Step 1</span>
-                                <span>학년별 기준좌석 배치 설정</span>
-                            </h3>
+                        <h3 class="font-bold text-indigo-950 text-xs flex items-center gap-1.5">
+                            <span class="bg-indigo-600 text-white px-2 py-0.5 rounded text-[11px]">Step 1</span>
+                            <span>학년별 기준좌석 배치 설정</span>
+                        </h3>
+                        <div class="flex gap-2">
                             <button onclick="runStep1BasePlacement('ALL')" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3.5 py-1.5 rounded text-xs font-bold shadow-sm flex items-center gap-1">
                                 ⚡ 전체 학년 일괄 배치
                             </button>
+                            <button onclick="resetStep1BasePlacement('ALL')" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm flex items-center gap-1">
+                                🔄 전 학년 배치 초기화
+                            </button>
                         </div>
+                    </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                            <div class="bg-white p-3 rounded border border-indigo-100 flex flex-col justify-between space-y-2">
-                                <div>
-                                    <label class="block font-bold text-slate-700 mb-1">1학년 배치 방식</label>
-                                    <select id="base-mode-g1" class="w-full border rounded px-2 py-1 text-xs bg-slate-50 font-semibold">
-                                        <option value="CLASS_NUM">자기 반 자기 자리 (자습생도 번호순)</option>
-                                        <option value="CLASS" selected>자기 반 자기 자리 (자습생 후방 배치)</option>
-                                        <option value="GRADESEQ">학급 경계 없이 학번순 (당겨앉기+자습후방)</option>
-                                    </select>
-                                </div>
-                                <button onclick="runStep1BasePlacement(1)" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <!-- 1학년 설정 및 버튼 구역 -->
+                        <div class="bg-white p-3 rounded border border-indigo-100 flex flex-col justify-between space-y-2">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">1학년 배치 방식</label>
+                                <select id="base-mode-g1" class="w-full border rounded px-2 py-1 text-xs bg-slate-50 font-semibold">
+                                    <option value="CLASS_NUM">자기 반 자기 자리 (자습생도 번호순)</option>
+                                    <option value="CLASS" selected>자기 반 자기 자리 (자습생 후방 배치)</option>
+                                    <option value="GRADESEQ">학급 경계 없이 학번순 (당겨앉기+자습후방)</option>
+                                </select>
+                            </div>
+                            <div class="flex gap-1.5">
+                                <button onclick="runStep1BasePlacement(1)" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
                                     ⚡ 1학년 기준좌석 배치
                                 </button>
-                            </div>
-
-                            <div class="bg-white p-3 rounded border border-indigo-100 flex flex-col justify-between space-y-2">
-                                <div>
-                                    <label class="block font-bold text-slate-700 mb-1">2학년 배치 방식</label>
-                                    <select id="base-mode-g2" class="w-full border rounded px-2 py-1 text-xs bg-slate-50 font-semibold">
-                                        <option value="CLASS_NUM">자기 반 자기 자리 (자습생도 번호순)</option>
-                                        <option value="CLASS" selected>자기 반 자기 자리 (자습생 후방 배치)</option>                                
-                                        <option value="GRADESEQ">학급 경계 없이 학번순 (당겨앉기+자습후방)</option>
-                                    </select>
-                                </div>
-                                <button onclick="runStep1BasePlacement(2)" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
-                                    ⚡ 2학년 기준좌석 배치
+                                <button onclick="resetStep1BasePlacement(1)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-2 py-1.5 rounded text-xs font-bold shadow-xs shrink-0">
+                                    🔄 초기화
                                 </button>
                             </div>
+                        </div>
 
-                            <div class="bg-white p-3 rounded border border-indigo-100 flex flex-col justify-between space-y-2">
-                                <div>
-                                    <label class="block font-bold text-slate-700 mb-1">3학년 배치 방식</label>
-                                    <select id="base-mode-g3" class="w-full border rounded px-2 py-1 text-xs bg-slate-50 font-semibold">
-                                        <option value="CLASS_NUM">자기 반 자기 자리 (자습생도 번호순)</option>
-                                        <option value="CLASS" selected>자기 반 자기 자리 (자습생 후방 배치)</option>                                
-                                        <option value="GRADESEQ">학급 경계 없이 학번순 (당겨앉기+자습후방)</option>
-                                    </select>
-                                </div>
-                                <button onclick="runStep1BasePlacement(3)" class="w-full bg-amber-600 hover:bg-amber-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
+                        <!-- 2학년 설정 및 버튼 구역 -->
+                        <div class="bg-white p-3 rounded border border-indigo-100 flex flex-col justify-between space-y-2">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">2학년 배치 방식</label>
+                                <select id="base-mode-g2" class="w-full border rounded px-2 py-1 text-xs bg-slate-50 font-semibold">
+                                    <option value="CLASS_NUM">자기 반 자기 자리 (자습생도 번호순)</option>
+                                    <option value="CLASS" selected>자기 반 자기 자리 (자습생 후방 배치)</option>                                
+                                    <option value="GRADESEQ">학급 경계 없이 학번순 (당겨앉기+자습후방)</option>
+                                </select>
+                            </div>
+                            <div class="flex gap-1.5">
+                                <button onclick="runStep1BasePlacement(2)" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
+                                    ⚡ 2학년 기준좌석 배치
+                                </button>
+                                <button onclick="resetStep1BasePlacement(2)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-2 py-1.5 rounded text-xs font-bold shadow-xs shrink-0">
+                                    🔄 초기화
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 3학년 설정 및 버튼 구역 -->
+                        <div class="bg-white p-3 rounded border border-indigo-100 flex flex-col justify-between space-y-2">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">3학년 배치 방식</label>
+                                <select id="base-mode-g3" class="w-full border rounded px-2 py-1 text-xs bg-slate-50 font-semibold">
+                                    <option value="CLASS_NUM">자기 반 자기 자리 (자습생도 번호순)</option>
+                                    <option value="CLASS" selected>자기 반 자기 자리 (자습생 후방 배치)</option>                                
+                                    <option value="GRADESEQ">학급 경계 없이 학번순 (당겨앉기+자습후방)</option>
+                                </select>
+                            </div>
+                            <div class="flex gap-1.5">
+                                <button onclick="runStep1BasePlacement(3)" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
                                     ⚡ 3학년 기준좌석 배치
+                                </button>
+                                <button onclick="resetStep1BasePlacement(3)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-2 py-1.5 rounded text-xs font-bold shadow-xs shrink-0">
+                                    🔄 초기화
                                 </button>
                             </div>
                         </div>
@@ -1588,7 +1610,8 @@
             }
 
             for (let num of roomNums) {
-                const room = appState.rooms.find(r => !r.isSpecial && r.targetGrade === grade && (r.num === num || r.targetClass === num));
+                // targetClass 조건 제거 -> 학급 번호가 아닌 고사실 번호(r.num)로만 엄격 매칭
+                const room = appState.rooms.find(r => !r.isSpecial && r.num === num);
                 if (!room) continue;
 
                 let seats = appState.currentSeats[room.id];
@@ -1957,6 +1980,52 @@
                 ? "Step 1. 전체 학년 기준좌석 배치가 완료되었습니다." 
                 : `Step 1. ${targetGrade}학년 기준좌석 배치가 완료되었습니다.`;
             alert(msg);
+        }
+        // [v23.37 신설] Step 1 학년별 / 전 학년 배치 초기화 함수
+        function resetStep1BasePlacement(targetGrade = 'ALL') {
+            const targetLabel = (targetGrade === 'ALL') ? '전 전체 학년' : `${targetGrade}학년`;
+            if (!confirm(`정말로 ${targetLabel}의 Step 1 기준좌석 배치를 초기화하시겠습니까?`)) return;
+
+            const targetGrades = (targetGrade === 'ALL') ? [1, 2, 3] : [parseInt(targetGrade)];
+
+            targetGrades.forEach(grade => {
+                const gradeRooms = appState.rooms.filter(r => !r.isSpecial && r.targetGrade === grade);
+                gradeRooms.forEach(room => {
+                    const classSts = appState.students.filter(s => 
+                        parseInt(s.id.charAt(0)) === room.targetGrade && 
+                        parseInt(s.id.slice(1, 3)) === room.targetClass
+                    );
+                    const targetCount = classSts.length > 0 ? classSts.length : 34;
+                    const spec = getSpecForCount(targetCount);
+
+                    appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => ({
+                        studentId: '',
+                        studentName: '빈좌석',
+                        subject: '',
+                        seatSeq: idx + 1
+                    }));
+                });
+
+                // 순차 대기 목록 복원
+                initSeqQueueForGrade(grade);
+            });
+
+            if (targetGrade === 'ALL') {
+                const spRooms = appState.rooms.filter(r => r.isSpecial);
+                spRooms.forEach(room => {
+                    const spec = getSpecForCount(35);
+                    appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => ({
+                        studentId: '',
+                        studentName: '빈좌석',
+                        subject: '',
+                        seatSeq: idx + 1
+                    }));
+                });
+            }
+
+            renderSeatsGrid();
+            saveCurrentSeatingForSchedule();
+            alert(`🔄 ${targetLabel}의 좌석 배치가 초기화되었습니다.`);
         }
 
         function getSpecForCount(count) {
