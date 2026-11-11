@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정기시험 좌석배치 시스템 v23.36</title>
+    <title>정기시험 좌석배치 시스템 v23.38</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -73,9 +73,9 @@
     <header class="bg-indigo-700 text-white p-4 shadow-md no-print flex justify-between items-center flex-wrap gap-3">
         <div>
             <h1 class="text-xl font-bold flex items-center gap-2">
-                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v23.36</span>
+                🏫 정기시험 좌석배치 시스템 <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-0.5 rounded font-mono">v23.38</span>
             </h1>
-            <p class="text-xs text-indigo-200 mt-0.5">순차 배치 시 초기 고사실 정원 규격 자동 복원 패치 완료</p>
+            <p class="text-xs text-indigo-200 mt-0.5">순차 배치 고사실 번호(r.num) 엄격 매칭 및 학년 기준 배치 초기화 패치 완료</p>
         </div>
         <div class="flex gap-2 text-xs flex-wrap items-center">
             <button onclick="exportJSON()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded transition font-medium flex items-center gap-1 shadow-sm">
@@ -315,12 +315,18 @@
                                 <span class="bg-indigo-600 text-white px-2 py-0.5 rounded text-[11px]">Step 1</span>
                                 <span>학년별 기준좌석 배치 설정</span>
                             </h3>
-                            <button onclick="runStep1BasePlacement('ALL')" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3.5 py-1.5 rounded text-xs font-bold shadow-sm flex items-center gap-1">
-                                ⚡ 전체 학년 일괄 배치
-                            </button>
+                            <div class="flex gap-2">
+                                <button onclick="runStep1BasePlacement('ALL')" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3.5 py-1.5 rounded text-xs font-bold shadow-sm flex items-center gap-1">
+                                    ⚡ 전체 학년 일괄 배치
+                                </button>
+                                <button onclick="resetStep1BasePlacement('ALL')" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm flex items-center gap-1">
+                                    🔄 전 학년 배치 초기화
+                                </button>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                            <!-- 1학년 설정 및 버튼 구역 -->
                             <div class="bg-white p-3 rounded border border-indigo-100 flex flex-col justify-between space-y-2">
                                 <div>
                                     <label class="block font-bold text-slate-700 mb-1">1학년 배치 방식</label>
@@ -330,11 +336,17 @@
                                         <option value="GRADESEQ">학급 경계 없이 학번순 (당겨앉기+자습후방)</option>
                                     </select>
                                 </div>
-                                <button onclick="runStep1BasePlacement(1)" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
-                                    ⚡ 1학년 기준좌석 배치
-                                </button>
+                                <div class="flex gap-1.5">
+                                    <button onclick="runStep1BasePlacement(1)" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
+                                        ⚡ 1학년 기준좌석 배치
+                                    </button>
+                                    <button onclick="resetStep1BasePlacement(1)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-2 py-1.5 rounded text-xs font-bold shadow-xs shrink-0">
+                                        🔄 초기화
+                                    </button>
+                                </div>
                             </div>
 
+                            <!-- 2학년 설정 및 버튼 구역 -->
                             <div class="bg-white p-3 rounded border border-indigo-100 flex flex-col justify-between space-y-2">
                                 <div>
                                     <label class="block font-bold text-slate-700 mb-1">2학년 배치 방식</label>
@@ -344,11 +356,17 @@
                                         <option value="GRADESEQ">학급 경계 없이 학번순 (당겨앉기+자습후방)</option>
                                     </select>
                                 </div>
-                                <button onclick="runStep1BasePlacement(2)" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
-                                    ⚡ 2학년 기준좌석 배치
-                                </button>
+                                <div class="flex gap-1.5">
+                                    <button onclick="runStep1BasePlacement(2)" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
+                                        ⚡ 2학년 기준좌석 배치
+                                    </button>
+                                    <button onclick="resetStep1BasePlacement(2)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-2 py-1.5 rounded text-xs font-bold shadow-xs shrink-0">
+                                        🔄 초기화
+                                    </button>
+                                </div>
                             </div>
 
+                            <!-- 3학년 설정 및 버튼 구역 -->
                             <div class="bg-white p-3 rounded border border-indigo-100 flex flex-col justify-between space-y-2">
                                 <div>
                                     <label class="block font-bold text-slate-700 mb-1">3학년 배치 방식</label>
@@ -358,9 +376,14 @@
                                         <option value="GRADESEQ">학급 경계 없이 학번순 (당겨앉기+자습후방)</option>
                                     </select>
                                 </div>
-                                <button onclick="runStep1BasePlacement(3)" class="w-full bg-amber-600 hover:bg-amber-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
-                                    ⚡ 3학년 기준좌석 배치
-                                </button>
+                                <div class="flex gap-1.5">
+                                    <button onclick="runStep1BasePlacement(3)" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-1.5 rounded text-xs font-bold shadow-xs">
+                                        ⚡ 3학년 기준좌석 배치
+                                    </button>
+                                    <button onclick="resetStep1BasePlacement(3)" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-2 py-1.5 rounded text-xs font-bold shadow-xs shrink-0">
+                                        🔄 초기화
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -415,7 +438,7 @@
                 <!-- 2) 순차적으로 앉히기 컨테이너 -->
                 <div id="seq-placement-container" class="hidden space-y-5">
                     <div class="p-3 bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-900">
-                        📌 <b>순차적으로 앉히기 안내:</b> 실행 시 일괄 앉히기에 의해 변형된 좌석 규격을 **초기 고사실 정원 규격으로 자동 원복**하여 대기 학생을 순차적으로 밀어넣어 앉힙니다.
+                        📌 <b>순차적으로 앉히기 안내:</b> 고사실 번호(r.num)로 지정하며, 실행 시 이미 남아있는 잔류 학생을 유지한 상태에서 **빈좌석 칸에 대기 학생을 순차 배치**합니다.
                     </div>
 
                     <div class="grid grid-cols-3 gap-3 min-w-[900px]">
@@ -773,7 +796,7 @@
     <!-- 스크립트 메인 로직 -->
     <script>
         // ==========================================
-        // 1. 애플리케이션 상태 (State Management v23.36)
+        // 1. 애플리케이션 상태 (State Management v23.38)
         // ==========================================
         let appState = {
             rawTimetable: [],
@@ -1588,25 +1611,14 @@
             }
 
             for (let num of roomNums) {
-                const room = appState.rooms.find(r => !r.isSpecial && r.targetGrade === grade && (r.num === num || r.targetClass === num));
+                // targetClass 및 targetGrade 매칭 조건 완전 제거 -> 고사실 번호(r.num)로만 엄격 매칭
+                const room = appState.rooms.find(r => !r.isSpecial && r.num === num);
                 if (!room) continue;
 
                 let seats = appState.currentSeats[room.id];
                 if (!seats || seats.length === 0) {
                     initDefaultRoomSeats(false);
                     seats = appState.currentSeats[room.id];
-                }
-                if (!seats) continue;
-
-                const spec = getSpecForCount(seats.length);
-                const range = getBundanSeatRange(spec, bNum);
-
-                for (let i = range.start; i < range.end; i++) {
-                    if (seats[i] && seats[i].studentId && seats[i].studentId.trim() !== '' && seats[i].studentName !== '빈좌석') {
-                        alert(`제${room.num}고사실(${room.targetGrade}-${room.targetClass}반)의 ${bNum}분단에 이미 학생(${seats[i].studentName})이 배치되어 있습니다.`);
-                        chkEl.checked = false;
-                        return;
-                    }
                 }
             }
         }
@@ -1619,7 +1631,7 @@
         }
 
         // ==========================================
-        // [v23.36 핵심 패처] 순차 배치 시 초기 고사실 정원 규격 재호출 및 배치
+        // [v23.38] 순차 배치 실행 (고사실 번호 엄격 매칭 & 잔류 학생 보존)
         // ==========================================
         function runSeqPlacement(grade) {
             const queue = appState.seqQueues[grade] || [];
@@ -1649,9 +1661,9 @@
                 return;
             }
 
-            // 1. [v23.36 신규] 대상 고사실의 좌석 규격을 '초기 고사실 정원 규격'으로 원복 재설정
+            // 1. 고사실 번호(r.num)로만 매칭하고 기존 배치 학생을 보존하며 정원 규격 재확장
             roomNums.forEach(num => {
-                const room = appState.rooms.find(r => !r.isSpecial && r.targetGrade === grade && (r.num === num || r.targetClass === num));
+                const room = appState.rooms.find(r => !r.isSpecial && r.num === num);
                 if (!room) return;
 
                 const classSts = appState.students.filter(s => 
@@ -1661,52 +1673,36 @@
                 const targetCount = classSts.length > 0 ? classSts.length : 34;
                 const spec = getSpecForCount(targetCount);
 
-                // 현재 고사실의 규격 크기가 초기 규격과 다르면(변형된 상태이면) 초기 빈좌석 구조로 원복
-                if (!appState.currentSeats[room.id] || appState.currentSeats[room.id].length !== spec.capacity) {
-                    appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => ({
+                const existingSeats = appState.currentSeats[room.id] || [];
+
+                // 배열 크기를 고사실 정원 규격(spec.capacity)으로 복원하되 이미 앉아있는 학생은 보존
+                appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => {
+                    if (existingSeats[idx] && existingSeats[idx].studentName !== '빈좌석' && existingSeats[idx].studentId) {
+                        return existingSeats[idx];
+                    }
+                    return {
                         studentId: '',
                         studentName: '빈좌석',
                         subject: '',
                         seatSeq: idx + 1
-                    }));
-
-                    const fixedCap = spec.cols.reduce((acc, val, cIdx) => spec.fixed[cIdx] ? acc + val : acc, 0);
-                    appState.internalTable2[room.id] = {
-                        totalCap: spec.capacity,
-                        fixedCap: fixedCap,
-                        nonFixedCap: spec.capacity - fixedCap
                     };
-                }
+                });
+
+                const fixedCap = spec.cols.reduce((acc, val, cIdx) => spec.fixed[cIdx] ? acc + val : acc, 0);
+                appState.internalTable2[room.id] = {
+                    totalCap: spec.capacity,
+                    fixedCap: fixedCap,
+                    nonFixedCap: spec.capacity - fixedCap
+                };
             });
 
-            // 2. 사전 중복 검사 (초기 원복된 좌석 크기 기준)
-            for (let num of roomNums) {
-                const room = appState.rooms.find(r => !r.isSpecial && r.targetGrade === grade && (r.num === num || r.targetClass === num));
-                if (!room) continue;
-
-                let seats = appState.currentSeats[room.id];
-                if (!seats) continue;
-
-                const spec = getSpecForCount(seats.length);
-
-                for (let bNum of checkedBundans) {
-                    const range = getBundanSeatRange(spec, bNum);
-                    for (let i = range.start; i < range.end; i++) {
-                        if (seats[i] && seats[i].studentId && seats[i].studentId.trim() !== '' && seats[i].studentName !== '빈좌석') {
-                            alert(`제${room.num}고사실(${room.targetGrade}-${room.targetClass}반)의 ${bNum}분단에 이미 학생(${seats[i].studentName})이 배치되어 있습니다.`);
-                            return;
-                        }
-                    }
-                }
-            }
-
-            // 3. 실제 순차 배치 실행 (초기 규격 기준 빈좌석 순차 밀어넣기)
+            // 2. 실제 순차 배치 실행 (잔류 학생은 건너뛰고 '빈좌석' 칸에만 대기 학생 순차 배치)
             let placedCount = 0;
 
             for (let num of roomNums) {
                 if (queue.length === 0) break;
 
-                const room = appState.rooms.find(r => !r.isSpecial && r.targetGrade === grade && (r.num === num || r.targetClass === num));
+                const room = appState.rooms.find(r => !r.isSpecial && r.num === num);
                 if (!room) continue;
 
                 let seats = appState.currentSeats[room.id];
@@ -1741,21 +1737,52 @@
             renderSeatsGrid();
             renderSeqQueueUI(grade);
             saveCurrentSeatingForSchedule();
-            alert(`🚀 ${grade}학년 총 ${placedCount}명의 학생이 초기 고사실 정원 규격에 맞게 좌석 배치되었습니다.`);
+            alert(`🚀 ${grade}학년 총 ${placedCount}명의 학생이 지정된 고사실/분단 규격에 맞게 순차 배치되었습니다.`);
         }
 
+        // [v23.38] 순차 배치 학년 기준 배치 초기화
         function resetSeqPlacement(grade) {
             if (!confirm(`정말로 ${grade}학년의 모든 좌석 배치를 초기화하시겠습니까?`)) return;
 
-            const gradeRooms = appState.rooms.filter(r => !r.isSpecial && r.targetGrade === grade);
-            gradeRooms.forEach(room => {
-                delete appState.currentSeats[room.id];
+            // 1. 전체 고사실을 순회하며 어느 고사실에 있든 해당 학년 학생(학번 첫자리)을 빈좌석으로 초기화
+            Object.keys(appState.currentSeats).forEach(roomId => {
+                const seats = appState.currentSeats[roomId];
+                if (!seats) return;
+                seats.forEach((seat, idx) => {
+                    if (seat.studentId && parseInt(seat.studentId.charAt(0)) === grade) {
+                        seats[idx] = {
+                            studentId: '',
+                            studentName: '빈좌석',
+                            subject: '',
+                            seatSeq: idx + 1
+                        };
+                    }
+                });
             });
 
+            // 2. 해당 학년에 속한 모든 고사실을 정원 규격에 맞는 초기 빈좌석 구조로 복원
+            const gradeRooms = appState.rooms.filter(r => !r.isSpecial && r.targetGrade === grade);
+            gradeRooms.forEach(room => {
+                const classSts = appState.students.filter(s => 
+                    parseInt(s.id.charAt(0)) === room.targetGrade && 
+                    parseInt(s.id.slice(1, 3)) === room.targetClass
+                );
+                const targetCount = classSts.length > 0 ? classSts.length : 34;
+                const spec = getSpecForCount(targetCount);
+
+                appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => ({
+                    studentId: '',
+                    studentName: '빈좌석',
+                    subject: '',
+                    seatSeq: idx + 1
+                }));
+            });
+
+            // 3. 순차 배치 대기 명단 일괄 복원 및 화면 반영
             initSeqQueueForGrade(grade);
             renderSeatsGrid();
             saveCurrentSeatingForSchedule();
-            alert(`🔄 ${grade}학년의 좌석 배치가 초기화되었으며 학생 명단이 대기 목록으로 복원되었습니다.`);
+            alert(`🔄 ${grade}학년의 좌석 배치가 학년 기준으로 초기화되어 대기 목록으로 복원되었습니다.`);
         }
 
         // ==========================================
@@ -1957,6 +1984,69 @@
                 ? "Step 1. 전체 학년 기준좌석 배치가 완료되었습니다." 
                 : `Step 1. ${targetGrade}학년 기준좌석 배치가 완료되었습니다.`;
             alert(msg);
+        }
+
+        // [v23.38 신설] Step 1 학년별 / 전 학년 배치 초기화 함수
+        function resetStep1BasePlacement(targetGrade = 'ALL') {
+            const targetLabel = (targetGrade === 'ALL') ? '전 전체 학년' : `${targetGrade}학년`;
+            if (!confirm(`정말로 ${targetLabel}의 Step 1 기준좌석 배치를 초기화하시겠습니까?`)) return;
+
+            const targetGrades = (targetGrade === 'ALL') ? [1, 2, 3] : [parseInt(targetGrade)];
+
+            targetGrades.forEach(grade => {
+                // 어느 고사실에 있든 해당 학년 학생 비우기
+                Object.keys(appState.currentSeats).forEach(roomId => {
+                    const seats = appState.currentSeats[roomId];
+                    if (!seats) return;
+                    seats.forEach((seat, idx) => {
+                        if (seat.studentId && parseInt(seat.studentId.charAt(0)) === grade) {
+                            seats[idx] = {
+                                studentId: '',
+                                studentName: '빈좌석',
+                                subject: '',
+                                seatSeq: idx + 1
+                            };
+                        }
+                    });
+                });
+
+                const gradeRooms = appState.rooms.filter(r => !r.isSpecial && r.targetGrade === grade);
+                gradeRooms.forEach(room => {
+                    const classSts = appState.students.filter(s => 
+                        parseInt(s.id.charAt(0)) === room.targetGrade && 
+                        parseInt(s.id.slice(1, 3)) === room.targetClass
+                    );
+                    const targetCount = classSts.length > 0 ? classSts.length : 34;
+                    const spec = getSpecForCount(targetCount);
+
+                    appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => ({
+                        studentId: '',
+                        studentName: '빈좌석',
+                        subject: '',
+                        seatSeq: idx + 1
+                    }));
+                });
+
+                // 순차 대기 목록 복원
+                initSeqQueueForGrade(grade);
+            });
+
+            if (targetGrade === 'ALL') {
+                const spRooms = appState.rooms.filter(r => r.isSpecial);
+                spRooms.forEach(room => {
+                    const spec = getSpecForCount(35);
+                    appState.currentSeats[room.id] = Array.from({ length: spec.capacity }, (_, idx) => ({
+                        studentId: '',
+                        studentName: '빈좌석',
+                        subject: '',
+                        seatSeq: idx + 1
+                    }));
+                });
+            }
+
+            renderSeatsGrid();
+            saveCurrentSeatingForSchedule();
+            alert(`🔄 ${targetLabel}의 좌석 배치가 초기화되었습니다.`);
         }
 
         function getSpecForCount(count) {
