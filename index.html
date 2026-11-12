@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>정기시험 좌석배치 시스템 v23.39 (v23.38 Design)</title>
+<title>정기시험 좌석배치 시스템 v23.40 (v23.38 Design)</title>
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- SheetJS -->
@@ -131,7 +131,7 @@ body {
       <div>
         <h1 class="text-base md:text-lg font-extrabold tracking-tight flex items-center gap-2">
           🏫 정기시험 좌석배치 시스템
-          <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-xs px-2.5 py-0.5 rounded-full font-extrabold">v23.39</span>
+          <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-xs px-2.5 py-0.5 rounded-full font-extrabold">v23.40</span>
         </h1>
         <p class="text-[11px] text-slate-400 mt-0.5">학년별 3단 이동규칙 · 순차배치 규격 유지 · 실시간 밀어내기 미리보기 및 랙 최적화</p>
       </div>
@@ -879,7 +879,7 @@ body {
 <!-- 스크립트 메인 로직 -->
 <script>
 // ==========================================
-// 1. 애플리케이션 상태 (State Management v23.39)
+// 1. 애플리케이션 상태 (State Management v23.40)
 // ==========================================
 let appState = {
   rawTimetable: [],
@@ -3212,12 +3212,16 @@ function promptAddStudent() {
   const name = prompt("학생 이름을 입력하세요:");
   if (!name) return;
 
-  appState.students.push({ id: id.trim(), name: name.trim(), choices: [] });
+  // ➕ 추가: 선택과목 입력 창 및 쉼표 기반 배열 파싱 로직
+  const choicesStr = prompt("수강 선택과목을 쉼표(,)로 구분하여 입력하세요 (예: 법과사회, 일본어회화):", "");
+  const choices = choicesStr ? choicesStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  // ✏️ 수정: 고정 빈 배열 대신 가공된 choices 배열 입력
+  appState.students.push({ id: id.trim(), name: name.trim(), choices: choices });
   appState.students.sort((a, b) => a.id.localeCompare(b.id));
   saveToLocalStorage();
   renderAll();
 }
-
 function deleteStudent(id) {
   appState.students = appState.students.filter(s => s.id !== id);
   saveToLocalStorage();
