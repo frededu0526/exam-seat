@@ -171,7 +171,7 @@ body {
         5. 🎟️ 학생별 수험표 출력
       </button>
       <button onclick="switchTab('tab7')" id="btn-tab7" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold text-slate-300 hover:text-white transition whitespace-nowrap">
-        6. 📊 통계 및 감독 표
+        6. 📊 통계 및 감독 표(개발중)
       </button>
     </div>
   </nav>
@@ -3061,6 +3061,16 @@ function renderTimetableDisplay() {
   body.innerHTML = html;
 }
 
+// [신규 추가] 일반 고사실("제1고사실 (1-1반)")과 특별 고사실("특별고사실 A(특수학급)") 모두
+// 여는 괄호 '(' 앞에서 줄바꿈(<br>)하고 "제n 고사실" 띄어쓰기를 맞춰주는 공통 함수
+function formatRoomTwoLines(name) {
+  if (!name) return '';
+  return String(name)
+    .trim()
+    .replace(/^제\s*(\d+)\s*고사실/, '제$1 고사실')
+    .replace(/\s*\(/, '<br>(');
+}
+
 function renderStudentList() {
   const tbody = document.getElementById('student-list-body');
   const badge = document.getElementById('student-total-badge');
@@ -3091,17 +3101,12 @@ function renderStudentList() {
     const spRoom = appState.rooms.find(r => r.isSpecial && (r.specialStudents || []).includes(st.id));
     const stdRoom = appState.rooms.find(r => !r.isSpecial && r.targetGrade === g && r.targetClass === c);
 
-    let roomLabel = `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 text-center">${g}-${c}반</span>`;
+    let roomLabel = `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 text-center whitespace-nowrap">${g}-${c}반</span>`;
     if (spRoom) {
-      roomLabel = `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 text-center leading-tight">${spRoom.name}</span>`;
+      roomLabel = `<span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-100 text-amber-800 text-center leading-tight whitespace-nowrap">${formatRoomTwoLines(spRoom.name)}</span>`;
     } else if (stdRoom) {
-      // "제3고사실 (1-3반)" -> "제3 고사실<br>(1-3반)" 두 줄로 깔끔하게 분리
-      const formattedRoomName = stdRoom.name
-        .replace(/^제\s*(\d+)\s*고사실/, '제$1 고사실')
-        .replace(/\s*\(/, '<br>(');
-      roomLabel = `<span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 text-center leading-tight whitespace-nowrap">${formattedRoomName}</span>`;
+      roomLabel = `<span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 text-center leading-tight whitespace-nowrap">${formatRoomTwoLines(stdRoom.name)}</span>`;
     }
-
     const choices = st.choices || [];
     const subjBadges = choices.length > 0
       ? choices.map(s => `<span class="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] mr-1 mb-1">${s}</span>`).join('')
@@ -3324,7 +3329,7 @@ function generateRoomInfoTable() {
 
   let headHtml = `<tr><th class="px-3 py-2 border-r bg-slate-200 min-w-[140px]">일자 / 교시</th>`;
   sortedRooms.forEach(r => {
-    headHtml += `<th class="px-2 py-2 border-r min-w-[90px] ${r.isSpecial ? 'bg-amber-100 text-amber-900' : ''}">${r.name}</th>`;
+    headHtml += `<th class="px-2.5 py-2 border-r min-w-[95px] leading-tight whitespace-nowrap ${r.isSpecial ? 'bg-amber-100 text-amber-900' : ''}">${formatRoomTwoLines(r.name)}</th>`;
   });
   headHtml += `</tr>`;
   thead.innerHTML = headHtml;
@@ -3377,7 +3382,7 @@ function generateProctorTable() {
   let headHtml = `<tr><th class="px-3 py-2 border-r bg-purple-100 text-purple-950 min-w-[140px]">일자 / 교시</th>`;
   columns.forEach(col => {
     const isHall = col.type === 'HALLWAY';
-    headHtml += `<th class="px-2 py-2 border-r min-w-[85px] ${isHall ? 'bg-purple-200/70 text-purple-900 font-extrabold' : ''}">${col.label}</th>`;
+    headHtml += `<th class="px-2.5 py-2 border-r min-w-[90px] leading-tight whitespace-nowrap ${isHall ? 'bg-purple-200/70 text-purple-900 font-extrabold' : ''}">${formatRoomTwoLines(col.label)}</th>`;
   });
   headHtml += `<th class="px-3 py-2 border-l-2 border-purple-300 bg-purple-200 text-purple-950 font-extrabold min-w-[70px]">합계</th></tr>`;
   thead.innerHTML = headHtml;
