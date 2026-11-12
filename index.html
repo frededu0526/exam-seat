@@ -566,11 +566,11 @@ body {
           <span class="font-extrabold text-indigo-900 block border-b pb-1">🏫 2층 구역</span>
           <div class="space-y-2">
             <div>
-              <span class="text-[11px] font-semibold text-slate-600">2층 (남)</span>
+              <span class="text-[11px] font-semibold text-slate-600">2층 (북)</span>
               <div id="zone-2S" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '2S')" class="min-h-[48px] p-2 bg-white rounded-lg border border-slate-200 flex flex-wrap gap-1.5"></div>
             </div>
             <div>
-              <span class="text-[11px] font-semibold text-slate-600">2층 (북)</span>
+              <span class="text-[11px] font-semibold text-slate-600">2층 (남)</span>
               <div id="zone-2N" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '2N')" class="min-h-[48px] p-2 bg-white rounded-lg border border-slate-200 flex flex-wrap gap-1.5"></div>
             </div>
           </div>
@@ -579,11 +579,11 @@ body {
           <span class="font-extrabold text-emerald-900 block border-b pb-1">🏫 3층 구역</span>
           <div class="space-y-2">
             <div>
-              <span class="text-[11px] font-semibold text-slate-600">3층 (남)</span>
+              <span class="text-[11px] font-semibold text-slate-600">3층 (북)</span>
               <div id="zone-3S" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '3S')" class="min-h-[48px] p-2 bg-white rounded-lg border border-slate-200 flex flex-wrap gap-1.5"></div>
             </div>
             <div>
-              <span class="text-[11px] font-semibold text-slate-600">3층 (북)</span>
+              <span class="text-[11px] font-semibold text-slate-600">3층 (남)</span>
               <div id="zone-3N" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '3N')" class="min-h-[48px] p-2 bg-white rounded-lg border border-slate-200 flex flex-wrap gap-1.5"></div>
             </div>
           </div>
@@ -592,11 +592,11 @@ body {
           <span class="font-extrabold text-amber-900 block border-b pb-1">🏫 4층 구역</span>
           <div class="space-y-2">
             <div>
-              <span class="text-[11px] font-semibold text-slate-600">4층 (남)</span>
+              <span class="text-[11px] font-semibold text-slate-600">4층 (북)</span>
               <div id="zone-4S" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '4S')" class="min-h-[48px] p-2 bg-white rounded-lg border border-slate-200 flex flex-wrap gap-1.5"></div>
             </div>
             <div>
-              <span class="text-[11px] font-semibold text-slate-600">4층 (북)</span>
+              <span class="text-[11px] font-semibold text-slate-600">4층 (남)</span>
               <div id="zone-4N" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '4N')" class="min-h-[48px] p-2 bg-white rounded-lg border border-slate-200 flex flex-wrap gap-1.5"></div>
             </div>
           </div>
@@ -605,11 +605,11 @@ body {
           <span class="font-extrabold text-purple-900 block border-b pb-1">🏫 5층 & 별도 공간</span>
           <div class="space-y-2">
             <div>
-              <span class="text-[11px] font-semibold text-slate-600">5층 (남)</span>
+              <span class="text-[11px] font-semibold text-slate-600">5층 (북)</span>
               <div id="zone-5S" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '5S')" class="min-h-[40px] p-2 bg-white rounded-lg border border-slate-200 flex flex-wrap gap-1.5"></div>
             </div>
             <div>
-              <span class="text-[11px] font-semibold text-slate-600">5층 (북)</span>
+              <span class="text-[11px] font-semibold text-slate-600">5층 (남)</span>
               <div id="zone-5N" ondragover="handleZoneDragOver(event)" ondrop="handleZoneDrop(event, '5N')" class="min-h-[40px] p-2 bg-white rounded-lg border border-slate-200 flex flex-wrap gap-1.5"></div>
             </div>
             <div>
@@ -3091,11 +3091,15 @@ function renderStudentList() {
     const spRoom = appState.rooms.find(r => r.isSpecial && (r.specialStudents || []).includes(st.id));
     const stdRoom = appState.rooms.find(r => !r.isSpecial && r.targetGrade === g && r.targetClass === c);
 
-    let roomLabel = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700">${g}-${c}반</span>`;
+    let roomLabel = `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 text-center">${g}-${c}반</span>`;
     if (spRoom) {
-      roomLabel = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800">${spRoom.name}</span>`;
+      roomLabel = `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 text-center leading-tight">${spRoom.name}</span>`;
     } else if (stdRoom) {
-      roomLabel = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700">${stdRoom.name}</span>`;
+      // "제3고사실 (1-3반)" -> "제3 고사실<br>(1-3반)" 두 줄로 깔끔하게 분리
+      const formattedRoomName = stdRoom.name
+        .replace(/^제\s*(\d+)\s*고사실/, '제$1 고사실')
+        .replace(/\s*\(/, '<br>(');
+      roomLabel = `<span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 text-center leading-tight whitespace-nowrap">${formattedRoomName}</span>`;
     }
 
     const choices = st.choices || [];
